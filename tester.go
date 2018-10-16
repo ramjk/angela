@@ -3,8 +3,7 @@ package main
 import "fmt"
 
 import (
-	// "database/sql"
-	"reflect"
+	"database/sql"
     "github.com/aws/aws-sdk-go/aws"
     "github.com/aws/aws-sdk-go/aws/session"
     // "github.com/aws/aws-sdk-go/service/sts"
@@ -12,43 +11,49 @@ import (
     // "strings"
 	// "github.com/aws/aws-sdk-go-v2/aws/external"
     "github.com/aws/aws-sdk-go/aws/credentials"
-	//"github.com/aws/aws-sdk-go-v2/service/rds/rdsutils"
+	"github.com/aws/aws-sdk-go/service/rds/rdsutils"
 	// "github.com/go-sql-driver/mysql"
 	// "github.com/aws/aws-sdk-go-v2/aws/stscreds"
-	// "os"
+	"os"
 )
 
 func main() {
+	HOME := os.Getenv("HOME")
+
 	sess, err := session.NewSession(&aws.Config{
 		Region: aws.String("us-west-2c"),
-		Credentials: credentials.NewSharedCredentials("/Users/kapleesh/.aws/credentials", ""),
+		Credentials: credentials.NewSharedCredentials(HOME + "/.aws/credentials", ""),
 		})
+
 	credentialsObj := sess.Config.Credentials
-	fmt.Println(reflect.TypeOf(credentialsObj))
-	// fmt.Println(credentialsObj)
-	// credentialsObj.Expire()
-	awsCreds, err := credentialsObj.Get()
-	fmt.Println("aws", awsCreds)	
-	fmt.Println("cred", credentialsObj)
-	fmt.Println(err)
 
 	//////
 
-	// awsRegion := "us-west-2c"
-	// dbUser := "kubidoo"
-	// dbName := "angela"
-	// dbEndpoint := "http://angela.cluster-c7vkkm31zszq.us-west-2.rds.amazonaws.com:3306"
+	awsRegion := "us-west-2c"
+	dbUser := "kubidoo"
+	dbName := "angela"
+	dbEndpoint := "http://angela.cluster-c7vkkm31zszq.us-west-2.rds.amazonaws.com:3306"
 
-	//authToken, err := rdsutils.BuildAuthToken(dbEndpoint, awsRegion, dbUser, credentialsObj)
+	authToken, err := rdsutils.BuildAuthToken(dbEndpoint, awsRegion, dbUser, credentialsObj)
+
+	if err != nil {
+		fmt.Println("Could not build auth token.")
+	}
 
 	// Create the MySQL DNS string for the DB connection
 	// user:password@protocol(endpoint)/dbname?<params>
-// 	dnsStr := fmt.Sprintf("%s:%s@tcp(%s)/%s?tls=true",
-// 	   dbUser, authToken, dbEndpoint, dbName,
-// 	)
+	dnsStr := fmt.Sprintf("%s:%s@tcp(%s)/%s?tls=true",
+	   dbUser, authToken, dbEndpoint, dbName,
+	)
 
-// // Use db to perform SQL operations on database
-// 	db, err := sql.Open("mysql", dnsStr)
+	// Use db to perform SQL operations on database
+	db, err := sql.Open("mysql", dnsStr)
+
+	if err != nil {
+		fmt.Println("Cannot open database.")
+	}
+
+	fmt.Println(db)
 
 	// cfg, err := external.LoadDefaultAWSConfig()
 	// if err != nil {
