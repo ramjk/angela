@@ -1,7 +1,5 @@
 package main
 
-import "fmt"
-
 import (
 	"database/sql"
     "github.com/aws/aws-sdk-go/aws"
@@ -12,7 +10,7 @@ import (
 	// "github.com/aws/aws-sdk-go-v2/aws/external"
     "github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/service/rds/rdsutils"
-	// "github.com/go-sql-driver/mysql"
+	_ "github.com/go-sql-driver/mysql"
 	// "github.com/aws/aws-sdk-go-v2/aws/stscreds"
 	"os"
 )
@@ -25,35 +23,38 @@ func main() {
 		Credentials: credentials.NewSharedCredentials(HOME + "/.aws/credentials", ""),
 		})
 
-	credentialsObj := sess.Config.Credentials
+	creds := sess.Config.Credentials
 
 	//////
 
-	awsRegion := "us-west-2c"
+	region := "us-west-2c"
 	dbUser := "kubidoo"
 	dbName := "angela"
-	dbEndpoint := "http://angela.cluster-c7vkkm31zszq.us-west-2.rds.amazonaws.com:3306"
+	endpoint := "angela.cluster-c7vkkm31zszq.us-west-2.rds.amazonaws.com:3306"
 
-	authToken, err := rdsutils.BuildAuthToken(dbEndpoint, awsRegion, dbUser, credentialsObj)
+	connectionString := rdsutils.NewConnectionStringBuilder(endpoint, region, dbUser, dbName, creds)
+
+	dnsStr, err := connectionString.WithTCPFormat().Build()
 
 	if err != nil {
-		fmt.Println("Could not build auth token.")
+		panic(err)
 	}
 
-	// Create the MySQL DNS string for the DB connection
-	// user:password@protocol(endpoint)/dbname?<params>
-	dnsStr := fmt.Sprintf("%s:%s@tcp(%s)/%s?tls=true",
-	   dbUser, authToken, dbEndpoint, dbName,
-	)
 
 	// Use db to perform SQL operations on database
 	db, err := sql.Open("mysql", dnsStr)
 
+	defer db.Close()
+
 	if err != nil {
-		fmt.Println("Cannot open database.")
+		panic(err)
 	}
 
-	fmt.Println(db)
+	err = db.Ping()
+
+	if err != nil {
+		panic(err)
+	}
 
 	// cfg, err := external.LoadDefaultAWSConfig()
 	// if err != nil {
