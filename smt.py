@@ -84,6 +84,7 @@ class SparseMerkleTree(object):
 
 		# Update root
 		self.root = self.cache[curr_id]
+		return True
 
 if __name__ == '__main__':
 	SMT = SparseMerkleTree("sha256")
