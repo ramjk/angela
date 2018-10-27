@@ -7,7 +7,7 @@ class SparseMerkleTree(object):
 	def __init__(self, hash_name: str) -> None:
 		super(SparseMerkleTree, self).__init__()
 
-		self.root = None
+		self.root_digest = None
 
 		self.hash_name = hash_name
 
@@ -83,7 +83,26 @@ class SparseMerkleTree(object):
 			curr_id = p_id
 
 		# Update root
-		self.root = self.cache[curr_id]
+		self.root_digest = self.cache[curr_id]
+
+	def generate_copath(self, index: str) -> list:
+		copath = list()
+		curr_id = bitarray(index)
+
+		while (curr_id.length > 0):
+			# Get both the parent and sibling ids
+			s_id = self.sibling(curr_id)
+			copath.append(s_id)
+			curr_id = self.parent(curr_id)
+
+		return copath
+
+	def verify_path(self, index, copath: list) -> bool:
+		copath.insert(0, index)
+		root_digest = reduce(lambda x, y: self._hash(x + y), copath)
+		return root_digest == self.root_digest
+
+
 
 if __name__ == '__main__':
 	SMT = SparseMerkleTree("sha256")
