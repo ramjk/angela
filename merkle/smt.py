@@ -1,4 +1,4 @@
-import util
+from angela.common import util
 import hashlib
 
 class SparseMerkleTree(object):
@@ -20,7 +20,7 @@ class SparseMerkleTree(object):
 		and the set of keys that are empty and in the empty_cache.
 		"""
 		self.cache = {}
-		self.empty_cache = [b'0']
+		self.empty_cache = [self._hash(b'0')]
 
 	"""
 	https://www.links.org/files/RevocationTransparency.pdf
@@ -104,10 +104,3 @@ class SparseMerkleTree(object):
 		copath.insert(0, index)
 		root_digest = reduce(lambda x, y: self._hash(x + y), copath)
 		return root_digest == self.root_digest
-
-
-if __name__ == '__main__':
-	SMT = SparseMerkleTree("sha256")
-	print(SMT.depth)
-	print(SMT.empty_cache[0])
-		
