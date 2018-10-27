@@ -1,4 +1,4 @@
-from angela.common import util
+from common import util
 import hashlib
 
 class SparseMerkleTree(object):

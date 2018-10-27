@@ -1,6 +1,6 @@
 import hashlib
 import unittest
-from angela.merkle.smt import SparseMerkleTree
+from merkle.smt import SparseMerkleTree
 
 class TestSparseMerkleTree(unittest.TestCase):
 	def test_constructor(self):
