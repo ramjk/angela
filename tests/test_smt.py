@@ -27,7 +27,7 @@ class TestSparseMerkleTree(unittest.TestCase):
 		copath = self.T.generate_copath(index)
 		self.assertNotEqual(len(copath), 255)
 		self.assertTrue(self.T.verify_path(index, copath)) 
-
+		
 	def test_membership(self):
 		index = random_index()
 		self.T.insert(index, b"angela")
