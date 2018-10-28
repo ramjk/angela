@@ -1,5 +1,6 @@
-from common import util
 import hashlib
+from common import util
+from functools import reduce
 
 class SparseMerkleTree(object):
 
@@ -33,12 +34,14 @@ class SparseMerkleTree(object):
 			self.empty_cache.append(t)
 		return self.empty_cache[n]	
 
-	def _hash(self, data: str) -> str:
+	def _hash(self, data) -> str:
 		# H is an object of type hashlib.hash_name
-		H = eval("hashlib.{}({})".format(self.hash_name, data))
+
+		H = eval("hashlib.{}()".format(self.hash_name))
+		H.update(util.to_bytes(data))
 		return H.hexdigest()
 
-	def parent(self, node_id: util.bitarray):
+	def _parent(self, node_id: util.bitarray):
 		# We create a copy in order to avoid destructively modifying node_id
 		p_id = node_id.copy()
 
@@ -46,7 +49,7 @@ class SparseMerkleTree(object):
 		p_id.pop()
 		return p_id
 
-	def sibling(self, node_id: util.bitarray):
+	def _sibling(self, node_id: util.bitarray):
 		# We create a copy in order to avoid destructively modifying node_id
 		s_id = node_id.copy()
 
@@ -62,14 +65,15 @@ class SparseMerkleTree(object):
 	def insert(self, index: str, data: str) -> bool:
 		# Do the first level hash of data and insert into index-th leaf
 		node_id = util.bitarray(index)
-		cache[node_id] = self._hash(data)
+		print("insert: node_id = {}".format(node_id))
+		self.cache[node_id] = self._hash(data)
 
 		# Do a normal update up the tree
 		curr_id = node_id.copy()
-		while (curr_id.length > 0):
+		while (curr_id.length() > 0):
 			# Get both the parent and sibling ids
-			s_id = self.sibling(curr_id)
-			p_id = self.parent(curr_id)
+			s_id = self._sibling(curr_id)
+			p_id = self._parent(curr_id)
 
 			# Get the digest of the current node and sibling
 			curr_digest = self.cache[curr_id]
@@ -79,9 +83,11 @@ class SparseMerkleTree(object):
 			else:
 				s_digest = self._empty_cache(s_id.length())
 
+			# Hash the digests of the left and right children
 			p_digest = self._hash(curr_digest + s_digest)
 			self.cache[p_id] = p_digest
 
+			# Traverse up the tree by making the current node the parent node
 			curr_id = p_id
 
 		# Update root
@@ -90,17 +96,35 @@ class SparseMerkleTree(object):
 
 	def generate_copath(self, index: str) -> list:
 		copath = list()
-		curr_id = bitarray(index)
+		curr_id = util.bitarray(index)
 
-		while (curr_id.length > 0):
-			# Get both the parent and sibling ids
-			s_id = self.sibling(curr_id)
-			copath.append(s_id)
-			curr_id = self.parent(curr_id)
+		# Our stopping condition is length > 1 so we don't add the root to the copath
+		while (curr_id.length() > 1):
+			# Append the sibling to the copath and advance current node
+			s_id = self._sibling(curr_id)
+			s_digest = None
+
+			# Check to see if sibling is cacehd otherwise set to empty value of appropriate length
+			if s_id in self.cache:
+				s_digest = self.cache[s_id]
+			else:
+				s_digest = self._empty_cache(len(s_id))
+
+			copath.append(s_digest)
+			curr_id = self._parent(curr_id)
 
 		return copath
 
 	def verify_path(self, index, copath: list) -> bool:
-		copath.insert(0, index)
+		# Convert index into a bitarray and check if its in the cache
+		node_id = util.bitarray(index)
+		print("verify_path: node_id = {}".format(node_id))
+		node_digest = self.cache[node_id]
+
+		# Prepend node_digest to the copath
+		copath.insert(0, node_digest)
+
+		# Reducing the copath models the hash invariant of the root
 		root_digest = reduce(lambda x, y: self._hash(x + y), copath)
+
 		return root_digest == self.root_digest
