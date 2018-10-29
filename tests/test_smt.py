@@ -11,7 +11,6 @@ class TestSparseMerkleTree(unittest.TestCase):
 	def test_constructor(self):
 		self.assertEqual(self.T.hash_name, "sha256")
 		self.assertEqual(self.T.depth, 256)
-		self.assertEqual(len(self.T.empty_cache), 1)
 
 		SHA256 = hashlib.sha256(b'0')
 		self.assertEqual(self.T.empty_cache[0], SHA256.hexdigest())
@@ -25,8 +24,8 @@ class TestSparseMerkleTree(unittest.TestCase):
 	def test_non_membership(self):
 		index = random_index()
 		proof = self.T.generate_proof(index)
-		self.assertTrue(proof.proof_type, False)
-		self.assertTrue(self.T.verify_path(index, copath)) 
+		self.assertFalse(proof.proof_type)
+		self.assertTrue(self.T.verify_path(proof)) 
 		
 	def test_membership(self):
 		index = random_index()

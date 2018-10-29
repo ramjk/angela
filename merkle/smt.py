@@ -9,8 +9,6 @@ class SparseMerkleTree(object):
 	def __init__(self, hash_name: str) -> None:
 		super(SparseMerkleTree, self).__init__()
 
-		self.root_digest = None
-
 		self.hash_name = hash_name
 
 		# We need to initialize the hash function to determine the digest_size
@@ -23,6 +21,7 @@ class SparseMerkleTree(object):
 		"""
 		self.cache = {}
 		self.empty_cache = [self._hash(b'0')]
+		self.root_digest = self._empty_cache(self.depth)
 
 	"""
 	https://www.links.org/files/RevocationTransparency.pdf
@@ -51,6 +50,9 @@ class SparseMerkleTree(object):
 		return p_id
 
 	def _sibling(self, node_id: util.bitarray):
+		if node_id.length() == 0:
+			return node_id, False
+
 		# We create a copy in order to avoid destructively modifying node_id
 		s_id = node_id.copy()
 
@@ -74,7 +76,6 @@ class SparseMerkleTree(object):
 	def insert(self, index: str, data: str) -> bool:
 		# Do the first level hash of data and insert into index-th leaf
 		node_id = util.bitarray(index)
-		print("insert: node_id = {}".format(node_id))
 		self.cache[node_id] = self._hash(data)
 
 		# Do a normal update up the tree
@@ -109,10 +110,12 @@ class SparseMerkleTree(object):
 	def generate_proof(self, index: str) -> list:
 		copath = list()
 		curr_id = util.bitarray(index)
-		membership_proof = curr_id in self.cache
+		proof = Proof(index=curr_id)
+		proof.proof_type = curr_id in self.cache
 
-		if not membership_proof:
+		if not proof.proof_type:
 			curr_id = self._get_empty_ancestor(curr_id)
+		proof.proof_id = curr_id
 
 		# Our stopping condition is length > 0 so we don't add the root to the copath
 		while (curr_id.length() > 0):
@@ -129,17 +132,20 @@ class SparseMerkleTree(object):
 			copath.append((s_id, s_digest))
 			curr_id = self._parent(curr_id)
 
-		return Proof(membership_proof, index, copath)
+		proof.copath = copath
+		return proof
 
 	# Note: copath is destructively modified
 	def verify_path(self, proof: Proof) -> bool:
-		# Convert index into a bitarray and check if its in the cache
-		node_id = util.bitarray(proof.index)
-		# print("verify_path: node_id = {}".format(node_id))
-		node_digest = self.cache[node_id]
+		proof_id_length = proof.proof_id.length()
+		if proof.proof_type == False:
+			if proof_id_length > len(proof.index):
+				return False
+			for i in range(proof_id_length):
+				if proof.proof_id[i] != proof.index[i]:
+					return False
 
-		# Reducing the copath models the hash invariant of the root
-		root_digest = node_digest
+		root_digest = self.cache.get(proof.proof_id, self._empty_cache(self.depth - proof_id_length))
 		for i in range(len(proof.copath)): 
 			if proof.copath[i][0][-1] == 0:
 				root_digest = self._hash(proof.copath[i][1] + root_digest)
