@@ -23,6 +23,9 @@ class SparseMerkleTree(object):
 		self.empty_cache = [self._hash(b'0')]
 		self.root_digest = self._empty_cache(self.depth)
 
+		# Maintains conflicts when we perform batch updates
+		self.conflicts = {}
+
 	"""
 	https://www.links.org/files/RevocationTransparency.pdf
 	"""
@@ -106,6 +109,50 @@ class SparseMerkleTree(object):
 		# Update root
 		self.root_digest = self.cache[curr_id]
 		return True
+
+	# Single-threaded insert of multiple leaves in the Merkle Tree
+	def batch_insert(self, leaves: dict) -> bool:
+		leaves = sorted(leaves.items(), key=lambda leaf:leaf[0])
+		self.conflicts = util.find_conflicts(leaves)
+
+		for i in range(len(leaves)):
+			self._percolate(leaves[i][0], leaves[i][1])
+
+		self.root_digest = self.cache[util.bitarray([])] 
+		return True
+
+	# Percolate the update of a leaf while resolving conflicts in update paths
+	def _percolate(self, leaf_id, leaf_data) -> None:
+		node_id = leaf_id
+		node_digest = self._hash(leaf_data)
+		self.cache[node_id] = node_digest
+		sibling_id = self._sibling(node_id)
+		done = False
+		while not done:
+			parent_id = self._parent(node_id)
+			parent_conflict = self.is_conflict(parent_id)
+			if not parent_conflict:
+				parent_digest = self._hash()
+				self.cache[parent_id] = parent_digest
+				node_id = parent_id
+				node_digest = parent_digest
+				sibling_id = self._sibling(node_id)
+			else:
+				done = True
+		return
+
+	# Checks if there will be a conflict in the percolation path
+	# If a conflict exists, set the conflict to False and return True
+	# If there is no conflict, return False
+	def _is_conflict(self, node_id):
+		if node_id in self.conflicts:
+			# lock(self.conflicts[node_id])
+			if (self.conflicts[node_id] == True):
+				self.conflicts[node_id] = False
+				# unlock(self.conflicts[node_id])
+				return True
+			# unlock(self.conflicts[node_id])
+		return False
 
 	def generate_proof(self, index: str) -> list:
 		copath = list()
