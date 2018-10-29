@@ -1,4 +1,4 @@
-import math
+import random
 from bitarray import bitarray
 
 """
@@ -8,16 +8,16 @@ class bitarray(bitarray):
     def __hash__(self):
         return self.tobytes().__hash__()
 
-def to_bytes(data) -> bytes:
+def to_bytes(data: str) -> bytes:
 	if type(data) == bytes:
 		return data
 	return data.encode()
 
 #leaves must be sorted
-def find_conflicts(leaves):
+def find_conflicts(leaves: list):
 	conflicts = {}
 	for i in range(1, len(leaves)):
-		x, y = leaves[i-1], leaves[i]
+		x, y = bitarray(leaves[i-1]), bitarray(leaves[i])
 		z = x^y
 		k = len(x)
 		for idx, elem in enumerate(z):

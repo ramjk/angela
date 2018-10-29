@@ -81,27 +81,27 @@ def flip_coin() -> bool:
 		leaves = [random_index() for _ in range(10)]
 		self.T.batch_insert({k:v for (k,v) in zip(leaves, values)})
 		for idx in leaves:
-			copath = self.T.generate_copath(idx)
-			self.assertEqual(len(copath), 255)
-			self.assertTrue(self.T.verify_path(idx, copath))
+			proof = self.T.generate_proof(idx)
+			self.assertEqual(len(proof.copath), 256)
+			self.assertTrue(self.T.verify_path(proof))
 
 	def test_med_batch_insert(self):
 		values = [''.join([random.choice('alex') for _ in range(100)]) for _ in range(100)]
 		leaves = [random_index() for _ in range(100)]
 		self.T.batch_insert({k:v for (k,v) in zip(leaves, values)})
 		for idx in leaves:
-			copath = self.T.generate_copath(idx)
-			self.assertEqual(len(copath), 255)
-			self.assertTrue(self.T.verify_path(idx, copath))
+			proof = self.T.generate_proof(idx)
+			self.assertEqual(len(proof.copath), 256)
+			self.assertTrue(self.T.verify_path(proof))
 
 	def test_large_batch_insert(self):
 		values = [''.join([random.choice('aneesh') for _ in range(500)]) for _ in range(500)]
 		leaves = [random_index() for i in range(500)]
 		self.T.batch_insert({k:v for (k,v) in zip(leaves, values)})
 		for idx in leaves:
-			copath = self.T.generate_copath(idx)
-			self.assertEqual(len(copath), 255)
-			self.assertTrue(self.T.verify_path(idx, copath))
+			proof = self.T.generate_proof(idx)
+			self.assertEqual(len(proof.copath), 256)
+			self.assertTrue(self.T.verify_path(proof))
 
 if __name__ == '__main__':
 	unittest.main()

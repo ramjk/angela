@@ -44,7 +44,9 @@ class SparseMerkleTree(object):
 		H.update(util.to_bytes(data))
 		return H.hexdigest()
 
-	def _parent(self, node_id: util.bitarray):
+	def _parent(self, node_id: util.bitarray) -> util.bitarray:
+		if node_id.length() == 0:
+			return None
 		# We create a copy in order to avoid destructively modifying node_id
 		p_id = node_id.copy()
 
@@ -52,7 +54,7 @@ class SparseMerkleTree(object):
 		p_id.pop()
 		return p_id
 
-	def _sibling(self, node_id: util.bitarray):
+	def _sibling(self, node_id: util.bitarray) -> tuple:
 		if node_id.length() == 0:
 			return node_id, False
 
@@ -111,32 +113,43 @@ class SparseMerkleTree(object):
 		return True
 
 	# Single-threaded insert of multiple leaves in the Merkle Tree
-	def batch_insert(self, leaves: dict) -> bool:
-		leaves = sorted(leaves.items(), key=lambda leaf:leaf[0])
-		self.conflicts = util.find_conflicts(leaves)
+	def batch_insert(self, transactions: dict) -> bool:
+		leaves = sorted(transactions.items(), key=lambda leaf:leaf[0])
+		self.conflicts = util.find_conflicts(list(transactions.keys()))
 
 		for i in range(len(leaves)):
 			self._percolate(leaves[i][0], leaves[i][1])
 
-		self.root_digest = self.cache[util.bitarray([])] 
+		self.root_digest = self.cache[util.bitarray()] 
 		return True
 
 	# Percolate the update of a leaf while resolving conflicts in update paths
-	def _percolate(self, leaf_id, leaf_data) -> None:
-		node_id = leaf_id
+	def _percolate(self, leaf_id: str, leaf_data: str) -> None:
+		node_id = util.bitarray(leaf_id)
 		node_digest = self._hash(leaf_data)
 		self.cache[node_id] = node_digest
-		sibling_id = self._sibling(node_id)
+		sibling_id, is_left = self._sibling(node_id)
+		if sibling_id in self.cache:
+			sibling_digest = self.cache[sibling_id]
+		else:
+			sibling_digest = self._empty_cache(sibling_id.length())
 		done = False
 		while not done:
 			parent_id = self._parent(node_id)
-			parent_conflict = self.is_conflict(parent_id)
+			parent_conflict = self._is_conflict(parent_id)
 			if not parent_conflict:
-				parent_digest = self._hash()
+				if is_left:
+					parent_digest = self._hash(sibling_digest + node_digest)
+				else:
+					parent_digest = self._hash(node_digest + sibling_digest) 
 				self.cache[parent_id] = parent_digest
 				node_id = parent_id
 				node_digest = parent_digest
-				sibling_id = self._sibling(node_id)
+				sibling_id, is_left = self._sibling(node_id)
+				if sibling_id in self.cache:
+					sibling_digest = self.cache[sibling_id]
+				else:
+					sibling_digest = self._empty_cache(sibling_id.length())
 			else:
 				done = True
 		return
@@ -144,7 +157,9 @@ class SparseMerkleTree(object):
 	# Checks if there will be a conflict in the percolation path
 	# If a conflict exists, set the conflict to False and return True
 	# If there is no conflict, return False
-	def _is_conflict(self, node_id):
+	def _is_conflict(self, node_id: util.bitarray) -> bool:
+		if node_id is None:
+			return True
 		if node_id in self.conflicts:
 			# lock(self.conflicts[node_id])
 			if (self.conflicts[node_id] == True):
