@@ -1,4 +1,5 @@
 import hashlib
+from merkle.proof import Proof
 from common import util
 from functools import reduce
 
@@ -7,8 +8,6 @@ class SparseMerkleTree(object):
 	"""docstring for SparseMerkleTree"""
 	def __init__(self, hash_name: str) -> None:
 		super(SparseMerkleTree, self).__init__()
-
-		self.root_digest = None
 
 		self.hash_name = hash_name
 
@@ -22,6 +21,7 @@ class SparseMerkleTree(object):
 		"""
 		self.cache = {}
 		self.empty_cache = [self._hash(b'0')]
+		self.root_digest = self._empty_cache(self.depth)
 
 	"""
 	https://www.links.org/files/RevocationTransparency.pdf
@@ -50,12 +50,23 @@ class SparseMerkleTree(object):
 		return p_id
 
 	def _sibling(self, node_id: util.bitarray):
+		if node_id.length() == 0:
+			return node_id, False
+
 		# We create a copy in order to avoid destructively modifying node_id
 		s_id = node_id.copy()
 
-		# Here, we xor the node_id with a bitarray of integer value of 1
+		# # Here, we xor the node_id with a bitarray of integer value of 1
 		s_id ^= util.bitarray(([0] * (s_id.length() - 1)) + [1]) # FIXME: This list comprehension is probably slow and memory intensive
-		return s_id
+		is_left = s_id.copy().pop() == 0
+		return s_id, is_left
+
+	def _get_empty_ancestor(self, index: util.bitarray) -> util.bitarray:
+		prev_id = curr_id = index.copy()
+		while curr_id.length() > 0:
+			curr_id.pop()
+			prev_id = curr_id
+		return prev_id
 
 	"""
 	Assume index is valid (for now).
@@ -65,14 +76,13 @@ class SparseMerkleTree(object):
 	def insert(self, index: str, data: str) -> bool:
 		# Do the first level hash of data and insert into index-th leaf
 		node_id = util.bitarray(index)
-		print("insert: node_id = {}".format(node_id))
 		self.cache[node_id] = self._hash(data)
 
 		# Do a normal update up the tree
 		curr_id = node_id.copy()
 		while (curr_id.length() > 0):
 			# Get both the parent and sibling ids
-			s_id = self._sibling(curr_id)
+			s_id, is_left = self._sibling(curr_id)
 			p_id = self._parent(curr_id)
 
 			# Get the digest of the current node and sibling
@@ -84,7 +94,10 @@ class SparseMerkleTree(object):
 				s_digest = self._empty_cache(s_id.length())
 
 			# Hash the digests of the left and right children
-			p_digest = self._hash(curr_digest + s_digest)
+			if is_left:
+				p_digest = self._hash(s_digest + curr_digest)
+			else:
+				p_digest = self._hash(curr_digest + s_digest)
 			self.cache[p_id] = p_digest
 
 			# Traverse up the tree by making the current node the parent node
@@ -94,14 +107,20 @@ class SparseMerkleTree(object):
 		self.root_digest = self.cache[curr_id]
 		return True
 
-	def generate_copath(self, index: str) -> list:
+	def generate_proof(self, index: str) -> list:
 		copath = list()
 		curr_id = util.bitarray(index)
+		proof = Proof(index=curr_id)
+		proof.proof_type = curr_id in self.cache
 
-		# Our stopping condition is length > 1 so we don't add the root to the copath
-		while (curr_id.length() > 1):
+		if not proof.proof_type:
+			curr_id = self._get_empty_ancestor(curr_id)
+		proof.proof_id = curr_id
+
+		# Our stopping condition is length > 0 so we don't add the root to the copath
+		while (curr_id.length() > 0):
 			# Append the sibling to the copath and advance current node
-			s_id = self._sibling(curr_id)
+			s_id, is_left = self._sibling(curr_id)
 			s_digest = None
 
 			# Check to see if sibling is cacehd otherwise set to empty value of appropriate length
@@ -110,21 +129,26 @@ class SparseMerkleTree(object):
 			else:
 				s_digest = self._empty_cache(len(s_id))
 
-			copath.append(s_digest)
+			copath.append((s_id, s_digest))
 			curr_id = self._parent(curr_id)
 
-		return copath
+		proof.copath = copath
+		return proof
 
-	def verify_path(self, index, copath: list) -> bool:
-		# Convert index into a bitarray and check if its in the cache
-		node_id = util.bitarray(index)
-		print("verify_path: node_id = {}".format(node_id))
-		node_digest = self.cache[node_id]
+	# Note: copath is destructively modified
+	def verify_path(self, proof: Proof) -> bool:
+		proof_id_length = proof.proof_id.length()
+		if proof.proof_type == False:
+			if proof_id_length > len(proof.index):
+				return False
+			for i in range(proof_id_length):
+				if proof.proof_id[i] != proof.index[i]:
+					return False
 
-		# Prepend node_digest to the copath
-		copath.insert(0, node_digest)
-
-		# Reducing the copath models the hash invariant of the root
-		root_digest = reduce(lambda x, y: self._hash(x + y), copath)
-
+		root_digest = self.cache.get(proof.proof_id, self._empty_cache(self.depth - proof_id_length))
+		for i in range(len(proof.copath)): 
+			if proof.copath[i][0][-1] == 0:
+				root_digest = self._hash(proof.copath[i][1] + root_digest)
+			else:
+				root_digest = self._hash(root_digest + proof.copath[i][1])
 		return root_digest == self.root_digest

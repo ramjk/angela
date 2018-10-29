@@ -11,7 +11,6 @@ class TestSparseMerkleTree(unittest.TestCase):
 	def test_constructor(self):
 		self.assertEqual(self.T.hash_name, "sha256")
 		self.assertEqual(self.T.depth, 256)
-		self.assertEqual(len(self.T.empty_cache), 1)
 
 		SHA256 = hashlib.sha256(b'0')
 		self.assertEqual(self.T.empty_cache[0], SHA256.hexdigest())
@@ -24,16 +23,22 @@ class TestSparseMerkleTree(unittest.TestCase):
 	"""
 	def test_non_membership(self):
 		index = random_index()
-		copath = self.T.generate_copath(index)
-		self.assertNotEqual(len(copath), 255)
-		self.assertTrue(self.T.verify_path(index, copath)) 
+		proof = self.T.generate_proof(index)
+		self.assertFalse(proof.proof_type)
+		self.assertTrue(self.T.verify_path(proof)) 
 		
 	def test_membership(self):
 		index = random_index()
 		self.T.insert(index, b"angela")
-		copath = self.T.generate_copath(index)
-		self.assertEqual(len(copath), 255)
-		self.assertTrue(self.T.verify_path(index, copath))
+		proof = self.T.generate_proof(index)
+		self.assertEqual(len(proof.copath), 256)
+		self.assertTrue(self.T.verify_path(proof))
+
+	def test_membership_small(self):
+		index = bitarray('101').to01()
+		self.T.insert(index, b"angela")
+		proof = self.T.generate_proof(index)
+		self.assertTrue(self.T.verify_path(proof))
 
 def random_index(digest_size: int = 256) -> str:
 	bitarr = list()
