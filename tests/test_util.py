@@ -12,4 +12,4 @@ class TestUtil(unittest.TestCase):
 		self.assertEqual(bytes, type(bytestring))
 
 if __name__ == '__main__':
-	unittest.main()		
+	unittest.main()

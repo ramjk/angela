@@ -136,7 +136,7 @@ class SparseMerkleTree(object):
 		return proof
 
 	# Note: copath is destructively modified
-	def verify_path(self, proof: Proof) -> bool:
+	def verify_proof(self, proof: Proof) -> bool:
 		proof_id_length = proof.proof_id.length()
 		if proof.proof_type == False:
 			if proof_id_length > len(proof.index):
