@@ -54,12 +54,17 @@ class SparseMerkleTree(object):
 		# We create a copy in order to avoid destructively modifying node_id
 		s_id = node_id.copy()
 
-		# Here, we xor the node_id with a bitarray of integer value of 1
+		# # Here, we xor the node_id with a bitarray of integer value of 1
 		s_id ^= util.bitarray(([0] * (s_id.length() - 1)) + [1]) # FIXME: This list comprehension is probably slow and memory intensive
-		return s_id
+		is_left = s_id.copy().pop() == 0
+		return s_id, is_left
 
-	def _get_empty_ancestor(index: util.bitarray) -> util.bitarray:
-		
+	def _get_empty_ancestor(self, index: util.bitarray) -> util.bitarray:
+		prev_id = curr_id = index.copy()
+		while curr_id.length() > 0:
+			curr_id.pop()
+			prev_id = curr_id
+		return prev_id
 
 	"""
 	Assume index is valid (for now).
@@ -76,7 +81,7 @@ class SparseMerkleTree(object):
 		curr_id = node_id.copy()
 		while (curr_id.length() > 0):
 			# Get both the parent and sibling ids
-			s_id = self._sibling(curr_id)
+			s_id, is_left = self._sibling(curr_id)
 			p_id = self._parent(curr_id)
 
 			# Get the digest of the current node and sibling
@@ -88,7 +93,10 @@ class SparseMerkleTree(object):
 				s_digest = self._empty_cache(s_id.length())
 
 			# Hash the digests of the left and right children
-			p_digest = self._hash(curr_digest + s_digest)
+			if is_left:
+				p_digest = self._hash(s_digest + curr_digest)
+			else:
+				p_digest = self._hash(curr_digest + s_digest)
 			self.cache[p_id] = p_digest
 
 			# Traverse up the tree by making the current node the parent node
@@ -98,18 +106,18 @@ class SparseMerkleTree(object):
 		self.root_digest = self.cache[curr_id]
 		return True
 
-	def generate_copath(self, index: str) -> list:
-		membership_proof = index in self.cache
+	def generate_proof(self, index: str) -> list:
 		copath = list()
 		curr_id = util.bitarray(index)
+		membership_proof = curr_id in self.cache
 
 		if not membership_proof:
-			curr_id = self._get_empty_ancestor(index)
+			curr_id = self._get_empty_ancestor(curr_id)
 
 		# Our stopping condition is length > 0 so we don't add the root to the copath
 		while (curr_id.length() > 0):
 			# Append the sibling to the copath and advance current node
-			s_id = self._sibling(curr_id)
+			s_id, is_left = self._sibling(curr_id)
 			s_digest = None
 
 			# Check to see if sibling is cacehd otherwise set to empty value of appropriate length
@@ -123,6 +131,7 @@ class SparseMerkleTree(object):
 
 		return Proof(membership_proof, index, copath)
 
+	# Note: copath is destructively modified
 	def verify_path(self, proof: Proof) -> bool:
 		# Convert index into a bitarray and check if its in the cache
 		node_id = util.bitarray(proof.index)
@@ -132,6 +141,8 @@ class SparseMerkleTree(object):
 		# Reducing the copath models the hash invariant of the root
 		root_digest = node_digest
 		for i in range(len(proof.copath)): 
-			root_digest = self._hash(root_digest + proof.copath[i][1])
-
+			if proof.copath[i][0][-1] == 0:
+				root_digest = self._hash(proof.copath[i][1] + root_digest)
+			else:
+				root_digest = self._hash(root_digest + proof.copath[i][1])
 		return root_digest == self.root_digest
