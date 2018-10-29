@@ -4,6 +4,8 @@ import random
 from merkle.smt import SparseMerkleTree
 from common.util import bitarray
 
+NUM_ITERATIONS = 1000
+
 class TestSparseMerkleTree(unittest.TestCase):
 	def setUp(self):
 		self.T = SparseMerkleTree("sha256")
@@ -25,20 +27,50 @@ class TestSparseMerkleTree(unittest.TestCase):
 		index = random_index()
 		proof = self.T.generate_proof(index)
 		self.assertFalse(proof.proof_type)
-		self.assertTrue(self.T.verify_path(proof)) 
+		self.assertTrue(self.T.verify_proof(proof)) 
+
+	def test_non_membership_large(self):
+		indices = list()
+
+		for i in range(NUM_ITERATIONS):
+			index = random_index()
+			is_member = flip_coin()
+			if is_member:
+				data = "angela{}".format(i)
+				self.T.insert(index, data.encode())
+			indices.append((index, is_member))
+
+		for index, is_member in indices:
+			proof = self.T.generate_proof(index)
+			self.assertEqual(proof.proof_type, is_member)
+			self.assertTrue(self.T.verify_proof(proof))
 		
+	def test_membership_small(self):
+		index = bitarray('101').to01()
+		self.T.insert(index, b"angela")
+		proof = self.T.generate_proof(index)
+		self.assertTrue(self.T.verify_proof(proof))
+
 	def test_membership(self):
 		index = random_index()
 		self.T.insert(index, b"angela")
 		proof = self.T.generate_proof(index)
 		self.assertEqual(len(proof.copath), 256)
-		self.assertTrue(self.T.verify_path(proof))
+		self.assertTrue(self.T.verify_proof(proof))
 
-	def test_membership_small(self):
-		index = bitarray('101').to01()
-		self.T.insert(index, b"angela")
-		proof = self.T.generate_proof(index)
-		self.assertTrue(self.T.verify_path(proof))
+	def test_membership_large(self):
+		indices = [random_index() for i in range(NUM_ITERATIONS)]
+
+		for number, index in enumerate(indices):
+			data = "angela{}".format(number)
+			self.T.insert(index, data.encode())
+
+		proofs = list()
+		for index in indices:
+			proofs.append(self.T.generate_proof(index))
+
+		for proof in proofs:
+			self.assertTrue(self.T.verify_proof(proof))
 
 def random_index(digest_size: int = 256) -> str:
 	bitarr = list()
@@ -51,6 +83,11 @@ def random_index(digest_size: int = 256) -> str:
 	bitstring = bitarray(bitarr).to01()
 	return bitstring
 
+def flip_coin():
+	r = random.random()
+	if r > 0.5:
+		return True
+	return False
 
 if __name__ == '__main__':
 	unittest.main()
