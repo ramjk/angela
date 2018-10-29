@@ -25,15 +25,22 @@ class TestSparseMerkleTree(unittest.TestCase):
 	def test_non_membership(self):
 		index = random_index()
 		copath = self.T.generate_copath(index)
-		self.assertNotEqual(len(copath), 255)
 		self.assertTrue(self.T.verify_path(index, copath)) 
 		
 	def test_membership(self):
 		index = random_index()
 		self.T.insert(index, b"angela")
 		copath = self.T.generate_copath(index)
-		self.assertEqual(len(copath), 255)
+		self.assertEqual(len(copath), 256)
 		self.assertTrue(self.T.verify_path(index, copath))
+
+	def test_membership_small(self):
+		index = bitarray('101').to01()
+		self.T.insert(index, b"angela")
+		copath = self.T.generate_copath(index)
+		print("!!!!!!!!!!!!===ANEESH TEST===!!!!!!!!!!!!")
+		print("index: ", index, "\ncopath: ", copath)
+		print(self.T.verify_path(index, copath))
 
 def random_index(digest_size: int = 256) -> str:
 	bitarr = list()
