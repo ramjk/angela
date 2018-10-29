@@ -21,7 +21,7 @@ class TestUtil(unittest.TestCase):
 				]
 		correct_conflict = {
 						bitarray(): True, 
-						bitarraybitarray([0, 0, 0]): True, 
+						bitarray([0, 0, 0]): True, 
 						bitarray([0, 0]): True,
 						bitarray([0]): True
 							}
