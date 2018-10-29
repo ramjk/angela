@@ -2,7 +2,7 @@ import hashlib
 import unittest
 import random
 from merkle.smt import SparseMerkleTree
-from common.util import bitarray
+from common.util import bitarray, random_index
 
 NUM_ITERATIONS = 1000
 
@@ -31,7 +31,6 @@ class TestSparseMerkleTree(unittest.TestCase):
 
 	def test_non_membership_large(self):
 		indices = list()
-
 		for i in range(NUM_ITERATIONS):
 			index = random_index()
 			is_member = flip_coin()
@@ -60,7 +59,6 @@ class TestSparseMerkleTree(unittest.TestCase):
 
 	def test_membership_large(self):
 		indices = [random_index() for i in range(NUM_ITERATIONS)]
-
 		for number, index in enumerate(indices):
 			data = "angela{}".format(number)
 			self.T.insert(index, data.encode())
@@ -72,18 +70,7 @@ class TestSparseMerkleTree(unittest.TestCase):
 		for proof in proofs:
 			self.assertTrue(self.T.verify_proof(proof))
 
-def random_index(digest_size: int = 256) -> str:
-	bitarr = list()
-	for i in range(digest_size):
-		r = random.random()
-		if r > 0.5:
-			bitarr.append(1)
-		else:
-			bitarr.append(0)
-	bitstring = bitarray(bitarr).to01()
-	return bitstring
-
-def flip_coin():
+def flip_coin() -> bool:
 	r = random.random()
 	if r > 0.5:
 		return True
