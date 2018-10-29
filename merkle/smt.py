@@ -1,4 +1,5 @@
 import hashlib
+from merkle.proof import Proof
 from common import util
 from functools import reduce
 
@@ -113,17 +114,17 @@ class SparseMerkleTree(object):
 			copath.append((s_id, s_digest))
 			curr_id = self._parent(curr_id)
 
-		return copath
+		return Proof(index in self.cache, index, copath)
 
-	def verify_path(self, index, copath: list) -> bool:
+	def verify_path(self, proof: Proof) -> bool:
 		# Convert index into a bitarray and check if its in the cache
-		node_id = util.bitarray(index)
+		node_id = util.bitarray(proof.index)
 		# print("verify_path: node_id = {}".format(node_id))
 		node_digest = self.cache[node_id]
 
 		# Reducing the copath models the hash invariant of the root
 		root_digest = node_digest
-		for i in range(len(copath)): 
-			root_digest = self._hash(root_digest + copath[i][1])
+		for i in range(len(proof.copath)): 
+			root_digest = self._hash(root_digest + proof.copath[i][1])
 
 		return root_digest == self.root_digest
