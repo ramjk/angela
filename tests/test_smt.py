@@ -4,6 +4,8 @@ import random
 from merkle.smt import SparseMerkleTree
 from common.util import bitarray
 
+NUM_ITERATIONS = 1000
+
 class TestSparseMerkleTree(unittest.TestCase):
 	def setUp(self):
 		self.T = SparseMerkleTree("sha256")
@@ -30,7 +32,7 @@ class TestSparseMerkleTree(unittest.TestCase):
 	def test_non_membership_large(self):
 		indices = list()
 
-		for i in range(100):
+		for i in range(NUM_ITERATIONS):
 			index = random_index()
 			is_member = flip_coin()
 			if is_member:
@@ -57,7 +59,7 @@ class TestSparseMerkleTree(unittest.TestCase):
 		self.assertTrue(self.T.verify_proof(proof))
 
 	def test_membership_large(self):
-		indices = [random_index() for i in range(100)]
+		indices = [random_index() for i in range(NUM_ITERATIONS)]
 
 		for number, index in enumerate(indices):
 			data = "angela{}".format(number)
