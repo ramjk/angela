@@ -58,6 +58,9 @@ class SparseMerkleTree(object):
 		s_id ^= util.bitarray(([0] * (s_id.length() - 1)) + [1]) # FIXME: This list comprehension is probably slow and memory intensive
 		return s_id
 
+	def _get_empty_ancestor(index: util.bitarray) -> util.bitarray:
+		
+
 	"""
 	Assume index is valid (for now).
 
@@ -96,8 +99,12 @@ class SparseMerkleTree(object):
 		return True
 
 	def generate_copath(self, index: str) -> list:
+		membership_proof = index in self.cache
 		copath = list()
 		curr_id = util.bitarray(index)
+
+		if not membership_proof:
+			curr_id = self._get_empty_ancestor(index)
 
 		# Our stopping condition is length > 0 so we don't add the root to the copath
 		while (curr_id.length() > 0):
@@ -114,7 +121,7 @@ class SparseMerkleTree(object):
 			copath.append((s_id, s_digest))
 			curr_id = self._parent(curr_id)
 
-		return Proof(index in self.cache, index, copath)
+		return Proof(membership_proof, index, copath)
 
 	def verify_path(self, proof: Proof) -> bool:
 		# Convert index into a bitarray and check if its in the cache
