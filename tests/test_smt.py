@@ -2,6 +2,7 @@ import hashlib
 import unittest
 import random
 from merkle.smt import SparseMerkleTree
+from common import util
 from common.util import bitarray
 
 NUM_ITERATIONS = 1000
@@ -24,7 +25,7 @@ class TestSparseMerkleTree(unittest.TestCase):
 		match of j.
 	"""
 	def test_non_membership(self):
-		index = random_index()
+		index = util.random_index()
 		proof = self.T.generate_proof(index)
 		self.assertFalse(proof.proof_type)
 		self.assertTrue(self.T.verify_proof(proof)) 
@@ -33,8 +34,8 @@ class TestSparseMerkleTree(unittest.TestCase):
 		indices = list()
 
 		for i in range(NUM_ITERATIONS):
-			index = random_index()
-			is_member = flip_coin()
+			index = util.random_index()
+			is_member = util.flip_coin()
 			if is_member:
 				data = "angela{}".format(i)
 				self.T.insert(index, data.encode())
@@ -52,14 +53,14 @@ class TestSparseMerkleTree(unittest.TestCase):
 		self.assertTrue(self.T.verify_proof(proof))
 
 	def test_membership(self):
-		index = random_index()
+		index = util.random_index()
 		self.T.insert(index, b"angela")
 		proof = self.T.generate_proof(index)
 		self.assertEqual(len(proof.copath), 256)
 		self.assertTrue(self.T.verify_proof(proof))
 
 	def test_membership_large(self):
-		indices = [random_index() for i in range(NUM_ITERATIONS)]
+		indices = [util.random_index() for i in range(NUM_ITERATIONS)]
 
 		for number, index in enumerate(indices):
 			data = "angela{}".format(number)
@@ -71,23 +72,6 @@ class TestSparseMerkleTree(unittest.TestCase):
 
 		for proof in proofs:
 			self.assertTrue(self.T.verify_proof(proof))
-
-def random_index(digest_size: int = 256) -> str:
-	bitarr = list()
-	for i in range(digest_size):
-		r = random.random()
-		if r > 0.5:
-			bitarr.append(1)
-		else:
-			bitarr.append(0)
-	bitstring = bitarray(bitarr).to01()
-	return bitstring
-
-def flip_coin():
-	r = random.random()
-	if r > 0.5:
-		return True
-	return False
 
 if __name__ == '__main__':
 	unittest.main()
