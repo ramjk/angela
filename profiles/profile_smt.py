@@ -1,8 +1,8 @@
 import cProfile, pstats, merkle.smt
 from common import util
 
-keys = [util.random_index() for i in range(10000)]
-values = [util.random_string() for i in range(10000)]
+keys = [util.random_index() for i in range(100)]
+values = [util.random_string() for i in range(100)]
 proofs = list()
 T = merkle.smt.SparseMerkleTree("sha256")
 
@@ -11,10 +11,10 @@ T_batch = merkle.smt.SparseMerkleTree("sha256")
 def profile_inserts():
 	pr = cProfile.Profile()
 
-	pr.enable()
-	for i in range(10000):
+	for i in range(100):
+		pr.enable()
 		T.insert(keys[i], values[i])
-	pr.disable()
+		pr.disable()
 
 	with open("profiles/profile_inserts.txt", 'w') as output:
 		p = pstats.Stats(pr, stream=output)
@@ -24,10 +24,10 @@ def profile_inserts():
 def profile_prover():
 	pr = cProfile.Profile()
 
-	pr.enable()
-	for i in range(10000):
+	for i in range(100):
+		pr.enable()
 		proofs.append(T.generate_proof(keys[i]))
-	pr.disable()
+		pr.disable()
 
 	with open("profiles/profile_prover.txt", 'w') as output:
 		p = pstats.Stats(pr, stream=output)
@@ -37,10 +37,10 @@ def profile_prover():
 def profile_verifier():
 	pr = cProfile.Profile()
 
-	pr.enable()
 	for proof in proofs:
+		pr.enable()
 		T.verify_proof(proof)
-	pr.disable
+		pr.disable
 
 	with open("profiles/profile_verifier.txt", 'w') as output:
 		p = pstats.Stats(pr, stream=output)

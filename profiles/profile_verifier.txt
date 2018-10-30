@@ -1,23 +1,24 @@
-         18000012 function calls in 11.804 seconds
+         180111 function calls in 0.129 seconds
 
    Ordered by: internal time
 
    ncalls  tottime  percall  cumtime  percall filename:lineno(function)
-  2560000    2.683    0.000    9.272    0.000 /Users/Alex_Kazorian/Documents/fa18/CS262/angela/merkle/smt.py:42(_hash)
-    10000    2.489    0.000   11.804    0.001 /Users/Alex_Kazorian/Documents/fa18/CS262/angela/merkle/smt.py:205(verify_proof)
-  2560000    1.827    0.000    1.827    0.000 {method 'hexdigest' of '_hashlib.HASH' objects}
-  2560000    1.325    0.000    1.325    0.000 {method 'update' of '_hashlib.HASH' objects}
-  2560000    1.299    0.000    1.299    0.000 {built-in method _hashlib.new}
-  2560000    0.957    0.000    1.368    0.000 /Users/Alex_Kazorian/Documents/fa18/CS262/angela/common/util.py:11(to_bytes)
-  2560000    0.770    0.000    2.069    0.000 /anaconda/lib/python3.6/hashlib.py:138(__hash_new)
-  2560000    0.410    0.000    0.410    0.000 {method 'encode' of 'str' objects}
-    10000    0.022    0.000    0.032    0.000 {method 'get' of 'dict' objects}
-    10000    0.008    0.000    0.010    0.000 /Users/Alex_Kazorian/Documents/fa18/CS262/angela/common/util.py:8(__hash__)
-    10000    0.006    0.000    0.008    0.000 /Users/Alex_Kazorian/Documents/fa18/CS262/angela/merkle/smt.py:34(_empty_cache)
-    20001    0.003    0.000    0.003    0.000 {built-in method builtins.len}
-    10000    0.002    0.000    0.002    0.000 {method 'tobytes' of 'bitarray._bitarray' objects}
-    10000    0.002    0.000    0.002    0.000 {method 'length' of 'bitarray._bitarray' objects}
+    25600    0.030    0.000    0.100    0.000 /Users/Alex_Kazorian/Documents/fa18/CS262/angela/merkle/smt.py:42(_hash)
+      100    0.028    0.000    0.129    0.001 /Users/Alex_Kazorian/Documents/fa18/CS262/angela/merkle/smt.py:205(verify_proof)
+    25600    0.020    0.000    0.020    0.000 {method 'hexdigest' of '_hashlib.HASH' objects}
+    25600    0.014    0.000    0.014    0.000 {method 'update' of '_hashlib.HASH' objects}
+    25600    0.014    0.000    0.014    0.000 {built-in method _hashlib.new}
+    25600    0.010    0.000    0.015    0.000 /Users/Alex_Kazorian/Documents/fa18/CS262/angela/common/util.py:11(to_bytes)
+    25600    0.008    0.000    0.022    0.000 /anaconda/lib/python3.6/hashlib.py:138(__hash_new)
+    25600    0.004    0.000    0.004    0.000 {method 'encode' of 'str' objects}
         1    0.000    0.000    0.000    0.000 {built-in method io.open}
+      100    0.000    0.000    0.000    0.000 {method 'get' of 'dict' objects}
+      100    0.000    0.000    0.000    0.000 /Users/Alex_Kazorian/Documents/fa18/CS262/angela/common/util.py:8(__hash__)
+      100    0.000    0.000    0.000    0.000 /Users/Alex_Kazorian/Documents/fa18/CS262/angela/merkle/smt.py:34(_empty_cache)
+      201    0.000    0.000    0.000    0.000 {built-in method builtins.len}
+       99    0.000    0.000    0.000    0.000 {method 'enable' of '_lsprof.Profiler' objects}
+      100    0.000    0.000    0.000    0.000 {method 'tobytes' of 'bitarray._bitarray' objects}
+      100    0.000    0.000    0.000    0.000 {method 'length' of 'bitarray._bitarray' objects}
         1    0.000    0.000    0.000    0.000 /anaconda/lib/python3.6/_bootlocale.py:23(getpreferredencoding)
         1    0.000    0.000    0.000    0.000 /anaconda/lib/python3.6/pstats.py:75(init)
         1    0.000    0.000    0.000    0.000 /anaconda/lib/python3.6/pstats.py:94(load_stats)
