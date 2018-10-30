@@ -12,7 +12,7 @@ class SparseMerkleTree(object):
 		self.hash_name = hash_name
 
 		# We need to initialize the hash function to determine the digest_size
-		H = eval("hashlib.{}()".format(hash_name))
+		H = hashlib.new(hash_name)
 		self.depth = 8 * H.digest_size
 
 		""" 
@@ -40,7 +40,8 @@ class SparseMerkleTree(object):
 	def _hash(self, data) -> str:
 		# H is an object of type hashlib.hash_name
 
-		H = eval("hashlib.{}()".format(self.hash_name))
+		# H = eval("hashlib.{}()".format(self.hash_name))
+		H = hashlib.new(self.hash_name)
 		H.update(util.to_bytes(data))
 		return H.hexdigest()
 
@@ -57,12 +58,13 @@ class SparseMerkleTree(object):
 	def _sibling(self, node_id: util.bitarray) -> tuple:
 		if node_id.length() == 0:
 			return node_id, False
-
+		
 		# We create a copy in order to avoid destructively modifying node_id
 		s_id = node_id.copy()
 
-		# # Here, we xor the node_id with a bitarray of integer value of 1
-		s_id ^= util.bitarray(([0] * (s_id.length() - 1)) + [1]) # FIXME: This list comprehension is probably slow and memory intensive
+		# Here, we xor the node_id with a bitarray of integer value of 1
+		s_id[-1] ^= 1
+		
 		is_left = s_id.copy().pop() == 0
 		return s_id, is_left
 

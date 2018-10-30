@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import merkle.smt
 import timeit
+import cProfile, pstats
 from common import util
 
 durations = list()

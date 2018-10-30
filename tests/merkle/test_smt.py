@@ -2,7 +2,7 @@ import hashlib
 import unittest
 import random
 from merkle.smt import SparseMerkleTree
-from common.util import bitarray, random_index, flip_coin
+from common.util import bitarray, random_index, flip_coin, random_string
 
 NUM_ITERATIONS = 1000
 
@@ -71,7 +71,7 @@ class TestSparseMerkleTree(unittest.TestCase):
 			self.assertTrue(self.T.verify_proof(proof))
 
 	def test_small_batch_insert(self):
-		values = [''.join([random.choice('ram') for _ in range(100)]) for _ in range(10)]
+		values = [random_string() for _ in range(10)]
 		leaves = [random_index() for _ in range(10)]
 		self.T.batch_insert({k:v for (k,v) in zip(leaves, values)})
 		for idx in leaves:
@@ -80,7 +80,7 @@ class TestSparseMerkleTree(unittest.TestCase):
 			self.assertTrue(self.T.verify_proof(proof))
 
 	def test_med_batch_insert(self):
-		values = [''.join([random.choice('alex') for _ in range(100)]) for _ in range(100)]
+		values = [random_string() for _ in range(100)]
 		leaves = [random_index() for _ in range(100)]
 		self.T.batch_insert({k:v for (k,v) in zip(leaves, values)})
 		for idx in leaves:
@@ -89,7 +89,7 @@ class TestSparseMerkleTree(unittest.TestCase):
 			self.assertTrue(self.T.verify_proof(proof))
 
 	def test_large_batch_insert(self):
-		values = [''.join([random.choice('aneesh') for _ in range(500)]) for _ in range(500)]
+		values = [random_string() for _ in range(500)]
 		leaves = [random_index() for i in range(500)]
 		self.T.batch_insert({k:v for (k,v) in zip(leaves, values)})
 		for idx in leaves:
