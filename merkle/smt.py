@@ -5,6 +5,8 @@ from functools import reduce
 
 class SparseMerkleTree(object):
 
+	TREE_DEPTH = 128
+
 	"""docstring for SparseMerkleTree"""
 	def __init__(self, hash_name: str) -> None:
 		super(SparseMerkleTree, self).__init__()
@@ -13,7 +15,7 @@ class SparseMerkleTree(object):
 
 		# We need to initialize the hash function to determine the digest_size
 		H = hashlib.new(hash_name)
-		self.depth = 8 * H.digest_size
+		self.depth = SparseMerkleTree.TREE_DEPTH # FIXME: This should at some point be dependent on the size of the hash digest
 
 		""" 
 		The Key space can be partitioned into the set of keys in the cache
