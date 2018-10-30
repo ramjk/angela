@@ -1,32 +1,32 @@
-         18000012 function calls in 11.337 seconds
+         18000012 function calls in 11.804 seconds
 
    Ordered by: internal time
 
    ncalls  tottime  percall  cumtime  percall filename:lineno(function)
-  2560000    2.549    0.000    8.899    0.000 /Users/Alex_Kazorian/Documents/fa18/CS262/angela/merkle/smt.py:40(_hash)
-    10000    2.401    0.000   11.337    0.001 /Users/Alex_Kazorian/Documents/fa18/CS262/angela/merkle/smt.py:203(verify_proof)
-  2560000    1.807    0.000    1.807    0.000 {method 'hexdigest' of '_hashlib.HASH' objects}
-  2560000    1.257    0.000    1.257    0.000 {method 'update' of '_hashlib.HASH' objects}
-  2560000    1.229    0.000    1.229    0.000 {built-in method _hashlib.new}
-  2560000    0.897    0.000    1.287    0.000 /Users/Alex_Kazorian/Documents/fa18/CS262/angela/common/util.py:12(to_bytes)
-  2560000    0.770    0.000    1.999    0.000 /anaconda/lib/python3.6/hashlib.py:138(__hash_new)
-  2560000    0.391    0.000    0.391    0.000 {method 'encode' of 'str' objects}
-    10000    0.019    0.000    0.028    0.000 {method 'get' of 'dict' objects}
-    10000    0.006    0.000    0.008    0.000 /Users/Alex_Kazorian/Documents/fa18/CS262/angela/common/util.py:9(__hash__)
-    10000    0.005    0.000    0.007    0.000 /Users/Alex_Kazorian/Documents/fa18/CS262/angela/merkle/smt.py:32(_empty_cache)
+  2560000    2.683    0.000    9.272    0.000 /Users/Alex_Kazorian/Documents/fa18/CS262/angela/merkle/smt.py:42(_hash)
+    10000    2.489    0.000   11.804    0.001 /Users/Alex_Kazorian/Documents/fa18/CS262/angela/merkle/smt.py:205(verify_proof)
+  2560000    1.827    0.000    1.827    0.000 {method 'hexdigest' of '_hashlib.HASH' objects}
+  2560000    1.325    0.000    1.325    0.000 {method 'update' of '_hashlib.HASH' objects}
+  2560000    1.299    0.000    1.299    0.000 {built-in method _hashlib.new}
+  2560000    0.957    0.000    1.368    0.000 /Users/Alex_Kazorian/Documents/fa18/CS262/angela/common/util.py:11(to_bytes)
+  2560000    0.770    0.000    2.069    0.000 /anaconda/lib/python3.6/hashlib.py:138(__hash_new)
+  2560000    0.410    0.000    0.410    0.000 {method 'encode' of 'str' objects}
+    10000    0.022    0.000    0.032    0.000 {method 'get' of 'dict' objects}
+    10000    0.008    0.000    0.010    0.000 /Users/Alex_Kazorian/Documents/fa18/CS262/angela/common/util.py:8(__hash__)
+    10000    0.006    0.000    0.008    0.000 /Users/Alex_Kazorian/Documents/fa18/CS262/angela/merkle/smt.py:34(_empty_cache)
     20001    0.003    0.000    0.003    0.000 {built-in method builtins.len}
     10000    0.002    0.000    0.002    0.000 {method 'tobytes' of 'bitarray._bitarray' objects}
-    10000    0.001    0.000    0.001    0.000 {method 'length' of 'bitarray._bitarray' objects}
+    10000    0.002    0.000    0.002    0.000 {method 'length' of 'bitarray._bitarray' objects}
         1    0.000    0.000    0.000    0.000 {built-in method io.open}
         1    0.000    0.000    0.000    0.000 /anaconda/lib/python3.6/_bootlocale.py:23(getpreferredencoding)
         1    0.000    0.000    0.000    0.000 /anaconda/lib/python3.6/pstats.py:75(init)
         1    0.000    0.000    0.000    0.000 /anaconda/lib/python3.6/pstats.py:94(load_stats)
         1    0.000    0.000    0.000    0.000 {built-in method _locale.nl_langinfo}
-        1    0.000    0.000    0.000    0.000 /anaconda/lib/python3.6/pstats.py:65(__init__)
         1    0.000    0.000    0.000    0.000 /anaconda/lib/python3.6/cProfile.py:50(create_stats)
+        1    0.000    0.000    0.000    0.000 /anaconda/lib/python3.6/pstats.py:65(__init__)
+        1    0.000    0.000    0.000    0.000 /anaconda/lib/python3.6/codecs.py:185(__init__)
         1    0.000    0.000    0.000    0.000 {built-in method builtins.hasattr}
         1    0.000    0.000    0.000    0.000 {built-in method builtins.isinstance}
-        1    0.000    0.000    0.000    0.000 /anaconda/lib/python3.6/codecs.py:185(__init__)
         1    0.000    0.000    0.000    0.000 {method 'disable' of '_lsprof.Profiler' objects}
 
 

@@ -1,20 +1,20 @@
-         40883818 function calls in 18.959 seconds
+         40883738 function calls in 19.841 seconds
 
    Ordered by: internal time
 
    ncalls  tottime  percall  cumtime  percall filename:lineno(function)
-    10000    5.513    0.001   18.957    0.002 /Users/Alex_Kazorian/Documents/fa18/CS262/angela/merkle/smt.py:174(generate_proof)
-  7680000    3.800    0.000    3.800    0.000 {method 'copy' of 'bitarray._bitarray' objects}
-  2560000    3.373    0.000    7.370    0.000 /Users/Alex_Kazorian/Documents/fa18/CS262/angela/merkle/smt.py:58(_sibling)
-  2560000    1.475    0.000    2.362    0.000 /Users/Alex_Kazorian/Documents/fa18/CS262/angela/merkle/smt.py:48(_parent)
-  2706183    1.043    0.000    1.440    0.000 /Users/Alex_Kazorian/Documents/fa18/CS262/angela/common/util.py:9(__hash__)
-  2423817    0.926    0.000    1.230    0.000 /Users/Alex_Kazorian/Documents/fa18/CS262/angela/merkle/smt.py:32(_empty_cache)
-  4847634    0.771    0.000    0.771    0.000 {built-in method builtins.len}
-  5120000    0.677    0.000    0.677    0.000 {method 'pop' of 'bitarray._bitarray' objects}
-  7690000    0.628    0.000    0.628    0.000 {method 'length' of 'bitarray._bitarray' objects}
-  2706183    0.397    0.000    0.397    0.000 {method 'tobytes' of 'bitarray._bitarray' objects}
-  2570000    0.334    0.000    0.334    0.000 {method 'append' of 'list' objects}
-    10000    0.021    0.000    0.021    0.000 /Users/Alex_Kazorian/Documents/fa18/CS262/angela/merkle/proof.py:4(__init__)
+    10000    5.800    0.001   19.839    0.002 /Users/Alex_Kazorian/Documents/fa18/CS262/angela/merkle/smt.py:176(generate_proof)
+  7680000    4.069    0.000    4.069    0.000 {method 'copy' of 'bitarray._bitarray' objects}
+  2560000    3.493    0.000    7.758    0.000 /Users/Alex_Kazorian/Documents/fa18/CS262/angela/merkle/smt.py:60(_sibling)
+  2560000    1.504    0.000    2.423    0.000 /Users/Alex_Kazorian/Documents/fa18/CS262/angela/merkle/smt.py:50(_parent)
+  2706263    1.076    0.000    1.487    0.000 /Users/Alex_Kazorian/Documents/fa18/CS262/angela/common/util.py:8(__hash__)
+  2423737    0.961    0.000    1.278    0.000 /Users/Alex_Kazorian/Documents/fa18/CS262/angela/merkle/smt.py:34(_empty_cache)
+  4847474    0.802    0.000    0.802    0.000 {built-in method builtins.len}
+  5120000    0.689    0.000    0.689    0.000 {method 'pop' of 'bitarray._bitarray' objects}
+  7690000    0.658    0.000    0.658    0.000 {method 'length' of 'bitarray._bitarray' objects}
+  2706263    0.411    0.000    0.411    0.000 {method 'tobytes' of 'bitarray._bitarray' objects}
+  2570000    0.354    0.000    0.354    0.000 {method 'append' of 'list' objects}
+    10000    0.024    0.000    0.024    0.000 /Users/Alex_Kazorian/Documents/fa18/CS262/angela/merkle/proof.py:4(__init__)
         1    0.000    0.000    0.000    0.000 {method 'disable' of '_lsprof.Profiler' objects}
 
 

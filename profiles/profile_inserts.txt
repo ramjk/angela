@@ -1,25 +1,26 @@
-         66578249 function calls in 34.398 seconds
+         66579540 function calls (66579412 primitive calls) in 35.992 seconds
 
    Ordered by: internal time
 
    ncalls  tottime  percall  cumtime  percall filename:lineno(function)
-    10000    9.105    0.001   34.398    0.003 /Users/Alex_Kazorian/Documents/fa18/CS262/angela/merkle/smt.py:83(insert)
-  2560000    3.601    0.000    6.302    0.000 /Users/Alex_Kazorian/Documents/fa18/CS262/angela/merkle/smt.py:58(_sibling)
-  2570000    3.037    0.000   10.818    0.000 /Users/Alex_Kazorian/Documents/fa18/CS262/angela/merkle/smt.py:40(_hash)
-  7821752    2.918    0.000    3.894    0.000 /Users/Alex_Kazorian/Documents/fa18/CS262/angela/common/util.py:9(__hash__)
-  7690000    2.464    0.000    2.464    0.000 {method 'copy' of 'bitarray._bitarray' objects}
-  2570000    2.187    0.000    2.187    0.000 {method 'hexdigest' of '_hashlib.HASH' objects}
-  2570000    1.573    0.000    1.573    0.000 {built-in method _hashlib.new}
-  2560000    1.532    0.000    2.419    0.000 /Users/Alex_Kazorian/Documents/fa18/CS262/angela/merkle/smt.py:48(_parent)
-  2570000    1.432    0.000    1.432    0.000 {method 'update' of '_hashlib.HASH' objects}
-  2570000    1.157    0.000    1.671    0.000 /Users/Alex_Kazorian/Documents/fa18/CS262/angela/common/util.py:12(to_bytes)
-  2438248    1.049    0.000    1.382    0.000 /Users/Alex_Kazorian/Documents/fa18/CS262/angela/merkle/smt.py:32(_empty_cache)
-  7821752    0.976    0.000    0.976    0.000 {method 'tobytes' of 'bitarray._bitarray' objects}
-  2570000    0.918    0.000    2.491    0.000 /anaconda/lib/python3.6/hashlib.py:138(__hash_new)
- 10128248    0.908    0.000    0.908    0.000 {method 'length' of 'bitarray._bitarray' objects}
-  5120000    0.694    0.000    0.694    0.000 {method 'pop' of 'bitarray._bitarray' objects}
-  2570000    0.513    0.000    0.513    0.000 {method 'encode' of 'str' objects}
-  2438248    0.333    0.000    0.333    0.000 {built-in method builtins.len}
+    10000    9.673    0.001   35.992    0.004 /Users/Alex_Kazorian/Documents/fa18/CS262/angela/merkle/smt.py:85(insert)
+  2560000    3.656    0.000    6.502    0.000 /Users/Alex_Kazorian/Documents/fa18/CS262/angela/merkle/smt.py:60(_sibling)
+  2570128    3.180    0.000   11.288    0.000 /Users/Alex_Kazorian/Documents/fa18/CS262/angela/merkle/smt.py:42(_hash)
+  7821869    3.067    0.000    4.081    0.000 /Users/Alex_Kazorian/Documents/fa18/CS262/angela/common/util.py:8(__hash__)
+  7690000    2.598    0.000    2.598    0.000 {method 'copy' of 'bitarray._bitarray' objects}
+  2570128    2.275    0.000    2.275    0.000 {method 'hexdigest' of '_hashlib.HASH' objects}
+  2570128    1.644    0.000    1.644    0.000 {built-in method _hashlib.new}
+  2560000    1.553    0.000    2.467    0.000 /Users/Alex_Kazorian/Documents/fa18/CS262/angela/merkle/smt.py:50(_parent)
+  2570128    1.479    0.000    1.479    0.000 {method 'update' of '_hashlib.HASH' objects}
+  2570128    1.237    0.000    1.761    0.000 /Users/Alex_Kazorian/Documents/fa18/CS262/angela/common/util.py:11(to_bytes)
+2438259/2438131    1.126    0.000    1.474    0.000 /Users/Alex_Kazorian/Documents/fa18/CS262/angela/merkle/smt.py:34(_empty_cache)
+  7821869    1.014    0.000    1.014    0.000 {method 'tobytes' of 'bitarray._bitarray' objects}
+ 10128131    0.953    0.000    0.953    0.000 {method 'length' of 'bitarray._bitarray' objects}
+  2570128    0.949    0.000    2.594    0.000 /anaconda/lib/python3.6/hashlib.py:138(__hash_new)
+  5120000    0.715    0.000    0.715    0.000 {method 'pop' of 'bitarray._bitarray' objects}
+  2570128    0.524    0.000    0.524    0.000 {method 'encode' of 'str' objects}
+  2438387    0.347    0.000    0.347    0.000 {built-in method builtins.len}
+      128    0.000    0.000    0.000    0.000 {method 'append' of 'list' objects}
         1    0.000    0.000    0.000    0.000 {method 'disable' of '_lsprof.Profiler' objects}
 
 

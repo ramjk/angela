@@ -1,0 +1,34 @@
+         66832547 function calls (66832419 primitive calls) in 34.425 seconds
+
+   Ordered by: internal time
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+    10000    8.382    0.001   34.342    0.003 /Users/Alex_Kazorian/Documents/fa18/CS262/angela/merkle/smt.py:131(_percolate)
+  2568836    3.537    0.000    6.002    0.000 /Users/Alex_Kazorian/Documents/fa18/CS262/angela/merkle/smt.py:60(_sibling)
+  2568964    2.996    0.000   10.644    0.000 /Users/Alex_Kazorian/Documents/fa18/CS262/angela/merkle/smt.py:42(_hash)
+  7853052    2.924    0.000    3.936    0.000 /Users/Alex_Kazorian/Documents/fa18/CS262/angela/common/util.py:8(__hash__)
+  7677003    2.194    0.000    2.194    0.000 {method 'copy' of 'bitarray._bitarray' objects}
+  2568964    2.144    0.000    2.144    0.000 {method 'hexdigest' of '_hashlib.HASH' objects}
+  2568836    1.525    0.000    2.414    0.000 /Users/Alex_Kazorian/Documents/fa18/CS262/angela/merkle/smt.py:50(_parent)
+  2568964    1.516    0.000    1.516    0.000 {built-in method _hashlib.new}
+  2568964    1.426    0.000    1.426    0.000 {method 'update' of '_hashlib.HASH' objects}
+  2568836    1.296    0.000    2.587    0.000 /Users/Alex_Kazorian/Documents/fa18/CS262/angela/merkle/smt.py:164(_is_conflict)
+  2568964    1.143    0.000    1.633    0.000 /Users/Alex_Kazorian/Documents/fa18/CS262/angela/common/util.py:11(to_bytes)
+2491458/2491330    1.106    0.000    1.442    0.000 /Users/Alex_Kazorian/Documents/fa18/CS262/angela/merkle/smt.py:34(_empty_cache)
+  7853052    1.012    0.000    1.012    0.000 {method 'tobytes' of 'bitarray._bitarray' objects}
+  2568964    0.930    0.000    2.446    0.000 /anaconda/lib/python3.6/hashlib.py:138(__hash_new)
+  5118002    0.696    0.000    0.696    0.000 {method 'pop' of 'bitarray._bitarray' objects}
+  7629002    0.695    0.000    0.695    0.000 {method 'length' of 'bitarray._bitarray' objects}
+  2568964    0.489    0.000    0.489    0.000 {method 'encode' of 'str' objects}
+  2501587    0.337    0.000    0.337    0.000 {built-in method builtins.len}
+        1    0.051    0.051    0.056    0.056 /Users/Alex_Kazorian/Documents/fa18/CS262/angela/common/util.py:17(find_conflicts)
+        1    0.014    0.014   34.423   34.423 /Users/Alex_Kazorian/Documents/fa18/CS262/angela/merkle/smt.py:120(batch_insert)
+        1    0.009    0.009    0.010    0.010 {built-in method builtins.sorted}
+        1    0.002    0.002    0.002    0.002 /Users/Alex_Kazorian/Documents/fa18/CS262/angela/profiles/profile_smt.py:54(<dictcomp>)
+    10000    0.001    0.000    0.001    0.000 /Users/Alex_Kazorian/Documents/fa18/CS262/angela/merkle/smt.py:121(<lambda>)
+      128    0.000    0.000    0.000    0.000 {method 'append' of 'list' objects}
+        1    0.000    0.000    0.000    0.000 {method 'items' of 'dict' objects}
+        1    0.000    0.000    0.000    0.000 {method 'keys' of 'dict' objects}
+        1    0.000    0.000    0.000    0.000 {method 'disable' of '_lsprof.Profiler' objects}
+
+
