@@ -1,6 +1,5 @@
-import random
-from bitarray import bitarray
 import random, string
+from bitarray import bitarray
 
 """
 FIXME: Is this good?
