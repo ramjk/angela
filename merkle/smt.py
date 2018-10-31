@@ -67,7 +67,7 @@ class SparseMerkleTree(object):
 		# Here, we xor the node_id with a bitarray of integer value of 1
 		s_id[-1] ^= 1
 		
-		is_left = s_id.copy().pop() == 0
+		is_left = s_id[-1] == 0
 		return s_id, is_left
 
 	def _get_empty_ancestor(self, index: util.bitarray) -> util.bitarray:
