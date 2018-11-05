@@ -128,7 +128,7 @@ class SparseMerkleTree(object):
 		return True
 
 	# Percolate the update of a leaf while resolving conflicts in update paths
-	def _percolate(self, leaf_id: str, leaf_data: str) -> None:
+	def _percolate(self, leaf_id: str, leaf_data: bytes) -> None:
 		node_id = util.bitarray(leaf_id)
 		node_digest = self._hash(leaf_data)
 		self.cache[node_id] = node_digest

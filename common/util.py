@@ -41,6 +41,10 @@ def random_index(digest_size: int = 256) -> str:
 def random_string(size: int=8) -> str:
 	return ''.join(random.choices(string.ascii_uppercase + string.digits, k=size))
 
+def random_bytes(size: int=8) -> bytes:
+	bit_string = random_string()
+	return to_bytes(bit_string)
+
 def flip_coin():
 	r = random.random()
 	if r > 0.5:

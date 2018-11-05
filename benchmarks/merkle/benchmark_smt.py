@@ -12,7 +12,7 @@ from common import util
 
 T = merkle.smt.SparseMerkleTree("sha256")
 '''
-stmt = "T.insert(util.random_index(digest_size=merkle.smt.SparseMerkleTree.TREE_DEPTH), util.random_string())"
+stmt = "T.insert(util.random_index(digest_size=merkle.smt.SparseMerkleTree.TREE_DEPTH), util.random_bytes())"
 
 for i in range(6, 14):
 	durations.append(timeit.timeit(stmt=stmt, setup=setup, number=2**i))
@@ -33,7 +33,7 @@ from common import util
 
 T = merkle.smt.SparseMerkleTree("sha256")
 num = {}
-values = [util.random_string() for _ in range(num)]
+values = [util.random_bytes() for _ in range(num)]
 leaves = [util.random_index(digest_size=merkle.smt.SparseMerkleTree.TREE_DEPTH) for _ in range(num)]
 d = {{k:v for (k,v) in zip(leaves, values)}}
 '''
