@@ -1,11 +1,24 @@
+# distutils: language = c++
+
 import hashlib
+import numpy as np
+cimport numpy as np
+from libcpp.map cimport map
+from libcpp.string cimport string
 from merkle.proof import Proof
 from common import util
 from functools import reduce
 
-class SparseMerkleTree(object):
+np.import_array()
+
+DTYPE = np.int
+ctypedef np.int_t DTYPE_t
+# ctypedef np.ndarray[DTYPE_t] bitstring
+
+cdef class SparseMerkleTree(object):
 
 	TREE_DEPTH = 128
+	cdef map[np.ndarray, string] cache
 
 	"""docstring for SparseMerkleTree"""
 	def __init__(self, hash_name: str) -> None:
@@ -21,7 +34,6 @@ class SparseMerkleTree(object):
 		The Key space can be partitioned into the set of keys in the cache
 		and the set of keys that are empty and in the empty_cache.
 		"""
-		self.cache = {}
 		self.empty_cache = [self._hash(b'0')]
 		self.root_digest = self._empty_cache(self.depth)
 
@@ -211,7 +223,8 @@ class SparseMerkleTree(object):
 				if proof.proof_id[i] != proof.index[i]:
 					return False
 
-		root_digest = self.cache.get(proof.proof_id, self._empty_cache(self.depth - proof_id_length))
+		cdef iterator root_digest = self.cache.find(proof.proof_id) # self._empty_cache(self.depth - proof_id_length)
+
 		for i in range(len(proof.copath)): 
 			if proof.copath[i][0][-1] == 0:
 				root_digest = self._hash(proof.copath[i][1] + root_digest)
