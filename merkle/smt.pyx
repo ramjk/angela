@@ -82,7 +82,7 @@ class SparseMerkleTree(object):
 
 	FIXME: What are the error cases where we return False?
 	"""
-	def insert(self, index: str, data: str) -> bool:
+	def insert(self, index: str, data: bytes) -> bool:
 		# Do the first level hash of data and insert into index-th leaf
 		node_id = util.bitarray(index)
 		self.cache[node_id] = self._hash(data)
@@ -173,7 +173,7 @@ class SparseMerkleTree(object):
 			# unlock(self.conflicts[node_id])
 		return False
 
-	def generate_proof(self, index: str) -> list:
+	def generate_proof(self, index: str) -> Proof:
 		copath = list()
 		curr_id = util.bitarray(index)
 		proof = Proof(index=curr_id)

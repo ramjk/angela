@@ -7,7 +7,12 @@
 # Unignore all dirs
 !*/
 
-__pycache__/
+*/__pycache__/
 
 *.pyc
+
+build/
+*/*.so
+*/*.c
+
 .DS_Store
