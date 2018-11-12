@@ -4,12 +4,10 @@ import (
 	"hash"
 	"crypto/sha256"
 	"fmt"
-	"math/big"
 )
 
 const TREE_DEPTH int = 128
 
-type bitstring = big.Int
 type digest = []byte
 
 type SparseMerkleTree struct {
@@ -47,22 +45,46 @@ func hashDigest(H hash.Hash, data []byte) (digest) {
 	return H.Sum(nil)
 }
 
-func getParent(nodeID bitstring) (bitstring) {
-	if (nodeID.BitLen() == 0) {
+func getParent(nodeID string) (string) {
+	length := len(nodeID)
+	if (length == 0) {
 		return nodeID
 	}
 
-	parentID := nodeID // FIXME: Is this actually creating a copy?
+	return nodeID[:length - 1]
+}
 
-	parentID.SetBits(parentID.Bits()[:parentID.BitLen() - 1])
+func getSibling(nodeID string) (string) {
+	length := len(nodeID)
+	if (length == 0) {
+		return nodeID
+	}
 
-	return parentID
+	
+	lastBit := nodeID[length - 1]
+	siblingID := nodeID[:length - 1]
+
+	if (lastBit == byte('0')) {
+		siblingID += "1"
+	} else {
+		siblingID += "0"
+	}
+
+	return siblingID
 }
 
 func main() {
 	H := sha256.New()
 	T, _ := makeTree(H)
 	fmt.Println(T.depth)
-	T.cache["01111001"] = hashDigest(T.H, []byte("01111001"))
+	myBits := "01111000"
+	fmt.Println("myBits")
+	fmt.Println(myBits)
+	parent := getParent(myBits)
+	fmt.Println("parent")
+	fmt.Println(parent)
+	sibling := getSibling(myBits)
+	fmt.Println(sibling)
+	T.cache["01111001"] = hashDigest(T.H, []byte(myBits))
 	fmt.Println(T.cache["01111001"])
 }
