@@ -21,7 +21,11 @@ type SparseMerkleTree struct {
 	conflicts map[bitstring]bool
 }
 
-func (T *SparseMerkleTree) 
+func (T *SparseMerkleTree) empty_cache(int n)(str) {
+	if (len(T.empty_cache) <= n) {
+		t = empty_cache
+	} 
+}
 
 func makeTree(hashName string)(*SparseMerkleTree, error) {
 	T := SparseMerkleTree{hashName, TREE_DEPTH, leaves, H} 
