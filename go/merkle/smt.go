@@ -1,4 +1,4 @@
-package main
+package merkle
 
 import (
 	"hash"
@@ -54,7 +54,7 @@ func getParent(nodeID string) (string) {
 	return nodeID[:length - 1]
 }
 
-func getSibling(nodeID string) (string) {
+func getSibling(nodeID string) (string, bool) {
 	length := len(nodeID)
 	if (length == 0) {
 		return nodeID
@@ -64,13 +64,104 @@ func getSibling(nodeID string) (string) {
 	lastBit := nodeID[length - 1]
 	siblingID := nodeID[:length - 1]
 
+	var isLeft bool
+
 	if (lastBit == byte('0')) {
 		siblingID += "1"
+		isLeft = false
 	} else {
 		siblingID += "0"
+		isLeft = true
 	}
 
 	return siblingID
+}
+
+func getEmptyAncestor(nodeID string) {
+	// FIXME: What does this do exactly?
+}
+
+/* Assume index is valid (for now).
+
+FIXME: What are the error cases where we return error/False?
+*/
+func (T *SparseMerkleTree) insert(index string, data string) (bool) {
+	T.cache[index] = hashDigest(data)
+
+	//FIXME: Actual copy?
+	var currID string
+	for (currID = index; len(currID) > 0;) {
+		// Get both the parent and sibling IDs
+		siblingID, isLeft := getSibling(currID)
+		parentID := getParent(currID)
+
+		// Get the digest of the current node and sibling
+		currDigest := T.cache[currID]
+		if siblingDigest, err := T.cache[siblingID]; err {
+			siblingDigest = getEmpty(len(siblingID))
+		}
+
+		// Hash the digests of the left and right children
+		var parentDigest digest
+		if isLeft {
+			parentDigest = hashDigest(T.H, siblingDigest + currDigest)
+		} else {
+			parentDigest = hashDigest(T.H, currDigest + siblingDigest)
+		}
+		T.cache[parentID] = parentDigest
+
+		// Traverse up the tree by making the current node the parent node
+		currentID = parentID
+	}
+
+	T.root_digest = T.cache[currID]
+	return true
+}
+
+func (T *SparseMerkleTree) generateProof(index string) (Proof) {
+	proofResult := Proof{}
+	proofResult.queryID = index
+	coPath := make([]CoPathPair)
+
+	var proof_t ProofType
+	if currID, notContains := T.cache[index]; notContains {
+		proof_t = NONMEMBERSHIP
+		currID = getEmptyAncestor(currID)
+	} else {
+		proof_t = MEMBERSHIP
+	}
+	proofResult.proofID = currID
+
+	// Our stopping condition is length > 0 so we don't add the root to the copath
+	for (; len(currID) > 0; currID = getParent(currID)) {
+		// Append the sibling to the copath and advance current node
+		siblingID, isLeft := getSibling(currID)
+		if siblingDigest, err := T.cache[siblingID]; err {
+			siblingDigest = getEmpty(len(siblingID))
+		}
+
+		coPathNode := CoPathPair{siblingID, siblingDigest}
+		coPath += coPathNode
+	}
+
+	proofResult.coPath = coPath
+	return proofResult
+}
+
+func (T *SparseMerkleTree) verifyProof(proof Proof) (bool) {
+	// If proof of nonmembership, first make sure that there is a prefix match
+	proofIDLength := len(proof.proofID)
+	if proof.proofType == NONMEMBERSHIP {
+		if proofIDLength > len(proof.queryID) {
+			return false
+		}
+
+		for i, _ := range [proofIDLength]int {
+			if proof.proofID[i] != proof.queryID[i] {
+				return false
+			}
+		}
+	}
 }
 
 func main() {

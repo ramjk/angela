@@ -10,15 +10,15 @@ const (
 	MEMBERSHIP       ProofType = true
 )
 
-type CoPathNode struct {
-	ID        big.Int
-	digest    string
+type CoPathPair struct {
+	ID        string
+	digest    []byte
 }
 
 type Proof struct {
 	proofType    ProofType
 	queryID      string
-	proofID      big.Int
+	proofID      string
 	coPath       []CoPathNode
 }
 
