@@ -1,6 +1,7 @@
 package merkle
 
 import (
+	_ "fmt"
 	"hash"
 	"bytes"
 )
@@ -81,7 +82,7 @@ func (T *SparseMerkleTree) getEmptyAncestor(nodeID string) (string) {
 	currID := nodeID
 	prevID := currID
 	for (len(currID) > 0) {
-		if _, err := T.cache[currID]; !err {
+		if _, contains := T.cache[currID]; contains {
 			break
 		}
 		prevID = currID
@@ -134,7 +135,7 @@ func (T *SparseMerkleTree) generateProof(index string) (Proof) {
 
 	var proof_t ProofType
 	var currID string
-	if _, notContains := T.cache[index]; notContains {
+	if _, contains := T.cache[index]; !contains {
 		proof_t = NONMEMBERSHIP
 		currID = T.getEmptyAncestor(currID)
 	} else {
@@ -170,21 +171,22 @@ func (T *SparseMerkleTree) verifyProof(proof Proof) (bool) {
 			return false
 		}
 
-		for i, _ := range []int{proofIDLength} {
+		for i := 0; i < proofIDLength; i++ {
 			if proof.proofID[i] != proof.queryID[i] {
 				return false
 			}
 		}
 	}
 
-	rootDigest, err := T.cache[proof.proofID]
-	if err {
+
+	rootDigest, contains := T.cache[proof.proofID]
+	if !contains {
 		rootDigest = T.getEmpty(TREE_DEPTH)
 	}
 
 	for i := 0; i < len(proof.coPath); i++ {
 		currNode := proof.coPath[i]
-		if currNode.ID[len(currNode.ID)] == 0 {
+		if currNode.ID[len(currNode.ID) - 1] == 0 {
 			rootDigest = hashDigest(T.H, append(currNode.digest[:], rootDigest[:]...))
 		} else {
 			rootDigest = hashDigest(T.H, append(rootDigest[:], currNode.digest[:]...))
