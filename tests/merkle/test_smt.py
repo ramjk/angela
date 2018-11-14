@@ -42,13 +42,8 @@ class TestSparseMerkleTree(unittest.TestCase):
 		i = True
 		for index, is_member in indices:
 			proof = self.T.generate_proof(index)
-			if i and not is_member:
-				print(is_member)
-				print("index = {}".format(index))
-				print("proof_id = {}".format(proof.proof_id))
-				print("copath = {}".format(proof.copath))
-				print(self.T.root_digest)
-				i = False
+			# self.assertEqual(len(proof.proof_id), len(proof.copath[0][0]))
+			# ^ this assert will fail if there is no copath 
 			self.assertEqual(proof.proof_type, is_member)
 			self.assertTrue(self.T.verify_proof(proof))
 		
