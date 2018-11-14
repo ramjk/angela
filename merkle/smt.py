@@ -31,7 +31,7 @@ class SparseMerkleTree(object):
 	"""
 	https://www.links.org/files/RevocationTransparency.pdf
 	"""
-	def _empty_cache(self, n: int):
+	def _empty_cache(self, n: int) -> str:
 		if len(self.empty_cache) <= n:
 			t = self._empty_cache(n - 1)
 			t = self._hash(t + t)
@@ -72,7 +72,7 @@ class SparseMerkleTree(object):
 
 	def _get_empty_ancestor(self, index: util.bitarray) -> util.bitarray:
 		prev_id = curr_id = index.copy()
-		while curr_id.length() > 0:
+		while curr_id.length() > 0 and curr_id not in self.cache:
 			curr_id.pop()
 			prev_id = curr_id
 		return prev_id
