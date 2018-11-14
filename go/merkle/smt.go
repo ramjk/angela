@@ -1,7 +1,7 @@
 package merkle
 
 import (
-	_ "fmt"
+	"fmt"
 	"hash"
 	"bytes"
 )
@@ -17,18 +17,6 @@ type SparseMerkleTree struct {
 	rootDigest digest
 	empty_cache map[int]digest
 	conflicts map[string]bool
-}
-
-func makeTree(H hash.Hash) (*SparseMerkleTree, error) {
-	T := SparseMerkleTree{} 
-	T.H = H
-	T.depth = TREE_DEPTH
-	T.cache = make(map[string]digest)
-	T.rootDigest = hashDigest(H, []byte("0")) // FIXME: Should this be the case for an empty tree?
-	T.empty_cache = make(map[int]digest)
-	T.empty_cache[0] = T.rootDigest 
-	T.conflicts = make(map[string]bool)
-	return &T, nil
 }
 
 func (T *SparseMerkleTree) getEmpty(n int) (digest) {
@@ -107,8 +95,8 @@ func (T *SparseMerkleTree) insert(index string, data string) (bool) {
 
 		// Get the digest of the current node and sibling
 		currDigest := T.cache[currID]
-		siblingDigest, err := T.cache[siblingID] 
-		if err {
+		siblingDigest, contains := T.cache[siblingID] 
+		if !contains {
 			siblingDigest = T.getEmpty(len(siblingID))
 		}
 
@@ -135,7 +123,8 @@ func (T *SparseMerkleTree) generateProof(index string) (Proof) {
 
 	var proof_t ProofType
 	var currID string
-	if _, contains := T.cache[index]; !contains {
+	_, contains := T.cache[index]
+	if !contains {
 		proof_t = NONMEMBERSHIP
 		currID = T.getEmptyAncestor(currID)
 	} else {
@@ -150,8 +139,8 @@ func (T *SparseMerkleTree) generateProof(index string) (Proof) {
 	for ; len(currID) > 0; currID = getParent(currID) {
 		// Append the sibling to the copath and advance current node
 		siblingID, _ := getSibling(currID)
-		siblingDigest, err := T.cache[siblingID]
-		if err {
+		siblingDigest, contains := T.cache[siblingID]
+		if !contains {
 			siblingDigest = T.getEmpty(len(siblingID))
 		}
 
@@ -181,8 +170,9 @@ func (T *SparseMerkleTree) verifyProof(proof Proof) (bool) {
 
 	rootDigest, contains := T.cache[proof.proofID]
 	if !contains {
-		rootDigest = T.getEmpty(TREE_DEPTH)
+		rootDigest = T.getEmpty(TREE_DEPTH - proofIDLength)
 	}
+
 
 	for i := 0; i < len(proof.coPath); i++ {
 		currNode := proof.coPath[i]
@@ -191,6 +181,23 @@ func (T *SparseMerkleTree) verifyProof(proof Proof) (bool) {
 		} else {
 			rootDigest = hashDigest(T.H, append(rootDigest[:], currNode.digest[:]...))
 		}
+		if !bytes.Equal(T.cache[getParent(currNode.ID)], rootDigest) {
+			fmt.Println("FAILED")
+		}
 	}
+	fmt.Println(rootDigest)
+	fmt.Println(T.rootDigest)
 	return bytes.Equal(rootDigest, T.rootDigest)
+}
+
+func makeTree(H hash.Hash) (*SparseMerkleTree, error) {
+	T := SparseMerkleTree{} 
+	T.H = H
+	T.depth = TREE_DEPTH
+	T.cache = make(map[string]digest)	
+	T.empty_cache = make(map[int]digest)
+	T.empty_cache[0] = hashDigest(H, []byte("0"))  
+	T.rootDigest = T.getEmpty(TREE_DEPTH) // FIXME: Should this be the case for an empty tree?
+	T.conflicts = make(map[string]bool)
+	return &T, nil
 }
