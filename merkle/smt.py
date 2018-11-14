@@ -189,7 +189,7 @@ class SparseMerkleTree(object):
 			s_id, is_left = self._sibling(curr_id)
 			s_digest = None
 
-			# Check to see if sibling is cacehd otherwise set to empty value of appropriate length
+			# Check to see if sibling is cache otherwise set to empty value of appropriate length
 			if s_id in self.cache:
 				s_digest = self.cache[s_id]
 			else:
