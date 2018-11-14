@@ -39,6 +39,7 @@ class TestSparseMerkleTree(unittest.TestCase):
 				self.T.insert(index, data.encode())
 			indices.append((index, is_member))
 
+		i = True
 		for index, is_member in indices:
 			proof = self.T.generate_proof(index)
 			# self.assertEqual(len(proof.proof_id), len(proof.copath[0][0]))

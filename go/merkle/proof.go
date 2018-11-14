@@ -1,8 +1,5 @@
 package merkle
 
-import "math/big"
-import "fmt"
-
 type ProofType bool
 
 const (
@@ -19,9 +16,9 @@ type Proof struct {
 	proofType    ProofType
 	queryID      string
 	proofID      string
-	coPath       []CoPathNode
+	coPath       []CoPathPair
 }
 
-func MakeProof(proofType ProofType, queryID string, proofID big.Int, coPath []CoPathNode) (*Proof) {
+func MakeProof(proofType ProofType, queryID string, proofID string, coPath []CoPathPair) (*Proof) {
 	return &Proof{proofType, queryID, proofID, coPath}
 }
