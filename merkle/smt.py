@@ -73,8 +73,8 @@ class SparseMerkleTree(object):
 	def _get_empty_ancestor(self, index: util.bitarray) -> util.bitarray:
 		prev_id = curr_id = index.copy()
 		while curr_id.length() > 0 and curr_id not in self.cache:
-			curr_id.pop()
 			prev_id = curr_id
+			curr_id.pop()
 		return prev_id
 
 	"""
