@@ -1,7 +1,7 @@
 package merkle
 
 import (
-	"fmt"
+	_ "fmt"
 	"hash"
 	"bytes"
 )
@@ -103,16 +103,15 @@ func (T *SparseMerkleTree) insert(index string, data string) (bool) {
 		// Hash the digests of the left and right children
 		var parentDigest digest
 		if isLeft {
-			parentDigest = hashDigest(T.H, append(siblingDigest[:], currDigest[:]...))
+			parentDigest = hashDigest(T.H, append(siblingDigest, currDigest...))
 		} else {
-			parentDigest = hashDigest(T.H, append(currDigest[:], siblingDigest[:]...))
+			parentDigest = hashDigest(T.H, append(currDigest, siblingDigest...))
 		}
 		T.cache[parentID] = parentDigest
 
 		// Traverse up the tree by making the current node the parent node
 		currID = parentID
 	}
-
 	T.rootDigest = T.cache[currID]
 	return true
 }
@@ -167,26 +166,19 @@ func (T *SparseMerkleTree) verifyProof(proof Proof) (bool) {
 		}
 	}
 
-
 	rootDigest, contains := T.cache[proof.proofID]
 	if !contains {
 		rootDigest = T.getEmpty(TREE_DEPTH - proofIDLength)
 	}
 
-
 	for i := 0; i < len(proof.coPath); i++ {
 		currNode := proof.coPath[i]
-		if currNode.ID[len(currNode.ID) - 1] == 0 {
-			rootDigest = hashDigest(T.H, append(currNode.digest[:], rootDigest[:]...))
+		if currNode.ID[len(currNode.ID) - 1] == '0' {
+			rootDigest = hashDigest(T.H, append(currNode.digest, rootDigest...))
 		} else {
-			rootDigest = hashDigest(T.H, append(rootDigest[:], currNode.digest[:]...))
-		}
-		if !bytes.Equal(T.cache[getParent(currNode.ID)], rootDigest) {
-			fmt.Println("FAILED")
+			rootDigest = hashDigest(T.H, append(rootDigest, currNode.digest...))
 		}
 	}
-	fmt.Println(rootDigest)
-	fmt.Println(T.rootDigest)
 	return bytes.Equal(rootDigest, T.rootDigest)
 }
 

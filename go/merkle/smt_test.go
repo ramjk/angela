@@ -34,14 +34,38 @@ func TestSibling(t *testing.T) {
 	}
 }
 
+func TestParentEmpty(t *testing.T) {
+	emptyZero := "0"
+	emptyOne := "1"
+
+	parentZero := getParent(emptyZero)
+	parentOne := getParent(emptyOne)
+
+	if strings.Compare(parentZero, parentOne) != 0 {
+		t.Error("Parents of level 0 children were not equal")
+	}
+
+	if strings.Compare(parentZero, "") != 0 {
+		t.Error("Parent of level 0 child is invalid")
+	}
+}
+
 func TestConstructor(t *testing.T) {
 	SHA256 := sha256.New()
 	tree, _ := makeTree(SHA256)
+
+	if !bytes.Equal(tree.empty_cache[0], tree.getEmpty(0)) {
+		t.Error("empty_cache[0] != getEmpty(0)")
+	}
 
 	actual := tree.getEmpty(0)
 	expected := hashDigest(SHA256, []byte("0"))
 	if !bytes.Equal(actual, expected) {
 		t.Error("0-th level empty node is incorrect.")
+	}
+
+	if !bytes.Equal(tree.getEmpty(TREE_DEPTH), tree.rootDigest) {
+		t.Error("Root Digest was not equal to getEmpty(TREE_DEPTH)")
 	}
 }
 
@@ -99,9 +123,12 @@ func TestMembershipLarge(t *testing.T) {
 		proofs[i] = tree.generateProof(bitString)
 	}
 
-	for _, proof := range proofs {
-		if strings.Compare(proof.proofID, proof.queryID) == 1 {
+	for i, proof := range proofs {
+		if strings.Compare(proof.proofID, proof.queryID) != 0 {
 			t.Error("proofID != queryID")
+		}
+		if strings.Compare(proof.proofID, indices[i]) != 0 {
+			t.Error("i-th proofID != indices[i]")
 		}
 		if len(proof.coPath) != len(proof.proofID) {
 			t.Error("Length of coPath != proofID")
@@ -109,7 +136,6 @@ func TestMembershipLarge(t *testing.T) {
 		if len(proof.coPath) != 128 {
 			t.Error("Length of copath != 128")
 		}
-		fmt.Println(proof.proofType)
 		if proof.proofType == NONMEMBERSHIP {
 			t.Error("Proof of non-membership")
 		}
