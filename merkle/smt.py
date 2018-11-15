@@ -5,7 +5,7 @@ from functools import reduce
 
 class SparseMerkleTree(object):
 
-	TREE_DEPTH = 128
+	TREE_DEPTH = 256
 
 	"""docstring for SparseMerkleTree"""
 	def __init__(self, hash_name: str) -> None:

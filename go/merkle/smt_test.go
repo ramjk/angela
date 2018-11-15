@@ -10,7 +10,7 @@ import (
 	"math/rand"
 )
 
-const NUMITERATIONS int = 2
+const NUMITERATIONS int = 10000
 
 func randomBitString(digestSize int) (string) {
 	rand.Seed(time.Now().UTC().UnixNano())
@@ -88,14 +88,14 @@ func TestMembership(t *testing.T) {
 	SHA256 := sha256.New()
 	tree, _ := makeTree(SHA256)
 
-	index := randomBitString(128)
+	index := randomBitString(TREE_DEPTH)
 
 	tree.insert(index, "angela")
 
 	proof := tree.generateProof(index)
 
-	if len(proof.coPath) != 128 {
-		t.Error("Length of the copath was not equal to 128.")
+	if len(proof.coPath) != TREE_DEPTH {
+		t.Error("Length of the copath was not equal to TREE_DEPTH.")
 	}
 
 	if !tree.verifyProof(proof) {
@@ -109,7 +109,7 @@ func TestMembershipLarge(t *testing.T) {
 
 	indices := make([]string, 0)
 	for i := 0; i < NUMITERATIONS; i++ {
-		indices = append(indices, randomBitString(128))
+		indices = append(indices, randomBitString(TREE_DEPTH))
 	}
 
 	for i, bitString := range indices {
@@ -133,8 +133,8 @@ func TestMembershipLarge(t *testing.T) {
 		if len(proof.coPath) != len(proof.proofID) {
 			t.Error("Length of coPath != proofID")
 		}
-		if len(proof.coPath) != 128 {
-			t.Error("Length of copath != 128")
+		if len(proof.coPath) != TREE_DEPTH {
+			t.Error("Length of copath != TREE_DEPTH")
 		}
 		if proof.proofType == NONMEMBERSHIP {
 			t.Error("Proof of non-membership")
@@ -143,4 +143,132 @@ func TestMembershipLarge(t *testing.T) {
 			t.Error("Proof was invalid when it was expected to be valid.")
 		}
 	}
+}
+
+func benchmarkInsertN(tree *SparseMerkleTree, indices []string, data []string, b *testing.B) {
+	for n := 0; n < b.N; n++ {
+		for i, index := range indices {
+			tree.insert(index, data[i])
+		}
+	}
+}
+
+func BenchmarkInsert64(b *testing.B) {
+	SHA256 := sha256.New()
+	tree, _ := makeTree(SHA256)
+
+	indices := make([]string, 64)
+	data := make([]string, 64)
+
+	for i := 0; i < 64; i++ {
+		indices[i] = randomBitString(TREE_DEPTH)
+		data[i] = fmt.Sprintf("angela%d", i)
+	}
+
+	benchmarkInsertN(tree, indices, data, b)
+}
+
+func BenchmarkInsert128(b *testing.B) {
+	SHA256 := sha256.New()
+	tree, _ := makeTree(SHA256)
+
+	indices := make([]string, 128)
+	data := make([]string, 128)
+
+	for i := 0; i < 128; i++ {
+		indices[i] = randomBitString(TREE_DEPTH)
+		data[i] = fmt.Sprintf("angela%d", i)
+	}
+
+	benchmarkInsertN(tree, indices, data, b)
+}
+
+func BenchmarkInsert256(b *testing.B) {
+	SHA256 := sha256.New()
+	tree, _ := makeTree(SHA256)
+
+	indices := make([]string, 256)
+	data := make([]string, 256)
+
+	for i := 0; i < 256; i++ {
+		indices[i] = randomBitString(TREE_DEPTH)
+		data[i] = fmt.Sprintf("angela%d", i)
+	}
+
+	benchmarkInsertN(tree, indices, data, b)
+}
+
+func BenchmarkInsert512(b *testing.B) {
+	SHA256 := sha256.New()
+	tree, _ := makeTree(SHA256)
+
+	indices := make([]string, 512)
+	data := make([]string, 512)
+
+	for i := 0; i < 512; i++ {
+		indices[i] = randomBitString(TREE_DEPTH)
+		data[i] = fmt.Sprintf("angela%d", i)
+	}
+
+	benchmarkInsertN(tree, indices, data, b)	
+}
+
+func BenchmarkInsert1024(b *testing.B) {
+	SHA256 := sha256.New()
+	tree, _ := makeTree(SHA256)
+
+	indices := make([]string, 1024)
+	data := make([]string, 1024)
+
+	for i := 0; i < 1024; i++ {
+		indices[i] = randomBitString(TREE_DEPTH)
+		data[i] = fmt.Sprintf("angela%d", i)
+	}
+
+	benchmarkInsertN(tree, indices, data, b)
+}
+
+func BenchmarkInsert2048(b *testing.B) {
+	SHA256 := sha256.New()
+	tree, _ := makeTree(SHA256)
+
+	indices := make([]string, 2048)
+	data := make([]string, 2048)
+
+	for i := 0; i < 2048; i++ {
+		indices[i] = randomBitString(TREE_DEPTH)
+		data[i] = fmt.Sprintf("angela%d", i)
+	}
+
+	benchmarkInsertN(tree, indices, data, b)
+}
+
+func BenchmarkInsert4096(b *testing.B) {
+	SHA256 := sha256.New()
+	tree, _ := makeTree(SHA256)
+
+	indices := make([]string, 4096)
+	data := make([]string, 4096)
+
+	for i := 0; i < 4096; i++ {
+		indices[i] = randomBitString(TREE_DEPTH)
+		data[i] = fmt.Sprintf("angela%d", i)
+	}
+
+	benchmarkInsertN(tree, indices, data, b)
+}
+
+func BenchmarkInsert8096(b *testing.B) {
+	SHA256 := sha256.New()
+	tree, _ := makeTree(SHA256)
+
+	indices := make([]string, 8096)
+	data := make([]string, 8096)
+
+	for i := 0; i < 8096; i++ {
+		indices[i] = randomBitString(TREE_DEPTH)
+		data[i] = fmt.Sprintf("angela%d", i)
+	}
+
+	benchmarkInsertN(tree, indices, data, b)
 }

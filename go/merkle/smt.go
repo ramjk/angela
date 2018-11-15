@@ -6,7 +6,7 @@ import (
 	"bytes"
 )
 
-const TREE_DEPTH int = 128
+const TREE_DEPTH int = 256
 
 type digest = []byte
 
