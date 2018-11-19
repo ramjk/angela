@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"math/rand"
+	"sync"
 )
 
 const NUMITERATIONS int = 10000
@@ -24,6 +25,31 @@ func randomBitString(digestSize int) (string) {
 		}
 	}
 	return result
+}
+
+func TestFindConflicts(t *testing.T) {
+	leaves := []string{"0000", "0001", "0010", "0110", "1110"} 
+	var correct_conflict = make(map[string]*SyncBool)
+	correct_conflict[""] = &SyncBool{&sync.Mutex{}, false}
+	correct_conflict["0"] = &SyncBool{&sync.Mutex{}, false}
+	correct_conflict["00"] = &SyncBool{&sync.Mutex{}, false}		
+	correct_conflict["000"] = &SyncBool{&sync.Mutex{}, false}		
+	
+	conflicts, err := findConflicts(leaves)
+
+	if err != nil || len(conflicts) != len(correct_conflict) {
+		t.Error("Incorrect number of conflicts generated")
+	}
+
+	for k, _ := range correct_conflict {
+		val, ok := conflicts[k];
+		if !ok {
+		    t.Error("Conflict not found: %v", k)
+		}
+		if val.writeable {
+			t.Error("writeable should be false, is true")
+		}	
+	}
 }
 
 func TestSibling(t *testing.T) {

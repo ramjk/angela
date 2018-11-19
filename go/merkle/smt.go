@@ -4,6 +4,7 @@ import (
 	_ "fmt"
 	"hash"
 	"bytes"
+	"sync"
 )
 
 const TREE_DEPTH int = 256
@@ -17,6 +18,11 @@ type SparseMerkleTree struct {
 	rootDigest digest
 	empty_cache map[int]digest
 	conflicts map[string]bool
+}
+
+type SyncBool struct {
+	lock *sync.Mutex
+	writeable bool
 }
 
 func (T *SparseMerkleTree) getEmpty(n int) (digest) {
@@ -180,6 +186,24 @@ func (T *SparseMerkleTree) verifyProof(proof Proof) (bool) {
 		}
 	}
 	return bytes.Equal(rootDigest, T.rootDigest)
+}
+
+// leaves must be sorted before findConflicts is called
+func findConflicts(leaves []string) (map[string]*SyncBool, error) {
+	var conflicts = make(map[string]*SyncBool)
+	for i := 1; i < len(leaves); i++ {
+		x, y := leaves[i-1], leaves[i]
+		k := len(x)
+		for idx := 0; idx < len(leaves); idx++ {
+			var a, b byte = x[idx], y[idx]
+			if a != b {
+				k = idx
+				break
+			}
+		}
+		conflicts[x[0:k]] = &SyncBool{lock: &sync.Mutex{}, writeable: false}
+	}
+	return conflicts, nil
 }
 
 func makeTree(H hash.Hash) (*SparseMerkleTree, error) {
