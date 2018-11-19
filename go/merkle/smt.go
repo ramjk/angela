@@ -5,6 +5,7 @@ import (
 	"hash"
 	"bytes"
 	"sync"
+	"sort"
 )
 
 const TREE_DEPTH int = 256
@@ -17,7 +18,7 @@ type SparseMerkleTree struct {
 	cache map[string]digest
 	rootDigest digest
 	empty_cache map[int]digest
-	conflicts map[string]bool
+	conflicts map[string]*SyncBool
 }
 
 type SyncBool struct {
@@ -122,6 +123,30 @@ func (T *SparseMerkleTree) insert(index string, data string) (bool) {
 	return true
 }
 
+
+func (T *SparseMerkleTree) batchInsert(transactions batchedTransaction) (bool, error) {
+
+	sort.Sort(batchedTransaction(transactions))
+	var err error
+	T.conflicts, err = findConflicts(transactions)
+	if err != nil {
+		return false, err
+	}
+
+	var wg sync.WaitGroup
+
+	for i:=0; i<len(transactions); i++ {
+		wg.Add(1)
+		//go T.percolate(transactions[i].id, transactions[i].data, wg)
+	}
+	wg.Wait()
+
+	T.rootDigest = T.cache[""]
+
+	return true, nil
+
+}
+
 func (T *SparseMerkleTree) generateProof(index string) (Proof) {
 	proofResult := Proof{}
 	proofResult.queryID = index
@@ -189,10 +214,10 @@ func (T *SparseMerkleTree) verifyProof(proof Proof) (bool) {
 }
 
 // leaves must be sorted before findConflicts is called
-func findConflicts(leaves []string) (map[string]*SyncBool, error) {
+func findConflicts(leaves []*transaction) (map[string]*SyncBool, error) {
 	var conflicts = make(map[string]*SyncBool)
 	for i := 1; i < len(leaves); i++ {
-		x, y := leaves[i-1], leaves[i]
+		x, y := leaves[i-1].id, leaves[i].id
 		k := len(x)
 		for idx := 0; idx < len(leaves); idx++ {
 			var a, b byte = x[idx], y[idx]
@@ -214,6 +239,6 @@ func makeTree(H hash.Hash) (*SparseMerkleTree, error) {
 	T.empty_cache = make(map[int]digest)
 	T.empty_cache[0] = hashDigest(H, []byte("0"))  
 	T.rootDigest = T.getEmpty(TREE_DEPTH) // FIXME: Should this be the case for an empty tree?
-	T.conflicts = make(map[string]bool)
+	T.conflicts = make(map[string]*SyncBool)
 	return &T, nil
 }

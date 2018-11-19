@@ -9,6 +9,7 @@ import (
 	"crypto/sha256"
 	"math/rand"
 	"sync"
+	"sort"
 )
 
 const NUMITERATIONS int = 10000
@@ -28,7 +29,9 @@ func randomBitString(digestSize int) (string) {
 }
 
 func TestFindConflicts(t *testing.T) {
-	leaves := []string{"0000", "0001", "0010", "0110", "1110"} 
+	leaves := []*transaction{{"0000", "data"}, {"0001", "data"}, 
+							 {"0010", "data"}, {"0110", "data"}, 
+							 {"1110", "data"}} 
 	var correct_conflict = make(map[string]*SyncBool)
 	correct_conflict[""] = &SyncBool{&sync.Mutex{}, false}
 	correct_conflict["0"] = &SyncBool{&sync.Mutex{}, false}
@@ -50,6 +53,27 @@ func TestFindConflicts(t *testing.T) {
 			t.Error("writeable should be false, is true")
 		}	
 	}
+}
+
+func TestSortTransactions(t *testing.T) {
+	arrLen := 10
+
+	transactions := make([]*transaction, arrLen)
+
+	for i:=0; i < arrLen; i++ {
+
+		transactions[i] = &transaction{randomBitString(128), "data"}
+	}
+
+	sort.Sort(batchedTransaction(transactions))
+
+	for i:=0; i < arrLen - 1; i++ {
+		if transactions[i].id > transactions[i+1].id {
+			t.Error("SORT is broken")
+		}
+
+	}
+	
 }
 
 func TestSibling(t *testing.T) {
