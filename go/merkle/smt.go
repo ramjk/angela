@@ -15,7 +15,7 @@ type digest = []byte
 type SparseMerkleTree struct {
 	H hash.Hash 
 	depth int
-	cache map[string]digest
+	cache sync.Map
 	rootDigest digest
 	empty_cache map[int]digest
 	conflicts map[string]*SyncBool
@@ -73,11 +73,10 @@ func getSibling(nodeID string) (string, bool) {
 }
 
 func (T *SparseMerkleTree) getEmptyAncestor(nodeID string) (string) {
-	// FIXME: What does this do exactly?
 	currID := nodeID
 	prevID := currID
 	for (len(currID) > 0) {
-		if _, contains := T.cache[currID]; contains {
+		if _, ok := T.cache.Load(currID); ok {
 			break
 		}
 		prevID = currID
@@ -91,7 +90,7 @@ func (T *SparseMerkleTree) getEmptyAncestor(nodeID string) (string) {
 FIXME: What are the error cases where we return error/False?
 */
 func (T *SparseMerkleTree) insert(index string, data string) (bool) {
-	T.cache[index] = hashDigest(T.H, []byte(data))
+	T.cache.Store(index, hashDigest(T.H, []byte(data)))
 
 	//FIXME: Actual copy?
 	var currID string
@@ -101,9 +100,9 @@ func (T *SparseMerkleTree) insert(index string, data string) (bool) {
 		parentID := getParent(currID)
 
 		// Get the digest of the current node and sibling
-		currDigest := T.cache[currID]
-		siblingDigest, contains := T.cache[siblingID] 
-		if !contains {
+		currDigest, _ := T.cache.Load(currID) // currID will always be in cache
+		siblingDigest, ok := T.cache[siblingID] 
+		if !ok {
 			siblingDigest = T.getEmpty(len(siblingID))
 		}
 
