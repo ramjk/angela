@@ -74,7 +74,7 @@ func TestSortTransactions(t *testing.T) {
 }
 
 func TestBatchInsert(t * testing.T) {
-	transactionLen := 8
+	transactionLen := NUMITERATIONS
 	tree, _ := makeTree()
 
 	transactions := make([]*transaction, transactionLen)

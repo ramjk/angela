@@ -140,7 +140,7 @@ func (T *SparseMerkleTree) batchInsert(transactions batchedTransaction) (bool, e
 
 	for i:=0; i<len(transactions); i++ {
 		wg.Add(1)
-		go T.percolate(transactions[i].id, transactions[i].data, wg)
+		go T.percolate(transactions[i].id, transactions[i].data, &wg)
 	}
 	wg.Wait()
 
@@ -151,7 +151,7 @@ func (T *SparseMerkleTree) batchInsert(transactions batchedTransaction) (bool, e
 
 }
 
-func (T *SparseMerkleTree) percolate(index string, data string, wg sync.WaitGroup) (bool, error) {
+func (T *SparseMerkleTree) percolate(index string, data string, wg *sync.WaitGroup) (bool, error) {
 	defer wg.Done()
 	
 	//TODO: You should not hash the value passed in if it not a leaf ie in the root tree
