@@ -100,7 +100,7 @@ func (T *SparseMerkleTree) insert(index string, data string) (bool) {
 		parentID := getParent(currID)
 
 		// Get the digest of the current node and sibling
-		currDigest, _ := T.cache.Load(currID) // currID will always be in cache
+		currDigest, _ := T.cache.Load(currID) // currID will always be in cacheg
 		siblingDigest, ok := T.cache[siblingID] 
 		if !ok {
 			siblingDigest = T.getEmpty(len(siblingID))
