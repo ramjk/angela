@@ -100,10 +100,14 @@ func (T *SparseMerkleTree) insert(index string, data string) (bool) {
 		parentID := getParent(currID)
 
 		// Get the digest of the current node and sibling
-		currDigest, _ := T.cache.Load(currID) // currID will always be in cacheg
-		siblingDigest, ok := T.cache[siblingID] 
+		value, _ := T.cache.Load(currID) // currID will always be in cache
+		currDigest := value.(digest)
+		value, ok := T.cache.Load(siblingID)
+		var siblingDigest digest
 		if !ok {
 			siblingDigest = T.getEmpty(len(siblingID))
+		} else {
+			siblingDigest = value.(digest)
 		}
 
 		// Hash the digests of the left and right children
@@ -113,12 +117,13 @@ func (T *SparseMerkleTree) insert(index string, data string) (bool) {
 		} else {
 			parentDigest = hashDigest(T.H, append(currDigest, siblingDigest...))
 		}
-		T.cache[parentID] = parentDigest
+		T.cache.Store(parentID, parentDigest)
 
 		// Traverse up the tree by making the current node the parent node
 		currID = parentID
 	}
-	T.rootDigest = T.cache[currID]
+	value, _ := T.cache.Load(currID)
+	T.rootDigest = value.(digest)
 	return true
 }
 
@@ -140,7 +145,8 @@ func (T *SparseMerkleTree) batchInsert(transactions batchedTransaction) (bool, e
 	}
 	wg.Wait()
 
-	T.rootDigest = T.cache[""]
+	value, _ := T.cache.Load("")
+	T.rootDigest = value.(digest)
 
 	return true, nil
 
@@ -150,7 +156,7 @@ func (T *SparseMerkleTree) percolate(index string, data string, wg sync.WaitGrou
 	defer wg.Done()
 	
 	//TODO: You should not hash the value passed in if it not a leaf ie in the root tree
-	T.cache[index] = hashDigest(T.H, []byte(data)) 
+	T.cache.Store(index, hashDigest(T.H, []byte(data))) 
 
 	var currID string
 	for currID = index; len(currID) > 0; {
@@ -164,10 +170,14 @@ func (T *SparseMerkleTree) percolate(index string, data string, wg sync.WaitGrou
 		}
 
 		// Get the digest of the current node and sibling
-		currDigest := T.cache[currID]
-		siblingDigest, contains := T.cache[siblingID] 
-		if !contains {
+		value, _ := T.cache.Load(currID) // currID will always be in cache
+		currDigest := value.(digest)
+		value, ok := T.cache.Load(siblingID)
+		var siblingDigest digest
+		if !ok {
 			siblingDigest = T.getEmpty(len(siblingID))
+		} else {
+			siblingDigest = value.(digest)
 		}
 
 		// Hash the digests of the left and right children
@@ -177,12 +187,14 @@ func (T *SparseMerkleTree) percolate(index string, data string, wg sync.WaitGrou
 		} else {
 			parentDigest = hashDigest(T.H, append(currDigest, siblingDigest...))
 		}
-		T.cache[parentID] = parentDigest
+		T.cache.Store(parentID, parentDigest)
 
 		// Traverse up the tree by making the current node the parent node
 		currID = parentID
 	}
-	T.rootDigest = T.cache[currID]
+	value, _ := T.cache.Load(currID)
+	T.rootDigest = value.(digest)
+
 	return true, nil
 
 }
@@ -208,8 +220,8 @@ func (T *SparseMerkleTree) generateProof(index string) (Proof) {
 
 	var proof_t ProofType
 	var currID string
-	_, contains := T.cache[index]
-	if !contains {
+	_, ok := T.cache.Load(index)
+	if !ok {
 		proof_t = NONMEMBERSHIP
 		currID = T.getEmptyAncestor(currID)
 	} else {
@@ -224,9 +236,12 @@ func (T *SparseMerkleTree) generateProof(index string) (Proof) {
 	for ; len(currID) > 0; currID = getParent(currID) {
 		// Append the sibling to the copath and advance current node
 		siblingID, _ := getSibling(currID)
-		siblingDigest, contains := T.cache[siblingID]
-		if !contains {
+		value, ok := T.cache.Load(siblingID)
+		var siblingDigest digest
+		if !ok {
 			siblingDigest = T.getEmpty(len(siblingID))
+		} else {
+			siblingDigest = value.(digest)
 		}
 
 		coPathNode := CoPathPair{siblingID, siblingDigest}
@@ -252,9 +267,12 @@ func (T *SparseMerkleTree) verifyProof(proof Proof) (bool) {
 		}
 	}
 
-	rootDigest, contains := T.cache[proof.proofID]
-	if !contains {
+	value, ok := T.cache.Load(proof.proofID)
+	var rootDigest digest
+	if !ok {
 		rootDigest = T.getEmpty(TREE_DEPTH - proofIDLength)
+	} else {
+		rootDigest = value.(digest)
 	}
 
 	for i := 0; i < len(proof.coPath); i++ {
@@ -290,7 +308,7 @@ func makeTree(H hash.Hash) (*SparseMerkleTree, error) {
 	T := SparseMerkleTree{} 
 	T.H = H
 	T.depth = TREE_DEPTH
-	T.cache = make(map[string]digest)	
+	T.cache = sync.Map{}	
 	T.empty_cache = make(map[int]digest)
 	T.empty_cache[0] = hashDigest(H, []byte("0"))  
 	T.rootDigest = T.getEmpty(TREE_DEPTH) // FIXME: Should this be the case for an empty tree?

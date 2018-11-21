@@ -47,7 +47,7 @@ func TestFindConflicts(t *testing.T) {
 	for k, _ := range correct_conflict {
 		val, ok := conflicts[k];
 		if !ok {
-		    t.Error("Conflict not found: %v", k)
+		    t.Error("Conflict not found:")
 		}
 		if val.writeable {
 			t.Error("writeable should be false, is true")
@@ -88,9 +88,9 @@ func TestBatchInsert(t * testing.T) {
 	_ = tree
 
     tree.batchInsert(transactions)
-	for k, v := range tree.conflicts { 
-    fmt.Printf("key[%s] value[%s]\n", k, v.writeable)
-	}
+	// for k, v := range tree.conflicts { 
+ //    fmt.Printf("key[%s] value[%s]\n", k, v.writeable)
+	// }
 
 	
 	for i := 0; i < transactionLen; i++ {
@@ -183,45 +183,61 @@ func TestMembership(t *testing.T) {
 	}
 }
 
-func TestMembershipLarge(t *testing.T) {
+// func TestMembershipLarge(t *testing.T) {
+// 	SHA256 := sha256.New()
+// 	tree, _ := makeTree(SHA256)
+
+// 	indices := make([]string, 0)
+// 	for i := 0; i < NUMITERATIONS; i++ {
+// 		indices = append(indices, randomBitString(TREE_DEPTH))
+// 	}
+
+// 	for i, bitString := range indices {
+// 		data := fmt.Sprintf("angela%d", i)
+// 		tree.insert(bitString, data)
+// 	}
+
+// 	proofs := make([]Proof, len(indices))
+
+// 	for i, bitString := range indices {
+// 		proofs[i] = tree.generateProof(bitString)
+// 	}
+
+// 	for i, proof := range proofs {
+// 		if strings.Compare(proof.proofID, proof.queryID) != 0 {
+// 			t.Error("proofID != queryID")
+// 		}
+// 		if strings.Compare(proof.proofID, indices[i]) != 0 {
+// 			t.Error("i-th proofID != indices[i]")
+// 		}
+// 		if len(proof.coPath) != len(proof.proofID) {
+// 			t.Error("Length of coPath != proofID")
+// 		}
+// 		if len(proof.coPath) != TREE_DEPTH {
+// 			t.Error("Length of copath != TREE_DEPTH")
+// 		}
+// 		if proof.proofType == NONMEMBERSHIP {
+// 			t.Error("Proof of non-membership")
+// 		}
+// 		if !tree.verifyProof(proof) {
+// 			t.Error("Proof was invalid when it was expected to be valid.")
+// 		}
+// 	}
+// }
+
+func TestNonMembership(t *testing.T) {
 	SHA256 := sha256.New()
 	tree, _ := makeTree(SHA256)
 
-	indices := make([]string, 0)
-	for i := 0; i < NUMITERATIONS; i++ {
-		indices = append(indices, randomBitString(TREE_DEPTH))
+	queryID := randomBitString(128)
+	proof := tree.generateProof(queryID)
+
+	if proof.proofType == MEMBERSHIP {
+		t.Error("Proof should be of type nonmembership")
 	}
 
-	for i, bitString := range indices {
-		data := fmt.Sprintf("angela%d", i)
-		tree.insert(bitString, data)
-	}
-
-	proofs := make([]Proof, len(indices))
-
-	for i, bitString := range indices {
-		proofs[i] = tree.generateProof(bitString)
-	}
-
-	for i, proof := range proofs {
-		if strings.Compare(proof.proofID, proof.queryID) != 0 {
-			t.Error("proofID != queryID")
-		}
-		if strings.Compare(proof.proofID, indices[i]) != 0 {
-			t.Error("i-th proofID != indices[i]")
-		}
-		if len(proof.coPath) != len(proof.proofID) {
-			t.Error("Length of coPath != proofID")
-		}
-		if len(proof.coPath) != TREE_DEPTH {
-			t.Error("Length of copath != TREE_DEPTH")
-		}
-		if proof.proofType == NONMEMBERSHIP {
-			t.Error("Proof of non-membership")
-		}
-		if !tree.verifyProof(proof) {
-			t.Error("Proof was invalid when it was expected to be valid.")
-		}
+	if tree.verifyProof(proof) == false {
+		t.Error("Proof was not verified")
 	}
 }
 
