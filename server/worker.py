@@ -1,7 +1,7 @@
 import ray
 from typing import List
 
-from transaction import Transaction
+from server.transaction import Transaction
 
 @ray.remote
 class Worker(object):

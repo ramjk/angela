@@ -11,7 +11,7 @@ import (
 	"sort"
 )
 
-const NUMITERATIONS int = 10000
+const NUMITERATIONS int = 1000
 
 func randomBitString(digestSize int) (string) {
 	rand.Seed(time.Now().UTC().UnixNano())
