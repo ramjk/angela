@@ -2,7 +2,7 @@ package merkle
 
 import (
 	_ "fmt"
-	"hash"
+	"crypto/sha256"
 	"bytes"
 	"sync"
 	"sort"
@@ -13,7 +13,6 @@ const TREE_DEPTH int = 256
 type digest = []byte
 
 type SparseMerkleTree struct {
-	H hash.Hash 
 	depth int
 	cache sync.Map
 	rootDigest digest
@@ -29,13 +28,13 @@ type SyncBool struct {
 func (T *SparseMerkleTree) getEmpty(n int) (digest) {
 	if (len(T.empty_cache) <= n) {
 		t := T.getEmpty(n - 1)
-		T.empty_cache[n] = hashDigest(T.H, append(t[:], t[:]...))
+		T.empty_cache[n] = hashDigest(append(t[:], t[:]...))
 	} 
 	return T.empty_cache[n]
 }
 
-func hashDigest(H hash.Hash, data []byte) (digest) {
-	defer H.Reset()
+func hashDigest(data []byte) (digest) {
+	H := sha256.New()
 	H.Write(data)
 	return H.Sum(nil)
 }
@@ -90,7 +89,7 @@ func (T *SparseMerkleTree) getEmptyAncestor(nodeID string) (string) {
 FIXME: What are the error cases where we return error/False?
 */
 func (T *SparseMerkleTree) insert(index string, data string) (bool) {
-	T.cache.Store(index, hashDigest(T.H, []byte(data)))
+	T.cache.Store(index, hashDigest([]byte(data)))
 
 	//FIXME: Actual copy?
 	var currID string
@@ -113,9 +112,9 @@ func (T *SparseMerkleTree) insert(index string, data string) (bool) {
 		// Hash the digests of the left and right children
 		var parentDigest digest
 		if isLeft {
-			parentDigest = hashDigest(T.H, append(siblingDigest, currDigest...))
+			parentDigest = hashDigest(append(siblingDigest, currDigest...))
 		} else {
-			parentDigest = hashDigest(T.H, append(currDigest, siblingDigest...))
+			parentDigest = hashDigest(append(currDigest, siblingDigest...))
 		}
 		T.cache.Store(parentID, parentDigest)
 
@@ -156,7 +155,7 @@ func (T *SparseMerkleTree) percolate(index string, data string, wg sync.WaitGrou
 	defer wg.Done()
 	
 	//TODO: You should not hash the value passed in if it not a leaf ie in the root tree
-	T.cache.Store(index, hashDigest(T.H, []byte(data))) 
+	T.cache.Store(index, hashDigest([]byte(data))) 
 
 	var currID string
 	for currID = index; len(currID) > 0; {
@@ -183,9 +182,9 @@ func (T *SparseMerkleTree) percolate(index string, data string, wg sync.WaitGrou
 		// Hash the digests of the left and right children
 		var parentDigest digest
 		if isLeft {
-			parentDigest = hashDigest(T.H, append(siblingDigest, currDigest...))
+			parentDigest = hashDigest(append(siblingDigest, currDigest...))
 		} else {
-			parentDigest = hashDigest(T.H, append(currDigest, siblingDigest...))
+			parentDigest = hashDigest(append(currDigest, siblingDigest...))
 		}
 		T.cache.Store(parentID, parentDigest)
 
@@ -202,11 +201,11 @@ func (T *SparseMerkleTree) percolate(index string, data string, wg sync.WaitGrou
 func (T *SparseMerkleTree) isConflict(index string) (bool) {
 	if val, ok := T.conflicts[index]; ok { 
 		val.lock.Lock()
+		val := T.conflicts[index]
 		defer val.lock.Unlock()
 
 		if !val.writeable {
-			var tempStruct *SyncBool = T.conflicts[index]
-			tempStruct.writeable = true
+			val.writeable = true
 			return true
 		}
 	}
@@ -278,9 +277,9 @@ func (T *SparseMerkleTree) verifyProof(proof Proof) (bool) {
 	for i := 0; i < len(proof.coPath); i++ {
 		currNode := proof.coPath[i]
 		if currNode.ID[len(currNode.ID) - 1] == '0' {
-			rootDigest = hashDigest(T.H, append(currNode.digest, rootDigest...))
+			rootDigest = hashDigest(append(currNode.digest, rootDigest...))
 		} else {
-			rootDigest = hashDigest(T.H, append(rootDigest, currNode.digest...))
+			rootDigest = hashDigest(append(rootDigest, currNode.digest...))
 		}
 	}
 	return bytes.Equal(rootDigest, T.rootDigest)
@@ -304,13 +303,12 @@ func findConflicts(leaves []*transaction) (map[string]*SyncBool, error) {
 	return conflicts, nil
 }
 
-func makeTree(H hash.Hash) (*SparseMerkleTree, error) {
+func makeTree() (*SparseMerkleTree, error) {
 	T := SparseMerkleTree{} 
-	T.H = H
 	T.depth = TREE_DEPTH
 	T.cache = sync.Map{}	
 	T.empty_cache = make(map[int]digest)
-	T.empty_cache[0] = hashDigest(H, []byte("0"))  
+	T.empty_cache[0] = hashDigest([]byte("0"))  
 	T.rootDigest = T.getEmpty(TREE_DEPTH) // FIXME: Should this be the case for an empty tree?
 	T.conflicts = make(map[string]*SyncBool)
 	return &T, nil

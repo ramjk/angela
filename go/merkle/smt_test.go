@@ -6,7 +6,6 @@ import (
 	"testing"
 	"strings"
 	"bytes"
-	"crypto/sha256"
 	"math/rand"
 	"sync"
 	"sort"
@@ -75,9 +74,8 @@ func TestSortTransactions(t *testing.T) {
 }
 
 func TestBatchInsert(t * testing.T) {
-	SHA256 := sha256.New()
 	transactionLen := 8
-	tree, _ := makeTree(SHA256)
+	tree, _ := makeTree()
 
 	transactions := make([]*transaction, transactionLen)
 
@@ -131,15 +129,14 @@ func TestParentEmpty(t *testing.T) {
 }
 
 func TestConstructor(t *testing.T) {
-	SHA256 := sha256.New()
-	tree, _ := makeTree(SHA256)
+	tree, _ := makeTree()
 
 	if !bytes.Equal(tree.empty_cache[0], tree.getEmpty(0)) {
 		t.Error("empty_cache[0] != getEmpty(0)")
 	}
 
 	actual := tree.getEmpty(0)
-	expected := hashDigest(SHA256, []byte("0"))
+	expected := hashDigest([]byte("0"))
 	if !bytes.Equal(actual, expected) {
 		t.Error("0-th level empty node is incorrect.")
 	}
@@ -152,8 +149,7 @@ func TestConstructor(t *testing.T) {
 func TestMembershipSmall(t *testing.T) {
 	index := "101"
 
-	SHA256 := sha256.New()
-	tree, _ := makeTree(SHA256)
+	tree, _ := makeTree()
 
 	tree.insert(index, "angela")
 
@@ -165,8 +161,7 @@ func TestMembershipSmall(t *testing.T) {
 }
 
 func TestMembership(t *testing.T) {
-	SHA256 := sha256.New()
-	tree, _ := makeTree(SHA256)
+	tree, _ := makeTree()
 
 	index := randomBitString(TREE_DEPTH)
 
@@ -183,51 +178,49 @@ func TestMembership(t *testing.T) {
 	}
 }
 
-// func TestMembershipLarge(t *testing.T) {
-// 	SHA256 := sha256.New()
-// 	tree, _ := makeTree(SHA256)
+func TestMembershipLarge(t *testing.T) {
+	tree, _ := makeTree()
 
-// 	indices := make([]string, 0)
-// 	for i := 0; i < NUMITERATIONS; i++ {
-// 		indices = append(indices, randomBitString(TREE_DEPTH))
-// 	}
+	indices := make([]string, 0)
+	for i := 0; i < NUMITERATIONS; i++ {
+		indices = append(indices, randomBitString(TREE_DEPTH))
+	}
 
-// 	for i, bitString := range indices {
-// 		data := fmt.Sprintf("angela%d", i)
-// 		tree.insert(bitString, data)
-// 	}
+	for i, bitString := range indices {
+		data := fmt.Sprintf("angela%d", i)
+		tree.insert(bitString, data)
+	}
 
-// 	proofs := make([]Proof, len(indices))
+	proofs := make([]Proof, len(indices))
 
-// 	for i, bitString := range indices {
-// 		proofs[i] = tree.generateProof(bitString)
-// 	}
+	for i, bitString := range indices {
+		proofs[i] = tree.generateProof(bitString)
+	}
 
-// 	for i, proof := range proofs {
-// 		if strings.Compare(proof.proofID, proof.queryID) != 0 {
-// 			t.Error("proofID != queryID")
-// 		}
-// 		if strings.Compare(proof.proofID, indices[i]) != 0 {
-// 			t.Error("i-th proofID != indices[i]")
-// 		}
-// 		if len(proof.coPath) != len(proof.proofID) {
-// 			t.Error("Length of coPath != proofID")
-// 		}
-// 		if len(proof.coPath) != TREE_DEPTH {
-// 			t.Error("Length of copath != TREE_DEPTH")
-// 		}
-// 		if proof.proofType == NONMEMBERSHIP {
-// 			t.Error("Proof of non-membership")
-// 		}
-// 		if !tree.verifyProof(proof) {
-// 			t.Error("Proof was invalid when it was expected to be valid.")
-// 		}
-// 	}
-// }
+	for i, proof := range proofs {
+		if strings.Compare(proof.proofID, proof.queryID) != 0 {
+			t.Error("proofID != queryID")
+		}
+		if strings.Compare(proof.proofID, indices[i]) != 0 {
+			t.Error("i-th proofID != indices[i]")
+		}
+		if len(proof.coPath) != len(proof.proofID) {
+			t.Error("Length of coPath != proofID")
+		}
+		if len(proof.coPath) != TREE_DEPTH {
+			t.Error("Length of copath != TREE_DEPTH")
+		}
+		if proof.proofType == NONMEMBERSHIP {
+			t.Error("Proof of non-membership")
+		}
+		if !tree.verifyProof(proof) {
+			t.Error("Proof was invalid when it was expected to be valid.")
+		}
+	}
+}
 
 func TestNonMembership(t *testing.T) {
-	SHA256 := sha256.New()
-	tree, _ := makeTree(SHA256)
+	tree, _ := makeTree()
 
 	queryID := randomBitString(128)
 	proof := tree.generateProof(queryID)
@@ -250,8 +243,7 @@ func benchmarkInsertN(tree *SparseMerkleTree, indices []string, data []string, b
 }
 
 func BenchmarkInsert64(b *testing.B) {
-	SHA256 := sha256.New()
-	tree, _ := makeTree(SHA256)
+	tree, _ := makeTree()
 
 	indices := make([]string, 64)
 	data := make([]string, 64)
@@ -265,8 +257,7 @@ func BenchmarkInsert64(b *testing.B) {
 }
 
 func BenchmarkInsert128(b *testing.B) {
-	SHA256 := sha256.New()
-	tree, _ := makeTree(SHA256)
+	tree, _ := makeTree()
 
 	indices := make([]string, 128)
 	data := make([]string, 128)
@@ -280,8 +271,7 @@ func BenchmarkInsert128(b *testing.B) {
 }
 
 func BenchmarkInsert256(b *testing.B) {
-	SHA256 := sha256.New()
-	tree, _ := makeTree(SHA256)
+	tree, _ := makeTree()
 
 	indices := make([]string, 256)
 	data := make([]string, 256)
@@ -295,8 +285,7 @@ func BenchmarkInsert256(b *testing.B) {
 }
 
 func BenchmarkInsert512(b *testing.B) {
-	SHA256 := sha256.New()
-	tree, _ := makeTree(SHA256)
+	tree, _ := makeTree()
 
 	indices := make([]string, 512)
 	data := make([]string, 512)
@@ -310,8 +299,7 @@ func BenchmarkInsert512(b *testing.B) {
 }
 
 func BenchmarkInsert1024(b *testing.B) {
-	SHA256 := sha256.New()
-	tree, _ := makeTree(SHA256)
+	tree, _ := makeTree()
 
 	indices := make([]string, 1024)
 	data := make([]string, 1024)
@@ -325,8 +313,7 @@ func BenchmarkInsert1024(b *testing.B) {
 }
 
 func BenchmarkInsert2048(b *testing.B) {
-	SHA256 := sha256.New()
-	tree, _ := makeTree(SHA256)
+	tree, _ := makeTree()
 
 	indices := make([]string, 2048)
 	data := make([]string, 2048)
@@ -340,8 +327,7 @@ func BenchmarkInsert2048(b *testing.B) {
 }
 
 func BenchmarkInsert4096(b *testing.B) {
-	SHA256 := sha256.New()
-	tree, _ := makeTree(SHA256)
+	tree, _ := makeTree()
 
 	indices := make([]string, 4096)
 	data := make([]string, 4096)
@@ -355,8 +341,7 @@ func BenchmarkInsert4096(b *testing.B) {
 }
 
 func BenchmarkInsert8096(b *testing.B) {
-	SHA256 := sha256.New()
-	tree, _ := makeTree(SHA256)
+	tree, _ := makeTree()
 
 	indices := make([]string, 8096)
 	data := make([]string, 8096)
