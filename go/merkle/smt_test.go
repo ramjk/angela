@@ -257,6 +257,28 @@ func TestNonMembership(t *testing.T) {
 	}
 }
 
+func TestDatabaseConnection(t *testing.T) {
+	db, err := getAngelaDB()
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+
+	id, err := db.insertNode("001", "RAM", 1)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(id)
+
+	nodeDigest, err := db.getLatestNodeDigest("001", 2)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(nodeDigest)
+}
+
+
+
 func benchmarkInsertN(tree *SparseMerkleTree, indices []string, data []string, b *testing.B) {
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {

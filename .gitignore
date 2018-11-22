@@ -11,3 +11,6 @@ __pycache__/
 
 *.pyc
 .DS_Store
+
+# Ignore DB config
+*config.go

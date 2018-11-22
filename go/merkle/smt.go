@@ -1,7 +1,7 @@
 package merkle
 
 import (
-	_ "fmt"
+	"fmt"
 	"crypto/sha256"
 	"bytes"
 	"sync"
@@ -128,9 +128,38 @@ func (T *SparseMerkleTree) insert(index string, data string) (bool) {
 	return true
 }
 
+func (T *SparseMerkleTree) preloadCopaths(transactions batchedTransaction) (bool, error) {
+	// compute copaths that need to be pulled in (need ids alone)
+	copaths := make(map[string]bool)
+
+	transactionLength := len(transactions)
+	var currID string
+
+	for i := 0; i < transactionLength; i++ {
+		currID = transactions[i].id
+		// Our stopping condition is length > 0 so we don't add the root to the copath
+		for ; len(currID) > 0; currID = getParent(currID) {
+			siblingID, _ := getSibling(currID)
+			copaths[siblingID] = true
+		}
+	}
+
+	copathPairs, err := retrieveCopaths(copaths)
+	if err != nil {
+		return false, err
+	}
+
+	for i := 0; i < len(copathPairs); i++ {
+		T.cache.Store(copathPairs[i].ID, copathPairs[i].digest)
+	}
+	return true, nil
+}
+
 
 func (T *SparseMerkleTree) batchInsert(transactions batchedTransaction) (bool, error) {	
 	sort.Sort(batchedTransaction(transactions))
+	T.preloadCopaths(transactions[:])
+	fmt.Println(T.cache)
 	var err error
 	T.conflicts, err = findConflicts(transactions)
 	if err != nil {
