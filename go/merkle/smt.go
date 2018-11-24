@@ -151,6 +151,31 @@ func (T *SparseMerkleTree) batchInsert(transactions batchedTransaction) (bool, e
 
 }
 
+func (T *SparseMerkleTree) batch2Insert(transactions batchedTransaction) (bool, error) {
+
+	sort.Sort(batchedTransaction(transactions))
+	var err error
+	T.conflicts, err = findConflicts(transactions)
+	if err != nil {
+		return false, err
+	}
+
+	var wg sync.WaitGroup
+	lenTrans := len(transactions)
+
+	for i:=0; i<len(transactions); i+=500 {
+		wg.Add(1)
+		go T.batchPercolate(transactions[i:min(i+500, lenTrans)], &wg)
+	}
+	wg.Wait()
+
+	value, _ := T.cache.Load("")
+	T.rootDigest = value.(digest)
+
+	return true, nil
+
+}
+
 func (T *SparseMerkleTree) percolate(index string, data string, wg *sync.WaitGroup) (bool, error) {
 	defer wg.Done()
 	
@@ -196,6 +221,59 @@ func (T *SparseMerkleTree) percolate(index string, data string, wg *sync.WaitGro
 
 	return true, nil
 
+}
+
+func (T *SparseMerkleTree) batchPercolate(transactions batchedTransaction, wg *sync.WaitGroup) (bool, error) {
+	defer wg.Done()
+	
+	for _, trans := range transactions {
+		index := trans.id
+		data := trans.data
+
+		//TODO: You should not hash the value passed in if it not a leaf ie in the root tree
+		T.cache.Store(index, hashDigest([]byte(data))) 
+
+		var currID string
+		for currID = index; len(currID) > 0; {
+			// Get both the parent and sibling IDs
+			siblingID, isLeft := getSibling(currID)
+			parentID := getParent(currID)
+
+			//conflict check
+			if T.isConflict(parentID) {
+				continue
+			}
+
+			// Get the digest of the current node and sibling
+			value, _ := T.cache.Load(currID) // currID will always be in cache
+			currDigest := value.(digest)
+			value, ok := T.cache.Load(siblingID)
+			var siblingDigest digest
+			if !ok {
+				siblingDigest = T.getEmpty(len(siblingID))
+			} else {
+				siblingDigest = value.(digest)
+			}
+
+			// Hash the digests of the left and right children
+			var parentDigest digest
+			if isLeft {
+				parentDigest = hashDigest(append(siblingDigest, currDigest...))
+			} else {
+				parentDigest = hashDigest(append(currDigest, siblingDigest...))
+			}
+			T.cache.Store(parentID, parentDigest)
+
+			// Traverse up the tree by making the current node the parent node
+			currID = parentID
+		}
+		value, _ := T.cache.Load(currID)
+		T.rootDigest = value.(digest)
+
+		continue
+	}
+
+	return true, nil
 }
 
 func (T *SparseMerkleTree) isConflict(index string) (bool) {

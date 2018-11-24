@@ -16,3 +16,8 @@ func (s batchedTransaction) Swap(i, j int) {
 func (s batchedTransaction) Less(i, j int) bool {
     return s[i].id < s[j].id
 }
+
+func min(i int, j int) int {
+	if i < j { return i }
+	return  j
+}
