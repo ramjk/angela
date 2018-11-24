@@ -33,7 +33,7 @@ provider:
     # Availability zone(s), comma-separated, that nodes may be launched in.
     # Nodes are currently spread between zones by a round-robin approach,
     # however this implementation detail should not be relied upon.
-    availability_zone: us-west-2a,us-west-2b
+    availability_zone: us-west-2a,us-west-2b, us-west-2c
 
 # How Ray will authenticate with newly launched nodes.
 auth:
@@ -41,7 +41,7 @@ auth:
 # By default Ray creates a new private keypair, but you can also use your own.
 # If you do so, make sure to also set "KeyName" in the head and worker node
 # configurations below.
-#    ssh_private_key: /path/to/your/key.pem
+    # ssh_private_key: ~/.ssh/ray-autoscaler_us-west-2.pem
 
 # Provider-specific config for the head node, e.g. instance type. By default
 # Ray will auto-configure unspecified fields such as SubnetId and KeyName.
@@ -49,7 +49,7 @@ auth:
 # http://boto3.readthedocs.io/en/latest/reference/services/ec2.html#EC2.ServiceResource.create_instances
 head_node:
     InstanceType: m5.large
-    ImageId: ami-0bdb828fd58c52235  # US West N. California, HVM (SSD) EBS-Backed 64-bit
+    ImageId: ami-a0cfeed8  # US West Oregon, HVM (SSD) EBS-Backed 64-bit
 
     # You can provision additional disk space with a conf as follows
     # BlockDeviceMappings:
@@ -65,7 +65,7 @@ head_node:
 # http://boto3.readthedocs.io/en/latest/reference/services/ec2.html#EC2.ServiceResource.create_instances
 worker_nodes:
     InstanceType: m5.large
-    ImageId: ami-0bdb828fd58c52235  # US West N. California, HVM (SSD) EBS-Backed 64-bit
+    ImageId: ami-a0cfeed8  # US West Oregon, HVM (SSD) EBS-Backed 64-bit
 
     # Run workers on spot by default. Comment this out to use on-demand.
     InstanceMarketOptions:
