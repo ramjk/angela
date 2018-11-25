@@ -78,32 +78,35 @@ func TestSortTransactions(t *testing.T) {
 	}
 }
 
-func TestBatchInsert(t * testing.T) {
-	transactionLen := NUMITERATIONS
-	tree, _ := makeTree()
+// func TestBatchInsert(t * testing.T) {
+// 	transactionLen := NUMITERATIONS
+// 	tree, _ := makeTree()
 
-	transactions := make([]*transaction, transactionLen)
+// 	transactions := make([]*transaction, transactionLen)
 
-	for i := 0; i < transactionLen; i++ {
-		transactions[i] = &transaction{randomBitString(TREE_DEPTH), fmt.Sprintf("angela%d", i)}
-	}
+// 	for i := 0; i < transactionLen; i++ {
+// 		transactions[i] = &transaction{randomBitString(TREE_DEPTH), fmt.Sprintf("angela%d", i)}
+// 	}
 
-	_ = tree
+// 	_ = tree
 
-    tree.batchInsert(transactions)
+//     tree.batchInsert(transactions)
+// 	// for k, v := range tree.conflicts { 
+//  //    fmt.Printf("key[%s] value[%s]\n", k, v.writeable)
+// 	// }
 	
-	for i := 0; i < transactionLen; i++ {
-		proof := tree.generateProof(transactions[i].id)
+// 	for i := 0; i < transactionLen; i++ {
+// 		proof := tree.generateProof(transactions[i].id)
 
-		if len(proof.coPath) != TREE_DEPTH {
-			t.Error("Length of the copath was not equal to TREE_DEPTH.")
-		}
+// 		if len(proof.coPath) != TREE_DEPTH {
+// 			t.Error("Length of the copath was not equal to TREE_DEPTH.")
+// 		}
 
-		if !tree.verifyProof(proof) {
-			t.Error("Proof was invalid when it was expected to be valid.")
-		}
-	}
-}
+// 		if !tree.verifyProof(proof) {
+// 			t.Error("Proof was invalid when it was expected to be valid.")
+// 		}
+// 	}
+// }
 
 func TestBatch2Insert(t * testing.T) {
 	transactionLen := NUMITERATIONS

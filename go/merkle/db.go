@@ -162,7 +162,7 @@ func (db *angelaDB) insertChangeList(changeList []*CoPathPair, currentEpoch int6
 	stmt, err := db.getChangeListInsertStmt(len(changeList))
 
 	if err != nil {
-		return -1, fmt.Errorf("[aurora]: error in getting copath statement: %v", err)
+		return -1, fmt.Errorf("[aurora]: error in making changeList statement: %v", err)
 	}
 
 	vals := []interface{}{}
@@ -244,7 +244,7 @@ func (db *angelaDB) getCopathQueryStmt(numNodes int) (*sql.Stmt, error) {
 func (db *angelaDB) retrieveLatestCopathDigests(copaths []string) ([]*CoPathPair, error) {
 	stmt, err := db.getCopathQueryStmt(len(copaths))
 	if err != nil {
-		return make([]*CoPathPair, 0), fmt.Errorf("[aurora]: error in getting copath statement: %v", err)
+		return make([]*CoPathPair, 0), fmt.Errorf("[aurora]: error in making copath statement: %v", err)
 	}
 	vals := []interface{}{}
 	for _, id := range copaths {
