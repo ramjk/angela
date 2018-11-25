@@ -36,11 +36,18 @@ const getLatestNodeStmt = `
 	ORDER BY epochNumber DESC
 	LIMIT 1
 	`
+const getLastThousandNodesStmt = `
+	SELECT nodeId, nodeDigest
+	FROM nodes
+	ORDER BY id DESC
+	LIMIT 1000
+	`
 
 type angelaDB struct {
 	conn *sql.DB
 	insert *sql.Stmt
 	getLatest *sql.Stmt
+	getLastThousand *sql.Stmt
 }
 
 func getAngelaDBConnectionString() string {
@@ -72,6 +79,11 @@ func getAngelaDB() (*angelaDB, error) {
 	angela.getLatest, err = conn.Prepare(getLatestNodeStmt)
 	if err != nil {
 		return nil, fmt.Errorf("[aurora]: error in preparing get statement: %v", err)		
+	}
+
+	angela.getLastThousand, err = conn.Prepare(getLastThousandNodesStmt)
+	if err != nil {
+		return nil, fmt.Errorf("[aurora]: error in preparing get thousand statement: %v", err)		
 	}
 
 	return angela, nil
@@ -128,6 +140,48 @@ func (db *angelaDB) insertNode(nodeId string, nodeDigest string, epochNumber int
 	return lastInsertID, nil
 }
 
+func (db *angelaDB) getChangeListInsertStmt(numNodes int) (*sql.Stmt, error) {
+	var buffer bytes.Buffer
+
+	buffer.WriteString("INSERT into nodes(nodeId, nodeDigest, epochNumber) VALUES ")
+    for i := 0; i < numNodes - 1; i++ {
+        buffer.WriteString("(?, ?, ?),")
+    }
+    buffer.WriteString("(?, ?, ?)")
+
+    stmt := buffer.String()
+
+    changeListStmt, err := db.conn.Prepare(stmt)
+	if err != nil {
+		return nil, fmt.Errorf("[aurora]: error in preparing write statement: %v", err)		
+	}
+	return changeListStmt, nil
+}
+
+func (db *angelaDB) insertChangeList(changeList []*CoPathPair, currentEpoch int64) (int64, error) {
+	stmt, err := db.getChangeListInsertStmt(len(changeList))
+
+	if err != nil {
+		return -1, fmt.Errorf("[aurora]: error in getting copath statement: %v", err)
+	}
+
+	vals := []interface{}{}
+	for _, elem := range changeList {
+	    vals = append(vals, elem.ID, elem.digest, currentEpoch)
+	}
+	//format all vals at once
+	res, err := stmt.Exec(vals...)	
+	if err != nil {
+		return -1, fmt.Errorf("[aurora] error in inserting hash nodes: %v", err)
+	}
+
+	lastInsertID, err := res.LastInsertId()
+	if err != nil {
+		return -1, fmt.Errorf("[aurora]: could not get last insert ID: %v", err)
+	}
+	return lastInsertID, nil
+}
+
 type rowScanner interface {
 	Scan(dest ...interface{}) error
 }
@@ -148,10 +202,30 @@ func readRows(scanner rowScanner) (*CoPathPair, error) {
 	return coPathPair, nil
 }
 
+func (db *angelaDB) getLastThousandNodes() ([]*CoPathPair, error) {
+	rows, err := db.getLastThousand.Query()
+	if err != nil {
+		return make([]*CoPathPair, 0), fmt.Errorf("[aurora]: error in querying copath statement: %v", err)
+	}
+	defer rows.Close()
+
+	var results []*CoPathPair
+	for rows.Next() {
+		copathPair, err := readRows(rows)
+		if err != nil {
+			return make([]*CoPathPair, 0), fmt.Errorf("[aurora]: could not read row: %v", err)
+		}
+		results = append(results, copathPair)
+	}
+
+	return results, nil
+}
+
 func (db *angelaDB) getCopathQueryStmt(numNodes int) (*sql.Stmt, error) {
 
 	var buffer bytes.Buffer
 
+	// TODO: Get only the latest node id, node digest pair 
 	buffer.WriteString("SELECT nodeId, nodeDigest FROM nodes WHERE nodeId IN (")
     for i := 0; i < numNodes - 1; i++ {
         buffer.WriteString("?,")
@@ -167,17 +241,16 @@ func (db *angelaDB) getCopathQueryStmt(numNodes int) (*sql.Stmt, error) {
 	return copathStmt, nil
 }
 
-
-func (db *angelaDB) retrieveLatestCopathDigests(copaths map[string]bool) ([]*CoPathPair, error) {
+func (db *angelaDB) retrieveLatestCopathDigests(copaths []string) ([]*CoPathPair, error) {
 	stmt, err := db.getCopathQueryStmt(len(copaths))
 	if err != nil {
 		return make([]*CoPathPair, 0), fmt.Errorf("[aurora]: error in getting copath statement: %v", err)
 	}
-	ids := make([]string, 0, len(copaths))
-    for k := range copaths {
-        ids = append(ids, k)
-    }
-	rows, err := stmt.Query(ids)
+	vals := []interface{}{}
+	for _, id := range copaths {
+	    vals = append(vals, id)
+	}
+	rows, err := stmt.Query(vals...)
 	if err != nil {
 		return make([]*CoPathPair, 0), fmt.Errorf("[aurora]: error in querying copath statement: %v", err)
 	}

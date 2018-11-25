@@ -11,10 +11,15 @@ import (
 	"sort"
 )
 
-const NUMITERATIONS int = 1000
+const NUMITERATIONS int = 150
+
+var seedNum int64 = 0
 
 func randomBitString(digestSize int) (string) {
 	rand.Seed(time.Now().UTC().UnixNano())
+	// use to get same input over multiple runs
+	rand.Seed(seedNum)
+	seedNum += 1
 	result := ""
 	for i := 0; i < digestSize; i++ {
 		bit := rand.Int31n(2)
@@ -124,6 +129,18 @@ func TestBatch2Insert(t * testing.T) {
 		if !tree.verifyProof(proof) {
 			t.Error("Proof was invalid when it was expected to be valid.")
 		}
+	}
+}
+
+func TestGetLastThousandNodes(t *testing.T) {
+	nodes, err := getLastThousandNodes()
+	if err != nil {
+		t.Error(err)
+	}
+	for _, elem := range nodes {
+		fmt.Println("NODE")
+		fmt.Println(elem.ID)
+		fmt.Println(elem.digest)
 	}
 }
 
