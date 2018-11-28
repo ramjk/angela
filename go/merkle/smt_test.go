@@ -48,8 +48,8 @@ func TestFindConflicts(t *testing.T) {
 		if !ok {
 		    t.Error("Conflict not found:")
 		}
-		if val.writeable {
-			t.Error("writeable should be false, is true")
+		if val.visited {
+			t.Error("visited should be false, is true")
 		}	
 	}
 }
@@ -86,10 +86,6 @@ func TestBatchInsert(t * testing.T) {
 	_ = tree
 
     tree.batchInsert(transactions)
-	// for k, v := range tree.conflicts { 
- //    fmt.Printf("key[%s] value[%s]\n", k, v.writeable)
-	// }
-
 	
 	for i := 0; i < transactionLen; i++ {
 		proof := tree.generateProof(transactions[i].id)
@@ -104,36 +100,36 @@ func TestBatchInsert(t * testing.T) {
 	}
 }
 
-func TestBatch2Insert(t * testing.T) {
-	transactionLen := NUMITERATIONS
-	tree, _ := makeTree()
+// func TestBatch2Insert(t * testing.T) {
+// 	transactionLen := NUMITERATIONS
+// 	tree, _ := makeTree()
 
-	transactions := make([]*transaction, transactionLen)
+// 	transactions := make([]*transaction, transactionLen)
 
-	for i := 0; i < transactionLen; i++ {
-		transactions[i] = &transaction{randomBitString(TREE_DEPTH), fmt.Sprintf("angela%d", i)}
-	}
+// 	for i := 0; i < transactionLen; i++ {
+// 		transactions[i] = &transaction{randomBitString(TREE_DEPTH), fmt.Sprintf("angela%d", i)}
+// 	}
 
-	_ = tree
+// 	_ = tree
 
-    tree.batch2Insert(transactions)
-	// for k, v := range tree.conflicts { 
- //    fmt.Printf("key[%s] value[%s]\n", k, v.writeable)
-	// }
+//     tree.batch2Insert(transactions)
+// 	// for k, v := range tree.conflicts { 
+//  //    fmt.Printf("key[%s] value[%s]\n", k, v.visited)
+// 	// }
 
 	
-	for i := 0; i < transactionLen; i++ {
-		proof := tree.generateProof(transactions[i].id)
+// 	for i := 0; i < transactionLen; i++ {
+// 		proof := tree.generateProof(transactions[i].id)
 
-		if len(proof.coPath) != TREE_DEPTH {
-			t.Error("Length of the copath was not equal to TREE_DEPTH.")
-		}
+// 		if len(proof.coPath) != TREE_DEPTH {
+// 			t.Error("Length of the copath was not equal to TREE_DEPTH.")
+// 		}
 
-		if !tree.verifyProof(proof) {
-			t.Error("Proof was invalid when it was expected to be valid.")
-		}
-	}
-}
+// 		if !tree.verifyProof(proof) {
+// 			t.Error("Proof was invalid when it was expected to be valid.")
+// 		}
+// 	}
+// }
 
 func TestSibling(t *testing.T) {
 	index := "11100010"
@@ -383,4 +379,19 @@ func BenchmarkInsert8096(b *testing.B) {
 	}
 
 	benchmarkInsertN(tree, indices, data, b)
+}
+
+func BenchmarkBatchInsert8096(b *testing.B) {
+	tree, _ := makeTree()
+
+	transactions := make([]*transaction, 8096)
+
+	for i := 0; i < 8096; i++ {
+		index := randomBitString(TREE_DEPTH)
+		d := fmt.Sprintf("angela%d", i)
+		t := transaction{id: index, data: d}
+		transactions[i] = &t
+	}
+
+	tree.batchInsert(transactions)
 }
