@@ -14,9 +14,9 @@ type digest = []byte
 
 type SparseMerkleTree struct {
 	depth int
-	cache sync.Map
+	cache []*CacheEntry
 	rootDigest digest
-	empty_cache map[int]digest
+	emptyCache map[int]digest
 	conflicts map[string]*SyncBool
 }
 
@@ -25,12 +25,17 @@ type SyncBool struct {
 	writeable bool
 }
 
+type CacheEntry struct {
+	id string
+	data digest
+}
+
 func (T *SparseMerkleTree) getEmpty(n int) (digest) {
-	if (len(T.empty_cache) <= n) {
+	if (len(T.emptyCache) <= n) {
 		t := T.getEmpty(n - 1)
-		T.empty_cache[n] = hashDigest(append(t[:], t[:]...))
+		T.emptyCache[n] = hashDigest(append(t[:], t[:]...))
 	} 
-	return T.empty_cache[n]
+	return T.emptyCache[n]
 }
 
 func hashDigest(data []byte) (digest) {
@@ -46,6 +51,14 @@ func getParent(nodeID string) (string) {
 	}
 
 	return nodeID[:length - 1]
+}
+
+func isLeft(nodeID string) (bool) {
+	lastBit := nodeID[length - 1]
+	if (lastBit == byte('0')) {
+		return false
+	} 
+	return true
 }
 
 func getSibling(nodeID string) (string, bool) {
@@ -75,7 +88,7 @@ func (T *SparseMerkleTree) getEmptyAncestor(nodeID string) (string) {
 	currID := nodeID
 	prevID := currID
 	for (len(currID) > 0) {
-		if _, ok := T.cache.Load(currID); ok {
+		if _, ok := T.cache.Load(currID); ok { // fix me
 			break
 		}
 		prevID = currID
@@ -87,6 +100,9 @@ func (T *SparseMerkleTree) getEmptyAncestor(nodeID string) (string) {
 /* Assume index is valid (for now).
 
 FIXME: What are the error cases where we return error/False?
+
+do we even need this insert function
+
 */
 func (T *SparseMerkleTree) insert(index string, data string) (bool) {
 	T.cache.Store(index, hashDigest([]byte(data)))
@@ -140,7 +156,7 @@ func (T *SparseMerkleTree) batchInsert(transactions batchedTransaction) (bool, e
 
 	for i:=0; i<len(transactions); i++ {
 		wg.Add(1)
-		go T.percolate(transactions[i].id, transactions[i].data, &wg)
+		go T.percolate(transactions[i].id, transactions[i].data, &wg, cacheSlice)
 	}
 	wg.Wait()
 
@@ -176,48 +192,32 @@ func (T *SparseMerkleTree) batch2Insert(transactions batchedTransaction) (bool, 
 
 }
 
-func (T *SparseMerkleTree) percolate(index string, data string, wg *sync.WaitGroup) (bool, error) {
+func (T *SparseMerkleTree) percolate(index string, data string, wg *sync.WaitGroup, cacheSlice []*CacheEntry) (bool, error) {
 	defer wg.Done()
 	
 	//TODO: You should not hash the value passed in if it not a leaf ie in the root tree
-	T.cache.Store(index, hashDigest([]byte(data))) 
+	cacheSlice[0] = hashDigest([]byte(data)) 
 
-	var currID string
-	for currID = index; len(currID) > 0; {
-		// Get both the parent and sibling IDs
-		siblingID, isLeft := getSibling(currID)
-		parentID := getParent(currID)
+	for index := 0; index < len(cacheSlice)-1; index += 2 {
+		currEntry := cacheSlice[index]
+		siblingEntry := cacheSlice[index+1]
+		siblingIsLeft := isLeft(siblingID)
+		parentEntry := cacheSlice[index+2]
 
-		//conflict check
-		if T.isConflict(parentID) {
+		if T.isConflict(parentEntry.id) {
 			return true, nil
-		}
-
-		// Get the digest of the current node and sibling
-		value, _ := T.cache.Load(currID) // currID will always be in cache
-		currDigest := value.(digest)
-		value, ok := T.cache.Load(siblingID)
-		var siblingDigest digest
-		if !ok {
-			siblingDigest = T.getEmpty(len(siblingID))
-		} else {
-			siblingDigest = value.(digest)
 		}
 
 		// Hash the digests of the left and right children
 		var parentDigest digest
 		if isLeft {
-			parentDigest = hashDigest(append(siblingDigest, currDigest...))
+			parentDigest = hashDigest(append(siblingEntry.data, currEntry.data...))
 		} else {
-			parentDigest = hashDigest(append(currDigest, siblingDigest...))
+			parentDigest = hashDigest(append(currEntry.data, siblingEntry.data...))
 		}
-		T.cache.Store(parentID, parentDigest)
-
-		// Traverse up the tree by making the current node the parent node
-		currID = parentID
+		parentEntry.data = parentDigest
 	}
-	value, _ := T.cache.Load(currID)
-	T.rootDigest = value.(digest)
+	T.rootDigest = cacheSlice[len(cacheSlice)-1]
 
 	return true, nil
 
@@ -385,8 +385,8 @@ func makeTree() (*SparseMerkleTree, error) {
 	T := SparseMerkleTree{} 
 	T.depth = TREE_DEPTH
 	T.cache = sync.Map{}	
-	T.empty_cache = make(map[int]digest)
-	T.empty_cache[0] = hashDigest([]byte("0"))  
+	T.emptyCache = make(map[int]digest)
+	T.emptyCache[0] = hashDigest([]byte("0"))  
 	T.rootDigest = T.getEmpty(TREE_DEPTH) // FIXME: Should this be the case for an empty tree?
 	T.conflicts = make(map[string]*SyncBool)
 	return &T, nil
