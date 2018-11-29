@@ -11,7 +11,9 @@ import (
 
 const TREE_DEPTH int = 256
 
-const BATCH_SIZE int = 50
+// const BATCH_READ_SIZE int = 5
+
+// const BATCH_PERCOLATE_SIZE int = 10
 
 type digest = []byte
 
@@ -152,6 +154,7 @@ func (T *SparseMerkleTree) preloadCopaths(transactions batchedTransaction, read 
 
 	copathPairs, err := retrieveCopaths(ids)
 	if err != nil {
+		fmt.Println(err)
 		read <- copathPairs
 		return false, err
 	}
@@ -167,12 +170,12 @@ func auroraWriteback(ch chan []*CoPathPair, quit chan bool) {
     		// write back to aurora of the changelist from the channel
     		// fmt.Println("Changelist")
     		// fmt.Println(delta)
-    		id, err := writeChangeList(delta, epochNumber)
+    		numRowsAffected, err := writeChangeList(delta, epochNumber)
     		if err != nil {
     			fmt.Println("Errored with %v", err)
     		}
-    		fmt.Println("Printing the ID")
-    		fmt.Println(id)
+    		fmt.Println("Printing the number of rows affected")
+    		fmt.Println(numRowsAffected)
     	case <-quit:
     		fmt.Println("Done Writing")
     		return
@@ -185,17 +188,17 @@ func (T *SparseMerkleTree) batchInsert(transactions batchedTransaction) (bool, e
 	// fmt.Println("Cache before preload")
 	// fmt.Println(T.cache)
 	sort.Sort(batchedTransaction(transactions))
-	for i := 0; i < len(transactions); i+=BATCH_SIZE {
-		go T.preloadCopaths(transactions[i:min(i+BATCH_SIZE, len(transactions))], readChannel)
+	for i := 0; i < len(transactions); i+=BATCH_READ_SIZE {
+		go T.preloadCopaths(transactions[i:min(i+BATCH_READ_SIZE, len(transactions))], readChannel)
 	}
-	// fmt.Println("Cache after preload")
-	// fmt.Println(T.cache)
-	for i := 0; i < len(transactions); i+=BATCH_SIZE {
+	for i := 0; i < len(transactions); i+=BATCH_READ_SIZE {
 		copathPairs := <-readChannel
 		for j := 0; j < len(copathPairs); j++ {
 			T.cache.Store(copathPairs[j].ID, copathPairs[j].digest)
 		}
 	}
+	// fmt.Println("Cache after preload")
+	// fmt.Println(T.cache)
 	var err error
 	T.conflicts, err = findConflicts(transactions)
 	if err != nil {
@@ -232,11 +235,11 @@ func (T *SparseMerkleTree) batchInsert(transactions batchedTransaction) (bool, e
 func (T *SparseMerkleTree) batch2Insert(transactions batchedTransaction) (bool, error) {
 	readChannel := make(chan []*CoPathPair)
 	sort.Sort(batchedTransaction(transactions))
-	for i := 0; i < len(transactions); i+=BATCH_SIZE {
-		go T.preloadCopaths(transactions[i:min(i+BATCH_SIZE, len(transactions))], readChannel)
+	for i := 0; i < len(transactions); i+=BATCH_READ_SIZE {
+		go T.preloadCopaths(transactions[i:min(i+BATCH_READ_SIZE, len(transactions))], readChannel)
 	}
 
-	for i := 0; i < len(transactions); i+=BATCH_SIZE {
+	for i := 0; i < len(transactions); i+=BATCH_READ_SIZE {
 		copathPairs := <-readChannel
 		for j := 0; j < len(copathPairs); j++ {
 			T.cache.Store(copathPairs[j].ID, copathPairs[j].digest)

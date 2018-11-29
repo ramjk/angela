@@ -11,15 +11,15 @@ import (
 	"sort"
 )
 
-const NUMITERATIONS int = 150
+const NUMITERATIONS int = 10
 
-var seedNum int64 = 0
+// var seedNum int64 = 0
 
 func randomBitString(digestSize int) (string) {
 	rand.Seed(time.Now().UTC().UnixNano())
 	// use to get same input over multiple runs
-	rand.Seed(seedNum)
-	seedNum += 1
+	// rand.Seed(seedNum)
+	// seedNum += 1
 	result := ""
 	for i := 0; i < digestSize; i++ {
 		bit := rand.Int31n(2)
@@ -78,37 +78,7 @@ func TestSortTransactions(t *testing.T) {
 	}
 }
 
-// func TestBatchInsert(t * testing.T) {
-// 	transactionLen := NUMITERATIONS
-// 	tree, _ := makeTree()
-
-// 	transactions := make([]*transaction, transactionLen)
-
-// 	for i := 0; i < transactionLen; i++ {
-// 		transactions[i] = &transaction{randomBitString(TREE_DEPTH), fmt.Sprintf("angela%d", i)}
-// 	}
-
-// 	_ = tree
-
-//     tree.batchInsert(transactions)
-// 	// for k, v := range tree.conflicts { 
-//  //    fmt.Printf("key[%s] value[%s]\n", k, v.writeable)
-// 	// }
-	
-// 	for i := 0; i < transactionLen; i++ {
-// 		proof := tree.generateProof(transactions[i].id)
-
-// 		if len(proof.coPath) != TREE_DEPTH {
-// 			t.Error("Length of the copath was not equal to TREE_DEPTH.")
-// 		}
-
-// 		if !tree.verifyProof(proof) {
-// 			t.Error("Proof was invalid when it was expected to be valid.")
-// 		}
-// 	}
-// }
-
-func TestBatch2Insert(t * testing.T) {
+func TestBatchInsert(t * testing.T) {
 	transactionLen := NUMITERATIONS
 	tree, _ := makeTree()
 
@@ -118,10 +88,11 @@ func TestBatch2Insert(t * testing.T) {
 		transactions[i] = &transaction{randomBitString(TREE_DEPTH), fmt.Sprintf("angela%d", i)}
 	}
 
-	_ = tree
-
-    tree.batch2Insert(transactions)
-
+    tree.batchInsert(transactions)
+	// for k, v := range tree.conflicts { 
+    //   fmt.Printf("key[%s] value[%s]\n", k, v.writeable)
+	// }
+	
 	for i := 0; i < transactionLen; i++ {
 		proof := tree.generateProof(transactions[i].id)
 
@@ -135,15 +106,31 @@ func TestBatch2Insert(t * testing.T) {
 	}
 }
 
-func TestGetLastThousandNodes(t *testing.T) {
-	nodes, err := getLastThousandNodes()
-	if err != nil {
-		t.Error(err)
+func TestBatch2Insert(t * testing.T) {
+	transactionLen := NUMITERATIONS
+	tree, _ := makeTree()
+
+	transactions := make([]*transaction, transactionLen)
+
+	for i := 0; i < transactionLen; i++ {
+		transactions[i] = &transaction{randomBitString(TREE_DEPTH), fmt.Sprintf("angela%d", i)}
 	}
-	for _, elem := range nodes {
-		fmt.Println("NODE")
-		fmt.Println(elem.ID)
-		fmt.Println(elem.digest)
+
+    tree.batch2Insert(transactions)
+	// for k, v := range tree.conflicts { 
+    //   fmt.Printf("key[%s] value[%s]\n", k, v.writeable)
+	// }
+	
+	for i := 0; i < transactionLen; i++ {
+		proof := tree.generateProof(transactions[i].id)
+
+		if len(proof.coPath) != TREE_DEPTH {
+			t.Error("Length of the copath was not equal to TREE_DEPTH.")
+		}
+
+		if !tree.verifyProof(proof) {
+			t.Error("Proof was invalid when it was expected to be valid.")
+		}
 	}
 }
 
@@ -278,23 +265,12 @@ func TestNonMembership(t *testing.T) {
 }
 
 func TestDatabaseConnection(t *testing.T) {
-	db, err := getAngelaDB()
+	db, err := GetAngelaDB()
 	if err != nil {
 		panic(err)
 	}
 	defer db.Close()
-
-	id, err := db.insertNode("001", "RAM", 1)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println(id)
-
-	nodeDigest, err := db.getLatestNodeDigest("001", 2)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println(nodeDigest)
+	// Write a ping here 
 }
 
 
