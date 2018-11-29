@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"sync"
 	"sort"
+	"runtime"
 )
 
 const TREE_DEPTH int = 256
@@ -160,30 +161,40 @@ func (T *SparseMerkleTree) batchInsert(transactions batchedTransaction) (bool, e
 
 }
 
-// func (T *SparseMerkleTree) batch2Insert(transactions batchedTransaction) (bool, error) {
+func (T *SparseMerkleTree) batch2Insert(transactions batchedTransaction) (bool, error) {
 
-// 	sort.Sort(batchedTransaction(transactions))
-// 	var err error
-// 	T.conflicts, err = findConflicts(transactions)
-// 	if err != nil {
-// 		return false, err
-// 	}
+	sort.Sort(batchedTransaction(transactions))
+	var err error
+	T.conflicts, err = findConflicts(transactions)
+	if err != nil {
+		return false, err
+	}
 
-// 	var wg sync.WaitGroup
-// 	lenTrans := len(transactions)
+	for _, transaction := range transactions {
+		for currID := transaction.id; currID != ""; currID = getParent(currID) {
+			placeHolder := T.getEmpty(0)
+			T.cache[currID] = &placeHolder
+		}
+	}
+	placeHolder := T.getEmpty(0)
+	T.cache[""] = &placeHolder
 
-// 	for i:=0; i<len(transactions); i+=500 {
-// 		wg.Add(1)
-// 		go T.batchPercolate(transactions[i:min(i+500, lenTrans)], &wg)
-// 	}
-// 	wg.Wait()
+	var wg sync.WaitGroup
+	lenTrans := len(transactions)
 
-// 	rootLockable := T.cache[""]
-// 	T.rootDigest = rootLockable.digest
+	stepSize := len(transactions) / runtime.GOMAXPROCS(0)
+	for i:=0; i<len(transactions); i+=stepSize {
+		wg.Add(1)
+		go T.batchPercolate(transactions[i:min(i+stepSize, lenTrans)], &wg)
+	}
+	wg.Wait()
 
-// 	return true, nil
+	rootDigestPointer := T.cache[""]
+	T.rootDigest = *rootDigestPointer
 
-// }
+	return true, nil
+
+}
 
 func (T *SparseMerkleTree) percolate(index string, data string, wg *sync.WaitGroup) (bool, error) {
 	defer wg.Done()
@@ -234,58 +245,60 @@ func (T *SparseMerkleTree) percolate(index string, data string, wg *sync.WaitGro
 	return true, nil
 }
 
-// func (T *SparseMerkleTree) batchPercolate(transactions batchedTransaction, wg *sync.WaitGroup) (bool, error) {
-// 	defer wg.Done()
+func (T *SparseMerkleTree) batchPercolate(transactions batchedTransaction, wg *sync.WaitGroup) (bool, error) {
+	defer wg.Done()
 	
-// 	for _, trans := range transactions {
-// 		index := trans.id
-// 		data := trans.data
+	for _, trans := range transactions {
+		index := trans.id
+		data := trans.data
 
-// 		//TODO: You should not hash the value passed in if it not a leaf ie in the root tree
-// 		hash := hashDigest([]byte(data))
-// 		T.cache[index] = &hash
+		//TODO: You should not hash the value passed in if it not a leaf ie in the root tree
+		hash := hashDigest([]byte(data))
+		indexPointer := T.cache[index]
+		*indexPointer = hash
 
-// 		var currID string
-// 		for currID = index; len(currID) > 0; {
-// 			// Get both the parent and sibling IDs
-// 			siblingID, isLeft := getSibling(currID)
-// 			parentID := getParent(currID)
+		var currID string
+		for currID = index; len(currID) > 0; {
+			// Get both the parent and sibling IDs
+			siblingID, isLeft := getSibling(currID)
+			parentID := getParent(currID)
 
-// 			//conflict check
-// 			if T.isConflict(parentID) {
-// 				continue
-// 			}
+			//conflict check
+			if T.isConflict(parentID) {
+				continue
+			}
 
-// 			// Get the digest of the current node and sibling
-// 			currDigestPointer := T.cache[currID] // currID will always be in cache
-// 			siblingDigestPointer, ok := T.cache[siblingID]
-// 			var siblingDigest digest
-// 			if !ok {
-// 				siblingDigest = T.getEmpty(len(siblingID))
-// 			} else {
-// 				siblingDigest = *siblingDigestPointer
-// 			}
-// 			currDigest := *currDigestPointer
+			// Get the digest of the current node and sibling
+			currDigestPointer := T.cache[currID] // currID will always be in cache
+			siblingDigestPointer, ok := T.cache[siblingID]
+			var siblingDigest digest
+			if !ok {
+				siblingDigest = T.getEmpty(len(siblingID))
+			} else {
+				siblingDigest = *siblingDigestPointer
+			}
+			currDigest := *currDigestPointer
 
-// 			// Hash the digests of the left and right children
-// 			var parentDigest digest
-// 			if isLeft {
-// 				parentDigest = hashDigest(append(siblingDigest, currDigest...))
-// 			} else {
-// 				parentDigest = hashDigest(append(currDigest, siblingDigest...))
-// 			}
-// 			T.cache[parentID] = &parentDigest
+			// Hash the digests of the left and right children
+			var parentDigest digest
+			if isLeft {
+				parentDigest = hashDigest(append(siblingDigest, currDigest...))
+			} else {
+				parentDigest = hashDigest(append(currDigest, siblingDigest...))
+			}
+			parentDigestPointer := T.cache[parentID]
+			*parentDigestPointer = parentDigest
 
-// 			// Traverse up the tree by making the current node the parent node
-// 			currID = parentID
-// 		}
-// 		rootDigestPointer := T.cache[currID]
-// 		T.rootDigest = *rootDigestPointer
+			// Traverse up the tree by making the current node the parent node
+			currID = parentID
+		}
+		rootDigestPointer := T.cache[currID]
+		T.rootDigest = *rootDigestPointer
 
-// 		continue
-// 	}
-// 	return true, nil
-// }
+		continue
+	}
+	return true, nil
+}
 
 func (T *SparseMerkleTree) isConflict(index string) (bool) {
 	if val, ok := T.conflicts[index]; ok { 
@@ -395,7 +408,7 @@ func findConflicts(leaves []*transaction) (map[string]*SyncBool, error) {
 func makeTree() (*SparseMerkleTree, error) {
 	T := SparseMerkleTree{} 
 	T.depth = TREE_DEPTH
-	T.cache = make(map[string]*digest, 10000)
+	T.cache = make(map[string]*digest)
 	T.empty_cache = make(map[int]digest)
 	T.empty_cache[0] = hashDigest([]byte("0"))  
 	T.rootDigest = T.getEmpty(TREE_DEPTH) // FIXME: Should this be the case for an empty tree?
