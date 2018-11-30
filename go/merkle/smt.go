@@ -1,7 +1,7 @@
 package merkle
 
 import (
-	_ "fmt"
+	"fmt"
 	"crypto/sha256"
 	"bytes"
 	"sync"
@@ -10,6 +10,10 @@ import (
 )
 
 const TREE_DEPTH int = 256
+
+const BATCH_READ_SIZE int = 100
+
+const BATCH_PERCOLATE_SIZE int = 50
 
 type digest = []byte
 
@@ -128,10 +132,79 @@ func (T *SparseMerkleTree) insert(index string, data string) (bool) {
 	return true
 }
 
+func (T *SparseMerkleTree) preloadCopaths(transactions batchedTransaction, read chan []*CoPathPair, db *angelaDB) (bool, error) {
+	// compute copaths that need to be pulled in (need ids alone)
+	copaths := make(map[string]bool)
+	transactionLength := len(transactions)
+	var currID string
 
-func (T *SparseMerkleTree) batchInsert(transactions batchedTransaction) (bool, error) {	
+	for i := 0; i < transactionLength; i++ {
+		currID = transactions[i].id
+		// Our stopping condition is length > 0 so we don't add the root to the copath
+		for ; len(currID) > 0; currID = getParent(currID) {
+			siblingID, _ := getSibling(currID)
+			copaths[siblingID] = true
+		}
+	}
+
+	ids := make([]string, 0, len(copaths))
+    for k := range copaths {
+        ids = append(ids, k)
+    }
+
+	copathPairs, err := db.retrieveLatestCopathDigests(ids)
+	if err != nil {
+		fmt.Println(err)
+		read <- copathPairs
+		return false, err
+	}
+	read <- copathPairs
+	return true, nil
+}
+
+func auroraWriteback(ch chan []*CoPathPair, quit chan bool, db *angelaDB) {
+	var epochNumber int64 = 1
+    for {
+    	select {
+    	case delta := <-ch:
+    		// write back to aurora of the changelist from the channel
+    		// fmt.Println("Changelist")
+    		// fmt.Println(delta)
+    		_, _ = db.insertChangeList(delta, epochNumber)
+    		// if err != nil {
+    		// 	fmt.Println("Errored with %v", err)
+    		// }
+    		// fmt.Println("Printing the number of rows affected")
+    		// fmt.Println(numRowsAffected)
+    	case <-quit:
+    		fmt.Println("Done Writing")
+    		return
+    	}
+    }
+}
+
+func (T *SparseMerkleTree) batchInsert(transactions batchedTransaction) (bool, error) {
+	readChannel := make(chan []*CoPathPair)
+	db, err := GetAngelaDB()
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+	// fmt.Println("Cache before preload")
+	// fmt.Println(T.cache)
 	sort.Sort(batchedTransaction(transactions))
-	var err error
+	for i := 0; i < len(transactions); i+=BATCH_READ_SIZE {
+		go T.preloadCopaths(transactions[i:min(i+BATCH_READ_SIZE, len(transactions))], readChannel, db)
+	}
+
+	for i := 0; i < len(transactions); i+=BATCH_READ_SIZE {
+		copathPairs := <-readChannel
+		for j := 0; j < len(copathPairs); j++ {
+			T.cache[copathPairs[j].ID] = &copathPairs[j].digest
+		}
+	}
+	// fmt.Println("Cache after preload")
+	// fmt.Println(T.cache)
 	T.conflicts, err = findConflicts(transactions)
 	if err != nil {
 		return false, err
@@ -147,24 +220,42 @@ func (T *SparseMerkleTree) batchInsert(transactions batchedTransaction) (bool, e
 	T.cache[""] = &placeHolder
 
 	var wg sync.WaitGroup
+	ch := make(chan []*CoPathPair)
+	quit := make(chan bool)
+
+	go auroraWriteback(ch, quit, db)
 
 	for i:=0; i<len(transactions); i++ {
 		wg.Add(1)
-		go T.percolate(transactions[i].id, transactions[i].data, &wg)
+		go T.percolate(transactions[i].id, transactions[i].data, &wg, ch)
 	}
 	wg.Wait()
-
+	quit <- true
 	rootDigestPointer := T.cache[""]
 	T.rootDigest = *rootDigestPointer
 
 	return true, nil
-
 }
 
 func (T *SparseMerkleTree) batch2Insert(transactions batchedTransaction) (bool, error) {
-
+	readChannel := make(chan []*CoPathPair)
+	db, err := GetAngelaDB()
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
 	sort.Sort(batchedTransaction(transactions))
-	var err error
+	for i := 0; i < len(transactions); i+=BATCH_READ_SIZE {
+		go T.preloadCopaths(transactions[i:min(i+BATCH_READ_SIZE, len(transactions))], readChannel, db)
+	}
+
+	for i := 0; i < len(transactions); i+=BATCH_READ_SIZE {
+		copathPairs := <-readChannel
+		for j := 0; j < len(copathPairs); j++ {
+			T.cache[copathPairs[j].ID] = &copathPairs[j].digest
+		}
+	}
+
 	T.conflicts, err = findConflicts(transactions)
 	if err != nil {
 		return false, err
@@ -181,23 +272,31 @@ func (T *SparseMerkleTree) batch2Insert(transactions batchedTransaction) (bool, 
 
 	var wg sync.WaitGroup
 	lenTrans := len(transactions)
+	ch := make(chan []*CoPathPair)
+	quit := make(chan bool)
+
+	go auroraWriteback(ch, quit, db)
 
 	stepSize := len(transactions) / runtime.GOMAXPROCS(0)
 	for i:=0; i<len(transactions); i+=stepSize {
 		wg.Add(1)
-		go T.batchPercolate(transactions[i:min(i+stepSize, lenTrans)], &wg)
+		go T.batchPercolate(transactions[i:min(i+stepSize, lenTrans)], &wg, ch)
 	}
 	wg.Wait()
 
+	quit <- true
 	rootDigestPointer := T.cache[""]
 	T.rootDigest = *rootDigestPointer
 
 	return true, nil
-
 }
 
-func (T *SparseMerkleTree) percolate(index string, data string, wg *sync.WaitGroup) (bool, error) {
+func (T *SparseMerkleTree) percolate(index string, data string, wg *sync.WaitGroup, ch chan []*CoPathPair) (bool, error) {
 	defer wg.Done()
+
+	changeList := make([]*CoPathPair, 0)
+
+	changeList = append(changeList, &CoPathPair{ID: index, digest: hashDigest([]byte(data))})
 	
 	//TODO: You should not hash the value passed in if it not a leaf ie in the root tree
 	hash := hashDigest([]byte(data))
@@ -212,6 +311,7 @@ func (T *SparseMerkleTree) percolate(index string, data string, wg *sync.WaitGro
 
 		//conflict check
 		if T.isConflict(parentID) {
+			ch <- changeList
 			return true, nil
 		}
 
@@ -233,6 +333,7 @@ func (T *SparseMerkleTree) percolate(index string, data string, wg *sync.WaitGro
 		} else {
 			parentDigest = hashDigest(append(currDigest, siblingDigest...))
 		}
+		changeList = append(changeList, &CoPathPair{ID: parentID, digest: parentDigest})
 		parentDigestPointer := T.cache[parentID]
 		*parentDigestPointer = parentDigest
 
@@ -241,12 +342,13 @@ func (T *SparseMerkleTree) percolate(index string, data string, wg *sync.WaitGro
 	}
 	rootDigestPointer := T.cache[currID]
 	T.rootDigest = *rootDigestPointer
-
+	ch <- changeList
 	return true, nil
 }
 
-func (T *SparseMerkleTree) batchPercolate(transactions batchedTransaction, wg *sync.WaitGroup) (bool, error) {
+func (T *SparseMerkleTree) batchPercolate(transactions batchedTransaction, wg *sync.WaitGroup, ch chan []*CoPathPair) (bool, error) {
 	defer wg.Done()
+	changeList := make([]*CoPathPair, 0)
 	
 	for _, trans := range transactions {
 		index := trans.id
@@ -256,6 +358,7 @@ func (T *SparseMerkleTree) batchPercolate(transactions batchedTransaction, wg *s
 		hash := hashDigest([]byte(data))
 		indexPointer := T.cache[index]
 		*indexPointer = hash
+		changeList = append(changeList, &CoPathPair{ID: index, digest: hash})
 
 		var currID string
 		for currID = index; len(currID) > 0; {
@@ -288,6 +391,7 @@ func (T *SparseMerkleTree) batchPercolate(transactions batchedTransaction, wg *s
 			}
 			parentDigestPointer := T.cache[parentID]
 			*parentDigestPointer = parentDigest
+			changeList = append(changeList, &CoPathPair{ID: parentID, digest: parentDigest})
 
 			// Traverse up the tree by making the current node the parent node
 			currID = parentID
@@ -297,6 +401,7 @@ func (T *SparseMerkleTree) batchPercolate(transactions batchedTransaction, wg *s
 
 		continue
 	}
+	ch <- changeList
 	return true, nil
 }
 

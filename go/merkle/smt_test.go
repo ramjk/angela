@@ -11,10 +11,15 @@ import (
 	"sort"
 )
 
-const NUMITERATIONS int = 1000
+const NUMITERATIONS int = 100
+
+// var seedNum int64 = 0
 
 func randomBitString(digestSize int) (string) {
 	rand.Seed(time.Now().UTC().UnixNano())
+	// use to get same input over multiple runs
+	// rand.Seed(seedNum)
+	// seedNum += 1
 	result := ""
 	for i := 0; i < digestSize; i++ {
 		bit := rand.Int31n(2)
@@ -83,9 +88,10 @@ func TestBatchInsert(t * testing.T) {
 		transactions[i] = &transaction{randomBitString(TREE_DEPTH), fmt.Sprintf("angela%d", i)}
 	}
 
-	_ = tree
-
     tree.batchInsert(transactions)
+	// for k, v := range tree.conflicts { 
+    //   fmt.Printf("key[%s] value[%s]\n", k, v.writeable)
+	// }
 	
 	for i := 0; i < transactionLen; i++ {
 		proof := tree.generateProof(transactions[i].id)
@@ -110,10 +116,11 @@ func TestBatch2Insert(t * testing.T) {
 		transactions[i] = &transaction{randomBitString(TREE_DEPTH), fmt.Sprintf("angela%d", i)}
 	}
 
-	_ = tree
-
     tree.batch2Insert(transactions)
-
+	// for k, v := range tree.conflicts { 
+    //   fmt.Printf("key[%s] value[%s]\n", k, v.writeable)
+	// }
+	
 	for i := 0; i < transactionLen; i++ {
 		proof := tree.generateProof(transactions[i].id)
 
@@ -256,6 +263,17 @@ func TestNonMembership(t *testing.T) {
 		t.Error("Proof was not verified")
 	}
 }
+
+func TestDatabaseConnection(t *testing.T) {
+	db, err := GetAngelaDB()
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+	// Write a ping here 
+}
+
+
 
 func benchmarkInsertN(tree *SparseMerkleTree, indices []string, data []string, b *testing.B) {
 	b.ResetTimer()
