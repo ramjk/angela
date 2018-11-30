@@ -11,9 +11,9 @@ import (
 
 const TREE_DEPTH int = 256
 
-// const BATCH_READ_SIZE int = 5
+const BATCH_READ_SIZE int = 50
 
-// const BATCH_PERCOLATE_SIZE int = 10
+const BATCH_PERCOLATE_SIZE int = 50
 
 type digest = []byte
 
@@ -191,10 +191,11 @@ func (T *SparseMerkleTree) batchInsert(transactions batchedTransaction) (bool, e
 	for i := 0; i < len(transactions); i+=BATCH_READ_SIZE {
 		go T.preloadCopaths(transactions[i:min(i+BATCH_READ_SIZE, len(transactions))], readChannel)
 	}
+
 	for i := 0; i < len(transactions); i+=BATCH_READ_SIZE {
 		copathPairs := <-readChannel
 		for j := 0; j < len(copathPairs); j++ {
-			T.cache.Store(copathPairs[j].ID, copathPairs[j].digest)
+			T.cache[copathPairs[j].ID] = &copathPairs[j].digest
 		}
 	}
 	// fmt.Println("Cache after preload")
@@ -242,7 +243,7 @@ func (T *SparseMerkleTree) batch2Insert(transactions batchedTransaction) (bool, 
 	for i := 0; i < len(transactions); i+=BATCH_READ_SIZE {
 		copathPairs := <-readChannel
 		for j := 0; j < len(copathPairs); j++ {
-			T.cache.Store(copathPairs[j].ID, copathPairs[j].digest)
+			T.cache[copathPairs[j].ID] = &copathPairs[j].digest
 		}
 	}
 
@@ -271,7 +272,7 @@ func (T *SparseMerkleTree) batch2Insert(transactions batchedTransaction) (bool, 
 	stepSize := len(transactions) / runtime.GOMAXPROCS(0)
 	for i:=0; i<len(transactions); i+=stepSize {
 		wg.Add(1)
-		go T.batchPercolate(transactions[i:min(i+stepSize, lenTrans)], &wg)
+		go T.batchPercolate(transactions[i:min(i+stepSize, lenTrans)], &wg, ch)
 	}
 	wg.Wait()
 
