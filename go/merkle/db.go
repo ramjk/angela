@@ -26,16 +26,6 @@ const createTableStmt = `
 		PRIMARY KEY (epochNumber, nodeId)
 	)`
 const showTablesStmt = "SHOW TABLES"
-const insertNodeStmt = 
-	`INSERT INTO nodes (nodeId, nodeDigest, epochNumber) VALUES (?, ?, ?)`
-const getLatestNodeStmt = `
-	SELECT nodeDigest
-	FROM nodes 
-	WHERE nodeId = ? 
-	AND epochNumber < ? 
-	ORDER BY epochNumber DESC
-	LIMIT 1
-	`
 const getLastThousandNodesStmt = `
 	SELECT nodeId, nodeDigest
 	FROM nodes
