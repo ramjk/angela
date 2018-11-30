@@ -32,19 +32,24 @@ const getLastThousandNodesStmt = `
 	ORDER BY id DESC
 	LIMIT 1000
 	`
+const createNodeIDIndex = `CREATE INDEX nodeID ON nodes (nodeId)`
 const showMaxPacketSizeStmt = `SHOW VARIABLES LIKE 'version'`
 
 type angelaDB struct {
 	conn *sql.DB
 }
 
-func getAngelaDBConnectionString() string {
-	return connectionString
+func getAngelaWriteConnectionString() string {
+	return writeConnectionString
 }
 
-func GetAngelaDB() (*angelaDB, error) {
+func getAngelaReadConnectionString() string {
+	return readConnectionString
+}
+
+func GetReadAngelaDB() (*angelaDB, error) {
 	// Use db to perform SQL operations on database
-	conn, err := sql.Open("mysql", getAngelaDBConnectionString())
+	conn, err := sql.Open("mysql", getAngelaReadConnectionString())
 
 	if err != nil {
 		return nil, fmt.Errorf("[aurora]: could not open a connection: %v", err)
@@ -59,11 +64,34 @@ func GetAngelaDB() (*angelaDB, error) {
 
 	angela := &angelaDB{conn: conn,}
 	return angela, nil
-} 
+}
+
+func GetWriteAngelaDB() (*angelaDB, error) {
+	// Use db to perform SQL operations on database
+	conn, err := sql.Open("mysql", getAngelaWriteConnectionString())
+
+	if err != nil {
+		return nil, fmt.Errorf("[aurora]: could not open a connection: %v", err)
+	}
+
+	err = conn.Ping()
+
+	if err != nil {
+		conn.Close()
+		return nil, fmt.Errorf("[aurora]: unable to ping the database: %v", err)
+	}
+
+	angela := &angelaDB{conn: conn,}
+	return angela, nil	
+}
 
 func (db *angelaDB) CreateTable() error {
 	fmt.Println(createTableStmt)
 	_, err := db.conn.Exec(createTableStmt)
+	if err != nil {
+		return err
+	}
+	_, err = db.conn.Exec(createNodeIDIndex)
 	if err != nil {
 		return err
 	}

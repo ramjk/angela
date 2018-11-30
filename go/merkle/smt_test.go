@@ -78,6 +78,17 @@ func TestSortTransactions(t *testing.T) {
 	}
 }
 
+// func TestRunDBCommands(t *testing.T) {
+// 	db, err := GetWriteAngelaDB()
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	defer db.Close()
+// 	db.ShowTables()
+// 	db.CreateTable()
+// 	db.ShowTables() 
+// }
+
 func TestBatchInsert(t * testing.T) {
 	transactionLen := NUMITERATIONS
 	tree, _ := makeTree()
@@ -265,7 +276,7 @@ func TestNonMembership(t *testing.T) {
 }
 
 func TestDatabaseConnection(t *testing.T) {
-	db, err := GetAngelaDB()
+	db, err := GetReadAngelaDB()
 	if err != nil {
 		panic(err)
 	}

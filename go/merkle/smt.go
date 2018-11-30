@@ -11,7 +11,7 @@ import (
 
 const TREE_DEPTH int = 256
 
-const BATCH_READ_SIZE int = 100
+const BATCH_READ_SIZE int = 50
 
 const BATCH_PERCOLATE_SIZE int = 50
 
@@ -170,12 +170,12 @@ func auroraWriteback(ch chan []*CoPathPair, quit chan bool, db *angelaDB) {
     		// write back to aurora of the changelist from the channel
     		// fmt.Println("Changelist")
     		// fmt.Println(delta)
-    		_, _ = db.insertChangeList(delta, epochNumber)
-    		// if err != nil {
-    		// 	fmt.Println("Errored with %v", err)
-    		// }
-    		// fmt.Println("Printing the number of rows affected")
-    		// fmt.Println(numRowsAffected)
+    		numRowsAffected, err := db.insertChangeList(delta, epochNumber)
+    		if err != nil {
+    			fmt.Println("Errored with %v", err)
+    		}
+    		fmt.Println("Printing the number of rows affected")
+    		fmt.Println(numRowsAffected)
     	case <-quit:
     		fmt.Println("Done Writing")
     		return
@@ -185,16 +185,21 @@ func auroraWriteback(ch chan []*CoPathPair, quit chan bool, db *angelaDB) {
 
 func (T *SparseMerkleTree) batchInsert(transactions batchedTransaction) (bool, error) {
 	readChannel := make(chan []*CoPathPair)
-	db, err := GetAngelaDB()
+	readDB, err := GetReadAngelaDB()
 	if err != nil {
 		panic(err)
 	}
-	defer db.Close()
+	defer readDB.Close()
+	writeDB, err := GetWriteAngelaDB()
+	if err != nil {
+		panic(err)
+	}
+	defer writeDB.Close()
 	// fmt.Println("Cache before preload")
 	// fmt.Println(T.cache)
 	sort.Sort(batchedTransaction(transactions))
 	for i := 0; i < len(transactions); i+=BATCH_READ_SIZE {
-		go T.preloadCopaths(transactions[i:min(i+BATCH_READ_SIZE, len(transactions))], readChannel, db)
+		go T.preloadCopaths(transactions[i:min(i+BATCH_READ_SIZE, len(transactions))], readChannel, readDB)
 	}
 
 	for i := 0; i < len(transactions); i+=BATCH_READ_SIZE {
@@ -223,7 +228,7 @@ func (T *SparseMerkleTree) batchInsert(transactions batchedTransaction) (bool, e
 	ch := make(chan []*CoPathPair)
 	quit := make(chan bool)
 
-	go auroraWriteback(ch, quit, db)
+	go auroraWriteback(ch, quit, writeDB)
 
 	for i:=0; i<len(transactions); i++ {
 		wg.Add(1)
@@ -239,14 +244,18 @@ func (T *SparseMerkleTree) batchInsert(transactions batchedTransaction) (bool, e
 
 func (T *SparseMerkleTree) batch2Insert(transactions batchedTransaction) (bool, error) {
 	readChannel := make(chan []*CoPathPair)
-	db, err := GetAngelaDB()
+	readDB, err := GetReadAngelaDB()
 	if err != nil {
 		panic(err)
 	}
-	defer db.Close()
+	defer readDB.Close()
+	writeDB, err := GetWriteAngelaDB()
+	if err != nil {
+		panic(err)
+	}
 	sort.Sort(batchedTransaction(transactions))
 	for i := 0; i < len(transactions); i+=BATCH_READ_SIZE {
-		go T.preloadCopaths(transactions[i:min(i+BATCH_READ_SIZE, len(transactions))], readChannel, db)
+		go T.preloadCopaths(transactions[i:min(i+BATCH_READ_SIZE, len(transactions))], readChannel, readDB)
 	}
 
 	for i := 0; i < len(transactions); i+=BATCH_READ_SIZE {
@@ -275,7 +284,7 @@ func (T *SparseMerkleTree) batch2Insert(transactions batchedTransaction) (bool, 
 	ch := make(chan []*CoPathPair)
 	quit := make(chan bool)
 
-	go auroraWriteback(ch, quit, db)
+	go auroraWriteback(ch, quit, writeDB)
 
 	stepSize := len(transactions) / runtime.GOMAXPROCS(0)
 	for i:=0; i<len(transactions); i+=stepSize {

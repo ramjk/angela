@@ -5,7 +5,7 @@ import (
 )
 
 func getLastThousandNodes() ([]*CoPathPair, error) {
-	db, err := GetAngelaDB()
+	db, err := GetReadAngelaDB()
 	if err != nil {
 		return make([]*CoPathPair, 0), err
 	}
@@ -20,7 +20,7 @@ func getLastThousandNodes() ([]*CoPathPair, error) {
 } 
 
 func retrieveCopaths(copaths []string) ([]*CoPathPair, error) {
-	db, err := GetAngelaDB()
+	db, err := GetReadAngelaDB()
 	if err != nil {
 		return make([]*CoPathPair, 0), err
 	}
@@ -35,7 +35,7 @@ func retrieveCopaths(copaths []string) ([]*CoPathPair, error) {
 }
 
 func writeChangeList(changeList []*CoPathPair, currentEpoch int64) (int64, error) {
-	db, err := GetAngelaDB()
+	db, err := GetWriteAngelaDB()
 	if err != nil {
 		return -1, err
 	}
