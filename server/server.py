@@ -6,7 +6,6 @@ import json
 
 from multiprocessing import Pool
 from math import log
-
 from server.transaction import Transaction
 from server.worker import Worker
 from common.util import send_data
@@ -116,5 +115,4 @@ if __name__ == '__main__':
 	args = parser.parse_args()
 
 	server = Server(args.port, args.num_workers, args.epoch_length, args.tree_depth)
-
 	server.start()

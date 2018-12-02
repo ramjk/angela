@@ -20,7 +20,7 @@ class Worker(object):
 			self.start = prefix + '0' * depth
 			self.end = prefix + '1' * depth
 
-	def set_children(self, children: Optional[list]) -> None:
+	def set_children(self, children) -> None:
 		self.children = children
 
 	def get_depth(self) -> int:
@@ -46,7 +46,3 @@ class Worker(object):
 			print("===ROOT===")
 			# call the c extension code here to perform batch 
 			# percolate on root node
-
-
-
-

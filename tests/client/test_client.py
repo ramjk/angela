@@ -21,6 +21,8 @@ class TestSparseMerkleTree(unittest.TestCase):
 			print()
 		print("__________________________________________")
 
+		self.server_thread = threading.Thread(target=self.server.receive)
+
 	def tearDown(self):
 		self.server.close()
 		self.client.end_session()
