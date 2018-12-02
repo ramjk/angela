@@ -18,9 +18,6 @@ class Worker(object):
 			prefix = format(worker_id, '0{}b'.format(parent_depth))
 			self.start = prefix + '0' * depth
 			self.end = prefix + '1' * depth
-			print(worker_id, self.start, self.end, len(self.start), len(self.end))
-			print()
-
 
 	def set_children(self, children) -> None:
 		self.children = children
@@ -29,10 +26,12 @@ class Worker(object):
 		return self.depth
 
 	def receive_transaction(self, transaction: Transaction) -> None:
+		print("In worker {}".format(self.worker_id))
+		print("Transaction ID: {}".format(transaction.index))
 		if transaction.transaction_type == 'W':
-			write_transaction_list.append(transaction)
+			self.write_transaction_list.append(transaction)
 		else:
-			read_transaction_list.append(transaction)
+			self.read_transaction_list.append(transaction)
 
 	# TODO: batch update function
 	# def batch():
