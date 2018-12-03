@@ -31,10 +31,11 @@ class TestSparseMerkleTree(unittest.TestCase):
 		msg = self.client.practice()
 		self.assertEqual(msg, "practice")
 
-	def test_write_transaction(self):
-		self.server.epoch_length = 2
-		self.server.receive_transaction(WriteTransaction('1000', 'apple'))
-		self.server.receive_transaction(WriteTransaction('1001', 'banana'))
+		# self.server.epoch_length = 2
+		# print("36")
+		# self.server.receive_transaction(WriteTransaction('1000', 'apple'))
+		# print("38")
+		# self.server.receive_transaction(WriteTransaction('1001', 'banana'))
 
 if __name__ == '__main__':
 	unittest.main()

@@ -53,13 +53,8 @@ class Server(object):
 		tmp = msg = conn.recv(1024)	
 		data_length -= len(tmp)	
 
-		# Stop when tmp == EOF
-		while data_length > 0:
-			# if msg == b"practice":
-			# 	conn.send(msg)	
-			print("looping...")
+		while data_length > 0:	
 			tmp = conn.recv(4096)
-			print(tmp)
 			msg += tmp
 			data_length -= len(tmp)
 		print("PROCESSING")
@@ -94,7 +89,9 @@ class Server(object):
 				# call c-extension code here
 
 			for object_id in object_ids:
+				print('97')
 				new_root, change_list = ray.get(object_id)
+				print('99')
 				new_roots.append(new_root)
 				dirty_list.extend(change_list)
 
