@@ -1,6 +1,8 @@
 import unittest
 import threading
 import ray
+
+from server.transaction import WriteTransaction
 from client.merkle_tree_client import MerkleTreeClient
 from server.server import Server
 
@@ -8,7 +10,7 @@ class TestSparseMerkleTree(unittest.TestCase):
 	def setUp(self):
 		port = 3307
 		num_worker = 9
-		epoch_length = 0
+		epoch_length = 1000
 		tree_depth = 256
 
 		self.server = Server(port, num_worker, epoch_length, tree_depth)
@@ -25,6 +27,10 @@ class TestSparseMerkleTree(unittest.TestCase):
 		msg = self.client.practice()
 		print(msg)
 		self.assertEqual(msg, "practice")
+
+		self.server.epoch_length = 2
+		self.server.receive_transaction(WriteTransaction('1000', 'apple'))
+		self.server.receive_transaction(WriteTransaction('1001', 'banana'))
 
 if __name__ == '__main__':
 	unittest.main()

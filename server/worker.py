@@ -1,5 +1,6 @@
+import bisect
 import ray
-from typing import List
+from typing import List, Optional, Tuple
 
 from server.transaction import Transaction
 
@@ -19,7 +20,7 @@ class Worker(object):
 			self.start = prefix + '0' * depth
 			self.end = prefix + '1' * depth
 
-	def set_children(self, children) -> None:
+	def set_children(self, children: Optional[list]) -> None:
 		self.children = children
 
 	def get_depth(self) -> int:
@@ -29,12 +30,26 @@ class Worker(object):
 		print("In worker {}".format(self.worker_id))
 		print("Transaction ID: {}".format(transaction.index))
 		if transaction.transaction_type == 'W':
-			self.write_transaction_list.append(transaction)
+			bisect.insort(self.write_transaction_list, transaction)
 		else:
 			self.read_transaction_list.append(transaction)
 
-	# TODO: batch update function
-	# def batch():
-	# 	vals = []
-	# 	for child self.children: 
-	# 		vals += ray.get(child.batch.remote())
+	def batch_update(self, transaction_list=None, dirty_list=None):
+		print("performing batch update for workerID:", self.worker_id)
+		if not transaction_list:
+			# call the c extension code here to perform batch percolate
+			new_root = ('101', "chocolate")
+			change_list = [('1001', 'x'), ('1000', 'y'), ('10010', 'z')]
+			return new_root, change_list 
+
+		else:
+			print("===ROOT===")
+			# call the c extension code here to perform batch 
+			# percolate on root node
+
+			# write back to DB here? 
+
+
+
+
+

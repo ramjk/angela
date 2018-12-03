@@ -23,6 +23,10 @@ class Server(object):
 		self.socket.bind(("localhost", port))
 		self.socket.listen()
 
+		self.write_transaction_list = list()
+		self.read_transaction_list = list()
+		self.in_write_mode = False
+
 		ray.init()
 
 		self.root_depth = int(log(num_workers-1, 2))
@@ -59,9 +63,35 @@ class Server(object):
 		ray.shutdown()
 
 	def receive_transaction(self, transaction: Transaction) -> None:
+		if transaction.transaction_type == 'W':
+			self.write_transaction_list.append(transaction)
+		else:
+			self.read_transaction_list.append(transaction)
+
 		# destination_worker_index = int(transaction.index[:int(log(self.num_workers, 2))], 2) # FIXME: Can we use a more efficient representation of indices/node_ids?
 		destination_worker_index = int(transaction.index, 2) >> (len(transaction.index) - self.root_depth)
-		ray.get(self.leaf_workers[destination_worker_index].receive_transaction.remote(transaction))
+		self.leaf_workers[destination_worker_index].receive_transaction.remote(transaction)
+
+		new_roots = list()
+		dirty_list = list()
+		object_ids = list()
+
+		if len(self.write_transaction_list) == self.epoch_length:
+			for leaf_worker in self.leaf_workers:
+				object_ids.append(leaf_worker.batch_update.remote())
+				# call c-extension code here
+
+			for object_id in object_ids:
+				new_root, change_list = ray.get(object_id)
+				new_roots.append(new_root)
+				dirty_list.extend(change_list)
+
+			print(new_roots)
+			print(dirty_list)
+
+			ray.get(self.root_worker.batch_update.remote(new_roots, dirty_list))
+
+			self.write_transaction_list = list()
 			
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
