@@ -65,11 +65,11 @@ class Server(object):
 
 		tx = Transaction.from_dict(json.loads(msg))
 
-		if tx.index == "practice":
+		if tx.data == "practice":
 			send_data(conn, tx)
 
+		# self.receive_transaction(tx)
 		conn.close()
-		# receive_transaction(transaction) based on msg
 
 	def close(self) -> None:
 		print("Closing server...")

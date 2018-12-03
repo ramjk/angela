@@ -47,9 +47,6 @@ class Worker(object):
 			# call the c extension code here to perform batch 
 			# percolate on root node
 
-			# write back to DB here? 
-
-
 
 
 
