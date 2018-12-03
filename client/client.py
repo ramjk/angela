@@ -2,8 +2,8 @@ import socket
 import json
 import requests
 
-import server.transaction
-from common.util import send_data
+from server import transaction
+from common import util
 
 class Client(object):
 	def __init__(self, host: str, port: int):
@@ -33,13 +33,17 @@ class Client(object):
 
 	def practice():
 		r = requests.get("http://localhost:8000/merkletree")
-		return server.transaction.Transaction.from_dict(json.loads(r.text))
+		return transaction.Transaction.from_dict(json.loads(r.text))
 
 	def get_leaf(self):
 		raise NotImplementedError
 
-	def get_proof(self):
-		raise NotImplementedError
+	def generate_proof(index):
+		tx = transaction.ReadTransaction(index)
+		r = requests.get("http://localhost:8000/merkletree/proof", params=tx.__dict__)
+		if (r.status_code == 400):
+			return None
+		return util.Proof.from_dict(r.json())
 
 	def get_signed_root(self):
 		raise NotImplementedError
@@ -49,7 +53,7 @@ class Client(object):
 
 	def insert_leaf(self, index, data):
 		transaction = WriteTransaction(index, data)
-		send_data(self.socket, transaction)
+		util.send_data(self.socket, transaction)
 		success = _listen()
 
 	def end_session(self):

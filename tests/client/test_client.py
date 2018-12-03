@@ -28,11 +28,8 @@ class TestSparseMerkleTree(unittest.TestCase):
 		self.client.end_session()
 
 	def test_practice(self):
-		conn, addr = self.server.socket.accept()
-		# server_thread = threading.Thread(target=self.server.receive, args=(conn,))
-		# server_thread.start()
-		tx = Client.practice()
-		self.assertEqual(tx.Index, "practice")
+		tx = Client.generate_proof(util.random_index())
+		print(tx.__dict__)
 
 		# self.server.epoch_length = 2
 		# for i in range(2):

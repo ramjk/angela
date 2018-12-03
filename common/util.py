@@ -11,6 +11,18 @@ class bitarray(bitarray):
     def __hash__(self):
         return self.tobytes().__hash__()
 
+class Proof(object):
+	def __init__(self):
+		self.ProofType = None
+		self.QueryID = None
+		self.ProofID = None
+		self.CoPath = None
+
+	def from_dict(json_dict):
+		proof = Proof()
+		proof.__dict__ = json_dict
+		return proof
+
 def to_bytes(data: str) -> bytes:
 	if type(data) == bytes:
 		return data

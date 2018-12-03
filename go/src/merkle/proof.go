@@ -9,14 +9,14 @@ const (
 
 type CoPathPair struct {
 	ID        string
-	digest    []byte
+	Digest    []byte
 }
 
 type Proof struct {
-	proofType    ProofType
-	queryID      string
-	proofID      string
-	coPath       []CoPathPair
+	ProofType    ProofType
+	QueryID      string
+	ProofID      string
+	CoPath       []CoPathPair
 }
 
 func MakeProof(proofType ProofType, queryID string, proofID string, coPath []CoPathPair) (*Proof) {

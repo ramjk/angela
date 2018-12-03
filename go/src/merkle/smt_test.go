@@ -105,7 +105,7 @@ func TestBatchInsert(t * testing.T) {
 	// }
 	
 	for i := 0; i < transactionLen; i++ {
-		proof := tree.generateProof(transactions[i].Id)
+		proof := tree.GenerateProof(transactions[i].id)
 
 		if len(proof.coPath) != TREE_DEPTH {
 			t.Error("Length of the copath was not equal to TREE_DEPTH.")
@@ -133,7 +133,7 @@ func TestBatch2Insert(t * testing.T) {
 	// }
 	
 	for i := 0; i < transactionLen; i++ {
-		proof := tree.generateProof(transactions[i].Id)
+		proof := tree.GenerateProof(transactions[i].id)
 
 		if len(proof.coPath) != TREE_DEPTH {
 			t.Error("Length of the copath was not equal to TREE_DEPTH.")
@@ -194,7 +194,7 @@ func TestMembershipSmall(t *testing.T) {
 
 	tree.insert(index, "angela")
 
-	proof := tree.generateProof(index)
+	proof := tree.GenerateProof(index)
 
 	if !tree.verifyProof(proof) {
 		t.Error("Proof was invalid when it was expected to be valid.")
@@ -208,7 +208,7 @@ func TestMembership(t *testing.T) {
 
 	tree.insert(index, "angela")
 
-	proof := tree.generateProof(index)
+	proof := tree.GenerateProof(index)
 
 	if len(proof.coPath) != TREE_DEPTH {
 		t.Error("Length of the copath was not equal to TREE_DEPTH.")
@@ -235,7 +235,7 @@ func TestMembershipLarge(t *testing.T) {
 	proofs := make([]Proof, len(indices))
 
 	for i, bitString := range indices {
-		proofs[i] = tree.generateProof(bitString)
+		proofs[i] = tree.GenerateProof(bitString)
 	}
 
 	for i, proof := range proofs {
@@ -264,7 +264,7 @@ func TestNonMembership(t *testing.T) {
 	tree, _ := MakeTree()
 
 	queryID := randomBitString(128)
-	proof := tree.generateProof(queryID)
+	proof := tree.GenerateProof(queryID)
 
 	if proof.proofType == MEMBERSHIP {
 		t.Error("Proof should be of type nonmembership")
