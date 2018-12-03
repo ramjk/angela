@@ -8,7 +8,8 @@ class MerkleTreeClient(object):
 		self.socket.connect((host, port))
 
 	def practice(self) -> str:
-		self.socket.send(b"practice")
+		self.socket.send(str(len("practice")).encode())
+		self.socket.sendall(b"practice")
 		return self.socket.recv(16).decode("utf-8")
 
 	def get_leaf(self):

@@ -48,17 +48,25 @@ class Server(object):
 			self.close()
 
 	def receive(self, conn) -> None:
-		tmp = msg = conn.recv(1024)		
+		data_length = int(conn.recv(1024))
+
+		tmp = msg = conn.recv(1024)	
+		data_length -= len(tmp)	
 
 		# Stop when tmp == EOF
-		while tmp:
+		while data_length > 0:
+			# if msg == b"practice":
+			# 	conn.send(msg)	
 			print("looping...")
-			tmp = conn.recv(1024)
+			tmp = conn.recv(4096)
 			print(tmp)
 			msg += tmp
-			
+			data_length -= len(tmp)
+		print("PROCESSING")
 		if msg == b"practice":
-			conn.send(msg)	
+			conn.sendall(msg)
+
+		conn.close()
 		# receive_transaction(transaction) based on msg
 
 	def close(self) -> None:
