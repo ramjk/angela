@@ -1,5 +1,6 @@
 import socket
 import json
+import requests
 
 import server.transaction
 from common.util import send_data
@@ -25,10 +26,14 @@ class Client(object):
 
 		return json.loads(msg)
 
-	def practice(self) -> server.transaction.Transaction:
-		tx = server.transaction.WriteTransaction('1001', "practice")
-		send_data(self.socket, tx)
-		return server.transaction.Transaction.from_dict(self._listen())
+	# def practice(self) -> server.transaction.Transaction:
+		# tx = server.transaction.WriteTransaction('1001', "practice")
+		# send_data(self.socket, tx)
+		# return server.transaction.Transaction.from_dict(self._listen())
+
+	def practice():
+		r = requests.get("http://localhost:8000/merkletree")
+		return server.transaction.Transaction.from_dict(json.loads(r.text))
 
 	def get_leaf(self):
 		raise NotImplementedError
