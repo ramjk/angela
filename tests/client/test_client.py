@@ -28,8 +28,8 @@ class TestSparseMerkleTree(unittest.TestCase):
 		conn, addr = self.server.socket.accept()
 		server_thread = threading.Thread(target=self.server.receive, args=(conn,))
 		server_thread.start()
-		msg = self.client.practice()
-		self.assertEqual(msg, "practice")
+		tx = self.client.practice()
+		self.assertEqual(tx.index, "practice")
 
 		# self.server.epoch_length = 2
 		# print("36")

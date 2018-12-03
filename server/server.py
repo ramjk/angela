@@ -2,12 +2,14 @@ import socket
 import signal
 import argparse
 import ray
+import json
 
 from multiprocessing import Pool
 from math import log
 
 from server.transaction import Transaction
 from server.worker import Worker
+from common.util import send_data
 
 class Server(object):
 	"""
@@ -48,18 +50,23 @@ class Server(object):
 			self.close()
 
 	def receive(self, conn) -> None:
-		data_length = int(conn.recv(1024))
+		data_length = int(conn.recv(200))
+		data_type = str(conn.recv(200))
 
-		tmp = msg = conn.recv(1024)	
+		print(data_length)
+
+		tmp = msg = conn.recv(200)	
 		data_length -= len(tmp)	
 
 		while data_length > 0:	
-			tmp = conn.recv(4096)
+			tmp = conn.recv(200)
 			msg += tmp
 			data_length -= len(tmp)
-		print("PROCESSING")
-		if msg == b"practice":
-			conn.sendall(msg)
+
+		tx = Transaction.from_dict(json.loads(msg))
+
+		if tx.index == "practice":
+			send_data(conn, tx)
 
 		conn.close()
 		# receive_transaction(transaction) based on msg
@@ -89,9 +96,7 @@ class Server(object):
 				# call c-extension code here
 
 			for object_id in object_ids:
-				print('97')
 				new_root, change_list = ray.get(object_id)
-				print('99')
 				new_roots.append(new_root)
 				dirty_list.extend(change_list)
 

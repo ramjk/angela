@@ -12,6 +12,10 @@ class Transaction(object):
 	def __lt__(self, other):
 		return self.index < other.index
 
+	def from_dict(json_dict):
+		tx = Transaction('', '')
+		tx.__dict__ = json_dict
+		return tx
 
 class ReadTransaction(Transaction):
 	def __init__(self, index: str) -> None:
