@@ -3,6 +3,7 @@ import signal
 import argparse
 import ray
 
+from multiprocessing import Pool
 from math import log
 
 from server.transaction import Transaction
@@ -38,24 +39,27 @@ class Server(object):
 		self.root_worker.set_children.remote(leaf_workers)
 
 	def start(self) -> None:
+		pool = Pool()
 		try:
 			while True:
-				self.receive()
-
+				(conn, address) = self.socket.accept()
+				pool.apply_async(self.receive, (conn,))
 		except KeyboardInterrupt as err:
-			if new_socket:
-				new_socket.close()
 			self.close()
 
-	def receive(self) -> None:
-		(new_socket, address) = self.socket.accept()
-		try:
-			msg = new_socket.recv(1024)
-			if msg == b"practice":
-				print(msg)
-				new_socket.send(msg)
-		finally:
-			new_socket.close()
+	def receive(self, conn) -> None:
+		tmp = msg = conn.recv(1024)		
+
+		# Stop when tmp == EOF
+		while tmp:
+			print("looping...")
+			tmp = conn.recv(1024)
+			print(tmp)
+			msg += tmp
+			
+		if msg == b"practice":
+			conn.send(msg)	
+		# receive_transaction(transaction) based on msg
 
 	def close(self) -> None:
 		print("Closing server...")

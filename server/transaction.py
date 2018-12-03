@@ -1,3 +1,4 @@
+from typing import List
 
 class Transaction(object):
 	def __init__(self, transaction_type: str, index: str) -> None:
@@ -15,7 +16,6 @@ class Transaction(object):
 class ReadTransaction(Transaction):
 	def __init__(self, index: str) -> None:
 		Transaction.__init__(self, 'R', index)
-
 
 class WriteTransaction(Transaction):
 	def __init__(self, index: str, data: str) -> None:
