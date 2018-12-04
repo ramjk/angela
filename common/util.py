@@ -1,5 +1,8 @@
 import random, string
 import json
+import hashlib
+import base64
+
 from bitarray import bitarray
 
 PACKET_SIZE = 200
@@ -26,7 +29,18 @@ class Proof(object):
 def to_bytes(data: str) -> bytes:
 	if type(data) == bytes:
 		return data
-	return data.encode()
+	return base64.b64decode(data)
+
+def to_string(data: bytes) -> str:
+	if type(data) == str:
+		return str
+	return base64.b64encode(data).decode()
+
+def SHA256(data):
+	data = to_bytes(data)
+	h = hashlib.sha256()
+	h.update(data)
+	return h.digest()
 
 #leaves must be sorted
 def find_conflicts(leaves: list):
@@ -61,6 +75,9 @@ def flip_coin():
 	if r > 0.5:
 		return True
 	return False
+
+def left_sibling(index):
+	return index[-1] == "0"
 
 def pad_packet(packet):
 	return packet.ljust(PACKET_SIZE)

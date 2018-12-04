@@ -1,10 +1,10 @@
 from typing import List
 
 class Transaction(object):
-	def __init__(self, TransactionType: str, Index: str) -> None:
+	def __init__(self, TransactionType: str, index: str) -> None:
 		self.MultiLeaf = False
 		self.TransactionType = TransactionType
-		self.Index = Index
+		self.Index = index
 
 	def __eq__(self, other):
 		return self.Index == other.Index
@@ -18,31 +18,31 @@ class Transaction(object):
 		return tx
 
 class ReadTransaction(Transaction):
-	def __init__(self, Index: str) -> None:
-		Transaction.__init__(self, 'R', Index)
+	def __init__(self, index: str) -> None:
+		Transaction.__init__(self, 'R', index)
 
 class WriteTransaction(Transaction):
-	def __init__(self, Index: str, data: str) -> None:
-		Transaction.__init__(self, 'W', Index)
-		self.data = data
+	def __init__(self, index: str, data: str) -> None:
+		Transaction.__init__(self, 'W', index)
+		self.Data = data
 
 class MultiLeafTransaction(Transaction):
 	def __init__(self, transactions: List[Transaction]) -> None:
 		self.MultiLeaf = True
 		self.transactions = transactions
-		for Index in indices: 
+		for index in indices: 
 			self.transaction_list.append(ReadTransaction.__init__(self, 'R', Index))
 
 class MultiLeafReadTransaction(MultiLeafTransaction):
 	def __init__(self, indices) -> None:
 		transactions = []
-		for Index in indices: 
-			transactions.append(ReadTransaction(Index))
+		for index in indices: 
+			transactions.append(ReadTransaction(index))
 		MultiLeafTransaction.__init__(transactions)
 
 class MultiLeafWriteTransaction(MultiLeafTransaction):
 	def __init__(self, indices, datas) -> None:
 		transactions = []
-		for Index, data in zip(indices, data): 
-			transactions.append(WriteTransaction(Index, data))
+		for index, data in zip(indices, data): 
+			transactions.append(WriteTransaction(index, data))
 		MultiLeafTransaction.__init__(transactions)

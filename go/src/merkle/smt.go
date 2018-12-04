@@ -1,6 +1,7 @@
 package merkle
 
 import (
+	"encoding/base64"
 	"fmt"
 	"encoding/base64"
 	"crypto/sha256"
@@ -30,6 +31,10 @@ type SparseMerkleTree struct {
 type SyncBool struct {
 	lock *sync.Mutex
 	visited bool
+}
+
+func (T *SparseMerkleTree) GetRoot() (digest) {
+	return T.rootDigest
 }
 
 func (T *SparseMerkleTree) getEmpty(n int) (digest) {
@@ -95,8 +100,9 @@ func (T *SparseMerkleTree) getEmptyAncestor(nodeID string) (string) {
 
 FIXME: What are the error cases where we return error/False?
 */
-func (T *SparseMerkleTree) insert(index string, Data string) (bool) {
-	hash := hashDigest([]byte(Data))
+func (T *SparseMerkleTree) Insert(index string, data string) (bool) {
+	dig, _ := base64.StdEncoding.DecodeString(data)
+	hash := hashDigest(dig)
 	T.cache[index] = &hash
 
 	//FIXME: Actual copy?
@@ -310,10 +316,12 @@ func (T *SparseMerkleTree) percolate(index string, Data string, wg *sync.WaitGro
 	defer wg.Done()
 
 	changeList := make([]*CoPathPair, 0)
-	changeList = append(changeList, &CoPathPair{ID: index, Digest: hashDigest([]byte(data))})
+
+	dig, _ := base64.StdEncoding.DecodeString(data)
+	changeList = append(changeList, &CoPathPair{ID: index, Digest: hashDigest(dig)})
 	
 	//TODO: You should not hash the value passed in if it not a leaf ie in the root tree
-	hash := hashDigest([]byte(Data))
+	hash := hashDigest(dig)
 	indexPointer := T.cache[index]
 	*indexPointer = hash
 
@@ -369,7 +377,8 @@ func (T *SparseMerkleTree) batchPercolate(transactions BatchedTransaction, wg *s
 		Data := trans.Data
 
 		//TODO: You should not hash the value passed in if it not a leaf ie in the root tree
-		hash := hashDigest([]byte(Data))
+		dig, _ := base64.StdEncoding.DecodeString(data)
+		hash := hashDigest(dig)
 		indexPointer := T.cache[index]
 		*indexPointer = hash
 		changeList = append(changeList, &CoPathPair{ID: index, Digest: hash})
@@ -538,13 +547,14 @@ func findConflicts(leaves []*Transaction) (map[string]*SyncBool, error) {
 	return conflicts, nil
 }
 
-func MakeTree() (*SparseMerkleTree, error) {
+func MakeTree() (*SparseMerkleTree) {
 	T := SparseMerkleTree{} 
 	T.depth = TREE_DEPTH
 	T.cache = make(map[string]*digest)
 	T.empty_cache = make(map[int]digest)
-	T.empty_cache[0] = hashDigest([]byte("0"))  
+	dig, _ := base64.StdEncoding.DecodeString("0")
+	T.empty_cache[0] = hashDigest(dig)  
 	T.rootDigest = T.getEmpty(TREE_DEPTH) // FIXME: Should this be the case for an empty tree?
 	T.conflicts = make(map[string]*SyncBool)
-	return &T, nil
+	return &T
 }

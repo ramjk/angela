@@ -28,8 +28,15 @@ class TestSparseMerkleTree(unittest.TestCase):
 		self.client.end_session()
 
 	def test_practice(self):
-		tx = Client.generate_proof(util.random_index())
-		print(tx.__dict__)
+		root = Client.get_signed_root()
+		print(root)
+		index = util.random_index()
+		data = util.random_string()
+		tx = Client.insert_leaf(index, data)
+		print(tx)
+		root = Client.get_signed_root()
+		proof = Client.generate_proof(index)
+		print(Client.verify_proof(proof, data, root))
 
 		# self.server.epoch_length = 2
 		# for i in range(2):
