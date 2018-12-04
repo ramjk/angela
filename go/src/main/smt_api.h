@@ -58,7 +58,7 @@ extern "C" {
 #endif
 
 
-extern GoUintptr BatchWrite(GoSlice p0, GoSlice p1);
+extern GoUintptr BatchWrite(char* p0, GoSlice p1, GoSlice p2, char** p3);
 
 extern char** Read(char* p0);
 

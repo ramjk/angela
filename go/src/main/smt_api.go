@@ -11,8 +11,8 @@ import (
 )
 
 //export BatchWrite
-func BatchWrite(transactionsKeys []*C.char, transactionsValues []*C.char) uintptr {
-	tree, _ := merkle.MakeTree()
+func BatchWrite(prefix *C.char, transactionsKeys []*C.char, transactionsValues []*C.char, rootPointer **C.char) uintptr {
+	tree := merkle.MakeTree()
 
 	transactions := make([]*merkle.Transaction, len(transactionsKeys))
 
@@ -24,6 +24,10 @@ func BatchWrite(transactionsKeys []*C.char, transactionsValues []*C.char) uintpt
 		fmt.Println(len(C.GoString(transactionsKeys[i])))
 		fmt.Println(C.GoString(transactionsValues[i]))
 	}
+
+	virtualPrefix := C.GoString(prefix)
+	fmt.Println(virtualPrefix)
+	prefix = C.CString("hello")
 	worked, err := tree.BatchInsert(transactions)
 
 	onesSlice := make([]bool, len(transactionsKeys))
@@ -38,7 +42,7 @@ func BatchWrite(transactionsKeys []*C.char, transactionsValues []*C.char) uintpt
 
 //export Read
 func Read(nodeId *C.char) **C.char {
-	tree, _ := merkle.MakeTree()
+	tree := merkle.MakeTree()
 
 	id := C.GoString(nodeId)
     results := tree.CGenerateProof(id)
