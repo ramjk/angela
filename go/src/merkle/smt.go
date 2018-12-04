@@ -461,11 +461,11 @@ func (T *SparseMerkleTree) CGenerateProof(index string) ([]string) {
 }
 
 func (T *SparseMerkleTree) GenerateProofDB(index string) (Proof) {
-	// readDB, err := GetReadAngelaDB()
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// defer readDB.Close()
+	readDB, err := GetReadAngelaDB()
+	if err != nil {
+		panic(err)
+	}
+	defer readDB.Close()
 	proofResult := Proof{}
 	proofResult.QueryID = index
 	
@@ -473,10 +473,10 @@ func (T *SparseMerkleTree) GenerateProofDB(index string) (Proof) {
 	var currID string
 	indexCheck := []string{index}
 	fmt.Println("Index to check", indexCheck)
-	// indexPair, err := readDB.retrieveLatestCopathDigests(indexCheck)
-	// ok := err == nil && len(indexPair) > 0
+	indexPair, err := readDB.retrieveLatestCopathDigests(indexCheck)
+	ok := err == nil && len(indexPair) > 0
 
-	_, ok := T.cache[index]
+	// _, ok := T.cache[index]
 	if !ok {
 		proof_t = NONMEMBERSHIP
 		currID = T.getEmptyAncestor(index)
@@ -500,16 +500,17 @@ func (T *SparseMerkleTree) GenerateProofDB(index string) (Proof) {
     }
     fmt.Println("number of copaths", len(ids))
 
-	// copathPairs, err := readDB.retrieveLatestCopathDigests(ids)
-	// if err != nil {
-	// 	fmt.Println(err)
-	// 	proofResult.CoPath = CoPath
-	// 	return proofResult
-	// }
+	copathPairs, err := readDB.retrieveLatestCopathDigests(ids)
+	if err != nil {
+		fmt.Println(err)
+		proofResult.CoPath = CoPath
+		return proofResult
+	}
 
-	// for j := 0; j < len(copathPairs); j++ {
-	// 	T.cache[copathPairs[j].ID] = &copathPairs[j].Digest
-	// }
+	for j := 0; j < len(copathPairs); j++ {
+		T.cache[copathPairs[j].ID] = &copathPairs[j].Digest
+	}
+	fmt.Println("length of cache",len(T.cache))
 
 	// Our stopping condition is length > 0 so we don't add the root to the copath
 	for ; len(currID) > 0; currID = getParent(currID) {
