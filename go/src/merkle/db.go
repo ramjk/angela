@@ -236,7 +236,7 @@ func (db *angelaDB) getCopathQueryStmt(numNodes int) (*sql.Stmt, error) {
 	var buffer bytes.Buffer
 	buffer.WriteString(`SELECT n1.nodeId, n1.nodeDigest 
 			  			FROM nodes AS n1
-			  			LEFT JOIN 
+			  			INNER JOIN 
 			  			(SELECT nodeId, MAX(epochNumber)
 			  			FROM nodes
 			  			WHERE nodeId IN (`)

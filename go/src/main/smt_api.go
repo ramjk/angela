@@ -11,48 +11,40 @@ import (
 )
 
 //export BatchWrite
-func BatchWrite(prefix *C.char, transactionsKeys []*C.char, transactionsValues []*C.char, rootPointer **C.char) uintptr {
-	tree := merkle.MakeTree()
+func BatchWrite(prefix *C.char, transactionsKeys []*C.char, transactionsValues []*C.char) *C.char {
+	tree := merkle.MakeTree(C.GoString(prefix))
 
 	transactions := make([]*merkle.Transaction, len(transactionsKeys))
 
-	fmt.Println(len(transactionsKeys))
-
 	for i:=0; i < len(transactionsKeys); i++ {
 		transactions[i] = &merkle.Transaction{C.GoString(transactionsKeys[i]), C.GoString(transactionsValues[i])}
-		fmt.Println(C.GoString(transactionsKeys[i]))
-		fmt.Println(len(C.GoString(transactionsKeys[i])))
-		fmt.Println(C.GoString(transactionsValues[i]))
 	}
 
-	virtualPrefix := C.GoString(prefix)
-	fmt.Println(virtualPrefix)
-	prefix = C.CString("hello")
-	worked, err := tree.BatchInsert(transactions)
+	root, _ := tree.BatchInsert(transactions)
 
-	onesSlice := make([]bool, len(transactionsKeys))
-	for i := range onesSlice {
-    	onesSlice[i] = worked
-	}
-	if err != nil {
-		return uintptr(unsafe.Pointer(&onesSlice[0]))
-	}
-	return uintptr(unsafe.Pointer(&onesSlice[0]))
+	// onesSlice := make([]bool, len(transactionsKeys))
+	// for i := range onesSlice {
+ //    	onesSlice[i] = worked
+	// }
+	// if err != nil {
+	// 	return uintptr(unsafe.Pointer(&onesSlice[0]))
+	// }
+	// return uintptr(unsafe.Pointer(&onesSlice[0]))
+    return C.CString(root)
 }
 
 //export Read
 func Read(nodeId *C.char) **C.char {
-	tree := merkle.MakeTree()
+	tree := merkle.MakeTree("")
 
 	id := C.GoString(nodeId)
     results := tree.CGenerateProof(id)
-    fmt.Println("ANEESH")
     fmt.Println(results)
     resultLength := len(results)
 
     // allocate space for all the node ids and digests and other fields in proof
     cArray := C.malloc(C.size_t(resultLength) * C.size_t(unsafe.Sizeof(uintptr(0))))
-    fmt.Println(cArray)
+    //fmt.Println(cArray)
     // convert the C array to a Go Array so we can index it
     a := (*[1<<30]*C.char)(cArray)
     // a[0] = C.CString(proof.proofType.String())
