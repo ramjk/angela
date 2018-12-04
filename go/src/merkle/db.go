@@ -40,11 +40,11 @@ type angelaDB struct {
 }
 
 func getAngelaWriteConnectionString() string {
-	return connectionString
+	return writeConnectionString
 }
 
 func getAngelaReadConnectionString() string {
-	return connectionString
+	return readConnectionString
 }
 
 func GetReadAngelaDB() (*angelaDB, error) {

@@ -72,7 +72,7 @@ func TestSortTransactions(t *testing.T) {
 	sort.Sort(BatchedTransaction(transactions))
 
 	for i:=0; i < arrLen - 1; i++ {
-		if transactions[i].Id > transactions[i+1].Id {
+		if transactions[i].ID > transactions[i+1].ID {
 			t.Error("SORT is broken")
 		}
 	}
@@ -215,7 +215,7 @@ func TestNonMembership(t *testing.T) {
 }
 
 
-func benchmarkInsertN(tree *SparseMerkleTree, indices []string, Data []string, b *testing.B) {
+func benchmarkInsertN(tree *SparseMerkleTree, indices []string, data []string, b *testing.B) {
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
 		for i, index := range indices {
@@ -349,7 +349,7 @@ func BenchmarkBatchInsert64(b *testing.B) {
 	for i := 0; i < 64; i++ {
 		index := randomBitString(TREE_DEPTH)
 		d := fmt.Sprintf("angela%d", i)
-		t := Transaction{Id: index, Data: d}
+		t := Transaction{ID: index, Data: d}
 		transactions[i] = &t
 	}
 
@@ -364,7 +364,7 @@ func BenchmarkBatchInsert128(b *testing.B) {
 	for i := 0; i < 128; i++ {
 		index := randomBitString(TREE_DEPTH)
 		d := fmt.Sprintf("angela%d", i)
-		t := Transaction{Id: index, Data: d}
+		t := Transaction{ID: index, Data: d}
 		transactions[i] = &t
 	}
 
@@ -379,7 +379,7 @@ func BenchmarkBatchInsert256(b *testing.B) {
 	for i := 0; i < 256; i++ {
 		index := randomBitString(TREE_DEPTH)
 		d := fmt.Sprintf("angela%d", i)
-		t := Transaction{Id: index, Data: d}
+		t := Transaction{ID: index, Data: d}
 		transactions[i] = &t
 	}
 
@@ -394,7 +394,7 @@ func BenchmarkBatchInsert512(b *testing.B) {
 	for i := 0; i < 512; i++ {
 		index := randomBitString(TREE_DEPTH)
 		d := fmt.Sprintf("angela%d", i)
-		t := Transaction{Id: index, Data: d}
+		t := Transaction{ID: index, Data: d}
 		transactions[i] = &t
 	}
 
@@ -409,7 +409,7 @@ func BenchmarkBatchInsert1024(b *testing.B) {
 	for i := 0; i < 1024; i++ {
 		index := randomBitString(TREE_DEPTH)
 		d := fmt.Sprintf("angela%d", i)
-		t := Transaction{Id: index, Data: d}
+		t := Transaction{ID: index, Data: d}
 		transactions[i] = &t
 	}
 
@@ -424,7 +424,7 @@ func BenchmarkBatchInsert2048(b *testing.B) {
 	for i := 0; i < 2048; i++ {
 		index := randomBitString(TREE_DEPTH)
 		d := fmt.Sprintf("angela%d", i)
-		t := Transaction{Id: index, Data: d}
+		t := Transaction{ID: index, Data: d}
 		transactions[i] = &t
 	}
 
@@ -439,7 +439,7 @@ func BenchmarkBatchInsert4096(b *testing.B) {
 	for i := 0; i < 4096; i++ {
 		index := randomBitString(TREE_DEPTH)
 		d := fmt.Sprintf("angela%d", i)
-		t := Transaction{Id: index, Data: d}
+		t := Transaction{ID: index, Data: d}
 		transactions[i] = &t
 	}
 
@@ -454,7 +454,7 @@ func BenchmarkBatchInsert8192(b *testing.B) {
 	for i := 0; i < 8192; i++ {
 		index := randomBitString(TREE_DEPTH)
 		d := fmt.Sprintf("angela%d", i)
-		t := Transaction{Id: index, Data: d}
+		t := Transaction{ID: index, Data: d}
 		transactions[i] = &t
 	}
 
@@ -469,7 +469,7 @@ func BenchmarkBatchInsert16384(b *testing.B) {
 	for i := 0; i < 16384; i++ {
 		index := randomBitString(TREE_DEPTH)
 		d := fmt.Sprintf("angela%d", i)
-		t := Transaction{Id: index, Data: d}
+		t := Transaction{ID: index, Data: d}
 		transactions[i] = &t
 	}
 
@@ -484,7 +484,7 @@ func BenchmarkBatch2Insert64(b *testing.B) {
 	for i := 0; i < 64; i++ {
 		index := randomBitString(TREE_DEPTH)
 		d := fmt.Sprintf("angela%d", i)
-		t := Transaction{Id: index, Data: d}
+		t := Transaction{ID: index, Data: d}
 		transactions[i] = &t
 	}
 
@@ -499,7 +499,7 @@ func BenchmarkBatch2Insert128(b *testing.B) {
 	for i := 0; i < 128; i++ {
 		index := randomBitString(TREE_DEPTH)
 		d := fmt.Sprintf("angela%d", i)
-		t := Transaction{Id: index, Data: d}
+		t := Transaction{ID: index, Data: d}
 		transactions[i] = &t
 	}
 
@@ -514,7 +514,7 @@ func BenchmarkBatch2Insert256(b *testing.B) {
 	for i := 0; i < 256; i++ {
 		index := randomBitString(TREE_DEPTH)
 		d := fmt.Sprintf("angela%d", i)
-		t := Transaction{Id: index, Data: d}
+		t := Transaction{ID: index, Data: d}
 		transactions[i] = &t
 	}
 
@@ -529,7 +529,7 @@ func BenchmarkBatch2Insert512(b *testing.B) {
 	for i := 0; i < 512; i++ {
 		index := randomBitString(TREE_DEPTH)
 		d := fmt.Sprintf("angela%d", i)
-		t := Transaction{Id: index, Data: d}
+		t := Transaction{ID: index, Data: d}
 		transactions[i] = &t
 	}
 
@@ -544,7 +544,7 @@ func BenchmarkBatch2Insert1024(b *testing.B) {
 	for i := 0; i < 1024; i++ {
 		index := randomBitString(TREE_DEPTH)
 		d := fmt.Sprintf("angela%d", i)
-		t := Transaction{Id: index, Data: d}
+		t := Transaction{ID: index, Data: d}
 		transactions[i] = &t
 	}
 
@@ -559,7 +559,7 @@ func BenchmarkBatch2Insert2048(b *testing.B) {
 	for i := 0; i < 2048; i++ {
 		index := randomBitString(TREE_DEPTH)
 		d := fmt.Sprintf("angela%d", i)
-		t := Transaction{Id: index, Data: d}
+		t := Transaction{ID: index, Data: d}
 		transactions[i] = &t
 	}
 
@@ -574,7 +574,7 @@ func BenchmarkBatch2Insert4096(b *testing.B) {
 	for i := 0; i < 4096; i++ {
 		index := randomBitString(TREE_DEPTH)
 		d := fmt.Sprintf("angela%d", i)
-		t := Transaction{Id: index, Data: d}
+		t := Transaction{ID: index, Data: d}
 		transactions[i] = &t
 	}
 
@@ -589,7 +589,7 @@ func BenchmarkBatch2Insert8192(b *testing.B) {
 	for i := 0; i < 8192; i++ {
 		index := randomBitString(TREE_DEPTH)
 		d := fmt.Sprintf("angela%d", i)
-		t := Transaction{Id: index, Data: d}
+		t := Transaction{ID: index, Data: d}
 		transactions[i] = &t
 	}
 
@@ -604,7 +604,7 @@ func BenchmarkBatch2Insert16384(b *testing.B) {
 	for i := 0; i < 16384; i++ {
 		index := randomBitString(TREE_DEPTH)
 		d := fmt.Sprintf("angela%d", i)
-		t := Transaction{Id: index, Data: d}
+		t := Transaction{ID: index, Data: d}
 		transactions[i] = &t
 	}
 

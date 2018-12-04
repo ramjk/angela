@@ -1,7 +1,7 @@
 package merkle
 
 type Transaction struct {
-	Id string
+	ID string
 	Data string
 }
 
@@ -14,7 +14,7 @@ func (s BatchedTransaction) Swap(i, j int) {
     s[i], s[j] = s[j], s[i]
 }
 func (s BatchedTransaction) Less(i, j int) bool {
-    return s[i].Id < s[j].Id
+    return s[i].ID < s[j].ID
 }
 
 func min(i int, j int) int {

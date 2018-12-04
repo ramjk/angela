@@ -3,7 +3,6 @@ package merkle
 import (
 	"encoding/base64"
 	"fmt"
-	"encoding/base64"
 	"crypto/sha256"
 	"bytes"
 	"sync"
@@ -147,7 +146,7 @@ func (T *SparseMerkleTree) preloadCopaths(transactions BatchedTransaction, read 
 	var currID string
 
 	for i := 0; i < transactionLength; i++ {
-		currID = transactions[i].Id
+		currID = transactions[i].ID
 		// Our stopping condition is length > 0 so we don't add the root to the copath
 		for ; len(currID) > 0; currID = getParent(currID) {
 			siblingID, _ := getSibling(currID)
@@ -178,12 +177,12 @@ func auroraWriteback(ch chan []*CoPathPair, quit chan bool, db *angelaDB) {
     		// write back to aurora of the changelist from the channel
     		// fmt.Println("Changelist")
     		// fmt.Println(delta)
-    		numRowsAffected, err := db.insertChangeList(delta, epochNumber)
+    		_, err := db.insertChangeList(delta, epochNumber)
     		if err != nil {
     			fmt.Println(err)
     		}
-    		fmt.Println("Printing the number of rows affected")
-    		fmt.Println(numRowsAffected)
+    		// fmt.Println("Printing the number of rows affected")
+    		// fmt.Println(numRowsAffected)
     	case <-quit:
     		fmt.Println("Done Writing")
     		return
@@ -228,7 +227,7 @@ func (T *SparseMerkleTree) BatchInsert(transactions BatchedTransaction) (bool, e
 	}
 
 	for _, Transaction := range transactions {
-		for currID := Transaction.Id; currID != ""; currID = getParent(currID) {
+		for currID := Transaction.ID; currID != ""; currID = getParent(currID) {
 			placeHolder := T.getEmpty(0)
 			T.cache[currID] = &placeHolder
 		}
@@ -244,7 +243,7 @@ func (T *SparseMerkleTree) BatchInsert(transactions BatchedTransaction) (bool, e
 
 	for i:=0; i<len(transactions); i++ {
 		wg.Add(1)
-		go T.percolate(transactions[i].Id, transactions[i].Data, &wg, ch)
+		go T.percolate(transactions[i].ID, transactions[i].Data, &wg, ch)
 	}
 	wg.Wait()
 	quit <- true
@@ -283,7 +282,7 @@ func (T *SparseMerkleTree) batch2Insert(transactions BatchedTransaction) (bool, 
 	}
 
 	for _, Transaction := range transactions {
-		for currID := Transaction.Id; currID != ""; currID = getParent(currID) {
+		for currID := Transaction.ID; currID != ""; currID = getParent(currID) {
 			placeHolder := T.getEmpty(0)
 			T.cache[currID] = &placeHolder
 		}
@@ -312,7 +311,7 @@ func (T *SparseMerkleTree) batch2Insert(transactions BatchedTransaction) (bool, 
 	return true, nil
 }
 
-func (T *SparseMerkleTree) percolate(index string, Data string, wg *sync.WaitGroup, ch chan []*CoPathPair) (bool, error) {
+func (T *SparseMerkleTree) percolate(index string, data string, wg *sync.WaitGroup, ch chan []*CoPathPair) (bool, error) {
 	defer wg.Done()
 
 	changeList := make([]*CoPathPair, 0)
@@ -342,7 +341,7 @@ func (T *SparseMerkleTree) percolate(index string, Data string, wg *sync.WaitGro
 		siblingDigestPointer, ok := T.cache[siblingID]
 		var siblingDigest digest
 		if !ok {
-			siblingDigest = T.getEmpty(len(siblingID))
+			siblingDigest = T.getEmpty(TREE_DEPTH - len(siblingID))
 		} else {
 			siblingDigest = *siblingDigestPointer
 		}
@@ -373,8 +372,8 @@ func (T *SparseMerkleTree) batchPercolate(transactions BatchedTransaction, wg *s
 	changeList := make([]*CoPathPair, 0)
 	
 	for _, trans := range transactions {
-		index := trans.Id
-		Data := trans.Data
+		index := trans.ID
+		data := trans.Data
 
 		//TODO: You should not hash the value passed in if it not a leaf ie in the root tree
 		dig, _ := base64.StdEncoding.DecodeString(data)
@@ -399,7 +398,7 @@ func (T *SparseMerkleTree) batchPercolate(transactions BatchedTransaction, wg *s
 			siblingDigestPointer, ok := T.cache[siblingID]
 			var siblingDigest digest
 			if !ok {
-				siblingDigest = T.getEmpty(len(siblingID))
+				siblingDigest = T.getEmpty(TREE_DEPTH - len(siblingID))
 			} else {
 				siblingDigest = *siblingDigestPointer
 			}
@@ -444,15 +443,15 @@ func (T *SparseMerkleTree) isConflict(index string) (bool) {
 }
 
 func (T *SparseMerkleTree) CGenerateProof(index string) ([]string) {
-	proof := T.generateProof(index)
-	resultLength := len(proof.coPath)*2+3
+	proof := T.GenerateProof(index)
+	resultLength := len(proof.CoPath)*2+3
 	results := make([]string, resultLength)
-    results[0] = strconv.FormatBool(bool(proof.proofType))
-    results[1] = proof.queryID
-    results[2] = proof.proofID
+    results[0] = strconv.FormatBool(bool(proof.ProofType))
+    results[1] = proof.QueryID
+    results[2] = proof.ProofID
     for i := 3; i < resultLength; i += 2 {
-    	results[i] = proof.coPath[i-3].ID
-    	results[i+1] = base64.StdEncoding.EncodeToString(proof.coPath[i-3].digest)
+    	results[i] = proof.CoPath[i-3].ID
+    	results[i+1] = base64.StdEncoding.EncodeToString(proof.CoPath[i-3].Digest)
     }
     return results
 }
@@ -533,7 +532,7 @@ func (T *SparseMerkleTree) verifyProof(proof Proof) (bool) {
 func findConflicts(leaves []*Transaction) (map[string]*SyncBool, error) {
 	var conflicts = make(map[string]*SyncBool)
 	for i := 1; i < len(leaves); i++ {
-		x, y := leaves[i-1].Id, leaves[i].Id
+		x, y := leaves[i-1].ID, leaves[i].ID
 		k := len(x)
 		for idx := 0; idx < len(leaves); idx++ {
 			var a, b byte = x[idx], y[idx]
