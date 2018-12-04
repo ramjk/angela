@@ -38,6 +38,11 @@ class TestSparseMerkleTree(unittest.TestCase):
 		proof = Client.generate_proof(index)
 		print(Client.verify_proof(proof, data, root))
 
+		index = util.random_index()
+		data = util.random_string()
+		root = Client.get_signed_root()
+		print(Client.verify_proof(Client.generate_proof(index), data, root))
+
 		# self.server.epoch_length = 2
 		# for i in range(2):
 		# 	print(self.client.insert_leaf(util.random_index(), util.random_string()))

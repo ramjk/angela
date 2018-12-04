@@ -47,7 +47,19 @@ class Client(object):
 		return r.json()
 
 	def verify_proof(proof, data, root):
-		tmp = util.SHA256(util.to_bytes(data))
+		proof_id_length = len(proof.ProofID)
+		tmp =  None
+		if proof.ProofType == False:
+			if proof_id_length > len(proof.QueryID):
+				return False
+			for i in range(proof_id_length):
+				if proof.ProofID[i] != proof.QueryID[i]:
+					return False
+			tmp = util.empty(256 - proof_id_length)
+			print(util.to_string(tmp))
+		else:
+			tmp = util.SHA256(util.to_bytes(data))
+
 		for node in proof.CoPath:
 			if util.left_sibling(node["ID"]):
 				tmp = util.SHA256(util.to_bytes(node["Digest"]) + tmp)
@@ -59,7 +71,6 @@ class Client(object):
 
 	def insert_leaf(index, data):
 		tx = transaction.WriteTransaction(index, data)
-		print(tx.__dict__)
 		r = requests.post("http://localhost:8000/merkletree/update", data=json.dumps(tx.__dict__))
 		return r.status_code
 

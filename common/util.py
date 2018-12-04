@@ -26,6 +26,12 @@ class Proof(object):
 		proof.__dict__ = json_dict
 		return proof
 
+def empty(depth):
+	if depth == 0:
+		return SHA256("")
+	t = empty(depth - 1) 
+	return SHA256(t + t)	
+
 def to_bytes(data: str) -> bytes:
 	if type(data) == bytes:
 		return data

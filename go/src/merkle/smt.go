@@ -471,6 +471,7 @@ func (T *SparseMerkleTree) GenerateProof(index string) (Proof) {
 		proof_t = MEMBERSHIP
 		currID = index
 	}
+	fmt.Println(T.getEmpty(TREE_DEPTH - len(currID)))
 	proofResult.ProofType = proof_t
 	proofResult.ProofID = currID
 	CoPath := make([]CoPathPair, 0)
@@ -552,7 +553,7 @@ func MakeTree() (*SparseMerkleTree) {
 	T.depth = TREE_DEPTH
 	T.cache = make(map[string]*digest)
 	T.empty_cache = make(map[int]digest)
-	dig, _ := base64.StdEncoding.DecodeString("0")
+	dig, _ := base64.StdEncoding.DecodeString("")
 	T.empty_cache[0] = hashDigest(dig)  
 	T.rootDigest = T.getEmpty(TREE_DEPTH) // FIXME: Should this be the case for an empty tree?
 	T.conflicts = make(map[string]*SyncBool)
