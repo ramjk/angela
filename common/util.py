@@ -19,6 +19,7 @@ class Proof(object):
 		self.ProofType = None
 		self.QueryID = None
 		self.ProofID = None
+		self.ProofLength = None
 		self.CoPath = None
 
 	def from_dict(json_dict):

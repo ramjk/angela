@@ -159,7 +159,7 @@ func (db *angelaDB) getChangeListInsertStmt(numNodes int) (*sql.Stmt, error) {
 	return changeListStmt, nil
 }
 
-func (db *angelaDB) insertChangeList(changeList []*CoPathPair, currentEpoch int64) (int64, error) {
+func (db *angelaDB) insertChangeList(changeList []*CoPathPair, currentEpoch uint64) (int64, error) {
 	stmt, err := db.getChangeListInsertStmt(len(changeList))
 
 	if err != nil {
@@ -275,7 +275,6 @@ func (db *angelaDB) retrieveLatestCopathDigests(copaths []string) ([]*CoPathPair
 		}
 		results = append(results, copathPair)
 	}
-
 	return results, nil
 }
 

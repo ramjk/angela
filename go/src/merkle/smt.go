@@ -6,9 +6,9 @@ import (
 	"crypto/sha256"
 	"bytes"
 	"sync"
-	"sort"
+	// "sort"
 	"strconv"
-	"runtime"
+	// "runtime"
 )
 
 const TREE_DEPTH int = 256
@@ -171,8 +171,7 @@ func (T *SparseMerkleTree) preloadCopaths(transactions BatchedTransaction, read 
 	return true, nil
 }
 
-func auroraWriteback(ch chan []*CoPathPair, quit chan bool, db *angelaDB, prefix string) {
-	var epochNumber int64 = 1
+func auroraWriteback(ch chan []*CoPathPair, quit chan bool, db *angelaDB, prefix string, epochNumber uint64) {
     for {
     	select {
     	case delta := <-ch:
@@ -195,7 +194,7 @@ func auroraWriteback(ch chan []*CoPathPair, quit chan bool, db *angelaDB, prefix
     }
 }
 
-func (T *SparseMerkleTree) BatchInsert(transactions BatchedTransaction) (string, error) {
+func (T *SparseMerkleTree) BatchInsert(transactions BatchedTransaction, epochNumber uint64) (string, error) {
 	readChannel := make(chan []*CoPathPair)
 
 	readDB, err := GetReadAngelaDB()
@@ -244,7 +243,7 @@ func (T *SparseMerkleTree) BatchInsert(transactions BatchedTransaction) (string,
 	ch := make(chan []*CoPathPair)
 	quit := make(chan bool)
 
-	go auroraWriteback(ch, quit, writeDB, T.prefix)
+	go auroraWriteback(ch, quit, writeDB, T.prefix, epochNumber)
 
 	for i:=0; i<len(transactions); i++ {
 		wg.Add(1)
@@ -258,63 +257,63 @@ func (T *SparseMerkleTree) BatchInsert(transactions BatchedTransaction) (string,
 	return base64.StdEncoding.EncodeToString(T.rootDigest), nil
 }
 
-func (T *SparseMerkleTree) batch2Insert(transactions BatchedTransaction) (bool, error) {
-	readChannel := make(chan []*CoPathPair)
-	readDB, err := GetReadAngelaDB()
-	if err != nil {
-		panic(err)
-	}
-	defer readDB.Close()
-	writeDB, err := GetWriteAngelaDB()
-	if err != nil {
-		panic(err)
-	}
-	sort.Sort(BatchedTransaction(transactions))
-	for i := 0; i < len(transactions); i+=BATCH_READ_SIZE {
-		go T.preloadCopaths(transactions[i:min(i+BATCH_READ_SIZE, len(transactions))], readChannel, readDB)
-	}
+// func (T *SparseMerkleTree) batch2Insert(transactions BatchedTransaction) (bool, error) {
+// 	readChannel := make(chan []*CoPathPair)
+// 	readDB, err := GetReadAngelaDB()
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	defer readDB.Close()
+// 	writeDB, err := GetWriteAngelaDB()
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	sort.Sort(BatchedTransaction(transactions))
+// 	for i := 0; i < len(transactions); i+=BATCH_READ_SIZE {
+// 		go T.preloadCopaths(transactions[i:min(i+BATCH_READ_SIZE, len(transactions))], readChannel, readDB)
+// 	}
 
-	for i := 0; i < len(transactions); i+=BATCH_READ_SIZE {
-		copathPairs := <-readChannel
-		for j := 0; j < len(copathPairs); j++ {
-			T.cache[copathPairs[j].ID] = &copathPairs[j].Digest
-		}
-	}
+// 	for i := 0; i < len(transactions); i+=BATCH_READ_SIZE {
+// 		copathPairs := <-readChannel
+// 		for j := 0; j < len(copathPairs); j++ {
+// 			T.cache[copathPairs[j].ID] = &copathPairs[j].Digest
+// 		}
+// 	}
 
-	T.conflicts, err = findConflicts(transactions)
-	if err != nil {
-		return false, err
-	}
+// 	T.conflicts, err = findConflicts(transactions)
+// 	if err != nil {
+// 		return false, err
+// 	}
 
-	for _, Transaction := range transactions {
-		for currID := Transaction.ID; currID != ""; currID = getParent(currID) {
-			placeHolder := T.getEmpty(0)
-			T.cache[currID] = &placeHolder
-		}
-	}
-	placeHolder := T.getEmpty(0)
-	T.cache[""] = &placeHolder
+// 	for _, Transaction := range transactions {
+// 		for currID := Transaction.ID; currID != ""; currID = getParent(currID) {
+// 			placeHolder := T.getEmpty(0)
+// 			T.cache[currID] = &placeHolder
+// 		}
+// 	}
+// 	placeHolder := T.getEmpty(0)
+// 	T.cache[""] = &placeHolder
 
-	var wg sync.WaitGroup
-	lenTrans := len(transactions)
-	ch := make(chan []*CoPathPair)
-	quit := make(chan bool)
+// 	var wg sync.WaitGroup
+// 	lenTrans := len(transactions)
+// 	ch := make(chan []*CoPathPair)
+// 	quit := make(chan bool)
 
-	go auroraWriteback(ch, quit, writeDB, T.prefix)
+// 	go auroraWriteback(ch, quit, writeDB, T.prefix)
 
-	stepSize := len(transactions) / runtime.GOMAXPROCS(0)
-	for i:=0; i<len(transactions); i+=stepSize {
-		wg.Add(1)
-		go T.batchPercolate(transactions[i:min(i+stepSize, lenTrans)], &wg, ch)
-	}
-	wg.Wait()
+// 	stepSize := len(transactions) / runtime.GOMAXPROCS(0)
+// 	for i:=0; i<len(transactions); i+=stepSize {
+// 		wg.Add(1)
+// 		go T.batchPercolate(transactions[i:min(i+stepSize, lenTrans)], &wg, ch)
+// 	}
+// 	wg.Wait()
 
-	quit <- true
-	rootDigestPointer := T.cache[""]
-	T.rootDigest = *rootDigestPointer
+// 	quit <- true
+// 	rootDigestPointer := T.cache[""]
+// 	T.rootDigest = *rootDigestPointer
 
-	return true, nil
-}
+// 	return true, nil
+// }
 
 func (T *SparseMerkleTree) percolate(index string, data string, wg *sync.WaitGroup, ch chan []*CoPathPair) (bool, error) {
 	defer wg.Done()
@@ -448,25 +447,93 @@ func (T *SparseMerkleTree) isConflict(index string) (bool) {
 }
 
 func (T *SparseMerkleTree) CGenerateProof(index string) ([]string) {
-	proof := T.GenerateProof(index)
-	fmt.Println(proof)
-	resultLength := len(proof.CoPath)*2+3
-	results := make([]string, resultLength)
+	proof := T.GenerateProofDB(index)
+	results := make([]string, proof.ProofLength)
     results[0] = strconv.FormatBool(bool(proof.ProofType))
     results[1] = proof.QueryID
     results[2] = proof.ProofID
-    for i := 3; i < resultLength; i += 2 {
-    	results[i] = proof.CoPath[i-3].ID
-    	results[i+1] = base64.StdEncoding.EncodeToString(proof.CoPath[i-3].Digest)
+    results[3] = strconv.FormatInt(int64(proof.ProofLength), 10)
+    for i := 4; i < proof.ProofLength; i += 2 {
+    	results[i] = proof.CoPath[(i-4)/2].ID
+    	results[i+1] = base64.StdEncoding.EncodeToString(proof.CoPath[(i-4)/2].Digest)
     }
     return results
+}
+
+func (T *SparseMerkleTree) GenerateProofDB(index string) (Proof) {
+	// readDB, err := GetReadAngelaDB()
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// defer readDB.Close()
+	proofResult := Proof{}
+	proofResult.QueryID = index
+	
+	var proof_t ProofType
+	var currID string
+	indexCheck := []string{index}
+	fmt.Println("Index to check", indexCheck)
+	// indexPair, err := readDB.retrieveLatestCopathDigests(indexCheck)
+	// ok := err == nil && len(indexPair) > 0
+
+	_, ok := T.cache[index]
+	if !ok {
+		proof_t = NONMEMBERSHIP
+		currID = T.getEmptyAncestor(index)
+	} else {
+		proof_t = MEMBERSHIP
+		currID = index
+	}
+	proofResult.ProofType = proof_t
+	proofResult.ProofID = currID
+	CoPath := make([]CoPathPair, 0)
+
+	copaths := make(map[string]bool)
+	// Our stopping condition is length > 0 so we don't add the root to the copath
+	for ; len(currID) > 0; currID = getParent(currID) {
+		siblingID, _ := getSibling(currID)
+		copaths[siblingID] = true
+	}
+	ids := make([]string, 0, len(copaths))
+    for k := range copaths {
+        ids = append(ids, k)
+    }
+    fmt.Println("number of copaths", len(ids))
+
+	// copathPairs, err := readDB.retrieveLatestCopathDigests(ids)
+	// if err != nil {
+	// 	fmt.Println(err)
+	// 	proofResult.CoPath = CoPath
+	// 	return proofResult
+	// }
+
+	// for j := 0; j < len(copathPairs); j++ {
+	// 	T.cache[copathPairs[j].ID] = &copathPairs[j].Digest
+	// }
+
+	// Our stopping condition is length > 0 so we don't add the root to the copath
+	for ; len(currID) > 0; currID = getParent(currID) {
+		// Append the sibling to the copath and advance current node
+		siblingID, _ := getSibling(currID)
+		siblingDigestPointer, ok := T.cache[siblingID]
+		var siblingDigest digest
+		if !ok {
+			siblingDigest = T.getEmpty(TREE_DEPTH - len(siblingID))
+		} else {
+			siblingDigest = *siblingDigestPointer
+		}
+		CoPathNode := CoPathPair{siblingID, siblingDigest}
+		CoPath = append(CoPath, CoPathNode)
+	}
+	// 4 metadata fields and 2 times the copath length
+	proofResult.ProofLength = len(CoPath)*2+4
+	proofResult.CoPath = CoPath
+	return proofResult	
 }
 
 func (T *SparseMerkleTree) GenerateProof(index string) (Proof) {
 	proofResult := Proof{}
 	proofResult.QueryID = index
-
-	fmt.Println(index)
 
 	var proof_t ProofType
 	var currID string

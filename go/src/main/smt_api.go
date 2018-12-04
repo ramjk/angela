@@ -11,7 +11,7 @@ import (
 )
 
 //export BatchWrite
-func BatchWrite(prefix *C.char, transactionsKeys []*C.char, transactionsValues []*C.char) *C.char {
+func BatchWrite(prefix *C.char, transactionsKeys []*C.char, transactionsValues []*C.char, epochNumber uint64) *C.char {
 	tree := merkle.MakeTree(C.GoString(prefix))
 
 	transactions := make([]*merkle.Transaction, len(transactionsKeys))
@@ -20,7 +20,7 @@ func BatchWrite(prefix *C.char, transactionsKeys []*C.char, transactionsValues [
 		transactions[i] = &merkle.Transaction{C.GoString(transactionsKeys[i]), C.GoString(transactionsValues[i])}
 	}
 
-	root, _ := tree.BatchInsert(transactions)
+	root, _ := tree.BatchInsert(transactions, epochNumber)
 
 	// onesSlice := make([]bool, len(transactionsKeys))
 	// for i := range onesSlice {
@@ -39,22 +39,14 @@ func Read(nodeId *C.char) **C.char {
 
 	id := C.GoString(nodeId)
     results := tree.CGenerateProof(id)
-    fmt.Println(results)
     resultLength := len(results)
+    fmt.Println("received", resultLength)
 
     // allocate space for all the node ids and digests and other fields in proof
     cArray := C.malloc(C.size_t(resultLength) * C.size_t(unsafe.Sizeof(uintptr(0))))
     //fmt.Println(cArray)
     // convert the C array to a Go Array so we can index it
     a := (*[1<<30]*C.char)(cArray)
-    // a[0] = C.CString(proof.proofType.String())
-    // a[1] = C.CString(proof.queryID)
-    // a[2] = C.CString(proof.proofID)
-
-    // for i := 3; i < resultLength; i += 2 {
-    // 	a[i] = C.CString(proof.coPath[i-3].ID)
-    // 	a[i+1] = C.CString(proof.coPath[i-3].digest.String())
-    // }
     for i := 0; i < resultLength; i++ {
     	a[i] = C.CString(results[i])
     }
@@ -65,19 +57,11 @@ func Read(nodeId *C.char) **C.char {
 func FreeCPointers(pointer **C.char, numItems int) {
 	p := unsafe.Pointer(pointer)
     a := (*[1<<30]*C.char)(p)[:numItems:numItems]
-    // fmt.Println(a)
-    // fmt.Println(numItems)
+    fmt.Println("About to free this many pointers", numItems+1)
 
     for idx:=0; idx<numItems; idx++  {
-    	// fmt.Println(idx)
-    	// fmt.Println(a[idx])
-    	// fmt.Println(C.GoString(a[idx]))
-    	fmt.Println("About to free")
-    	fmt.Println(a[idx])
         C.free(unsafe.Pointer(a[idx]))
     }
-    fmt.Println("About to free")
-    fmt.Println(p)
     C.free(p)
 }
 
