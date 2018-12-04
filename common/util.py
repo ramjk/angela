@@ -1,5 +1,11 @@
 import random, string
+import json
+import hashlib
+import base64
+
 from bitarray import bitarray
+
+PACKET_SIZE = 200
 
 """
 FIXME: Is this good?
@@ -8,10 +14,39 @@ class bitarray(bitarray):
     def __hash__(self):
         return self.tobytes().__hash__()
 
+class Proof(object):
+	def __init__(self):
+		self.ProofType = None
+		self.QueryID = None
+		self.ProofID = None
+		self.CoPath = None
+
+	def from_dict(json_dict):
+		proof = Proof()
+		proof.__dict__ = json_dict
+		return proof
+
+def empty(depth):
+	if depth == 0:
+		return SHA256("")
+	t = empty(depth - 1) 
+	return SHA256(t + t)	
+
 def to_bytes(data: str) -> bytes:
 	if type(data) == bytes:
 		return data
-	return data.encode()
+	return base64.b64decode(data)
+
+def to_string(data: bytes) -> str:
+	if type(data) == str:
+		return str
+	return base64.b64encode(data).decode()
+
+def SHA256(data):
+	data = to_bytes(data)
+	h = hashlib.sha256()
+	h.update(data)
+	return h.digest()
 
 #leaves must be sorted
 def find_conflicts(leaves: list):
@@ -46,3 +81,15 @@ def flip_coin():
 	if r > 0.5:
 		return True
 	return False
+
+def left_sibling(index):
+	return index[-1] == "0"
+
+def pad_packet(packet):
+	return packet.ljust(PACKET_SIZE)
+
+def send_data(sock, data: object):
+	json_dump = json.dumps(data.__dict__)
+	sock.sendall(pad_packet(str(len(json_dump)).encode()))
+	sock.sendall(pad_packet(b"data-type"))
+	sock.sendall(pad_packet(json_dump.encode()))
