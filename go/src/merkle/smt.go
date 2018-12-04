@@ -1,6 +1,7 @@
 package merkle
 
 import (
+	"encoding/base64"
 	"fmt"
 	"encoding/base64"
 	"crypto/sha256"
@@ -30,6 +31,10 @@ type SparseMerkleTree struct {
 type SyncBool struct {
 	lock *sync.Mutex
 	visited bool
+}
+
+func (T *SparseMerkleTree) GetRoot() (digest) {
+	return T.rootDigest
 }
 
 func (T *SparseMerkleTree) getEmpty(n int) (digest) {
@@ -95,8 +100,9 @@ func (T *SparseMerkleTree) getEmptyAncestor(nodeID string) (string) {
 
 FIXME: What are the error cases where we return error/False?
 */
-func (T *SparseMerkleTree) insert(index string, Data string) (bool) {
-	hash := hashDigest([]byte(Data))
+func (T *SparseMerkleTree) Insert(index string, data string) (bool) {
+	dig, _ := base64.StdEncoding.DecodeString(data)
+	hash := hashDigest(dig)
 	T.cache[index] = &hash
 
 	//FIXME: Actual copy?
@@ -111,7 +117,7 @@ func (T *SparseMerkleTree) insert(index string, Data string) (bool) {
 		siblingDigestPointer, ok := T.cache[siblingID]
 		var siblingDigest digest
 		if !ok {
-			siblingDigest = T.getEmpty(len(siblingID))
+			siblingDigest = T.getEmpty(TREE_DEPTH - len(siblingID))
 		} else {
 			siblingDigest = *siblingDigestPointer
 		}
@@ -211,7 +217,7 @@ func (T *SparseMerkleTree) BatchInsert(transactions BatchedTransaction) (bool, e
 	for i := 0; i < len(transactions); i+=BATCH_READ_SIZE {
 		copathPairs := <-readChannel
 		for j := 0; j < len(copathPairs); j++ {
-			T.cache[copathPairs[j].ID] = &copathPairs[j].digest
+			T.cache[copathPairs[j].ID] = &copathPairs[j].Digest
 		}
 	}
 	// fmt.Println("Cache after preload")
@@ -267,7 +273,7 @@ func (T *SparseMerkleTree) batch2Insert(transactions BatchedTransaction) (bool, 
 	for i := 0; i < len(transactions); i+=BATCH_READ_SIZE {
 		copathPairs := <-readChannel
 		for j := 0; j < len(copathPairs); j++ {
-			T.cache[copathPairs[j].ID] = &copathPairs[j].digest
+			T.cache[copathPairs[j].ID] = &copathPairs[j].Digest
 		}
 	}
 
@@ -311,10 +317,11 @@ func (T *SparseMerkleTree) percolate(index string, Data string, wg *sync.WaitGro
 
 	changeList := make([]*CoPathPair, 0)
 
-	changeList = append(changeList, &CoPathPair{ID: index, digest: hashDigest([]byte(Data))})
+	dig, _ := base64.StdEncoding.DecodeString(data)
+	changeList = append(changeList, &CoPathPair{ID: index, Digest: hashDigest(dig)})
 	
 	//TODO: You should not hash the value passed in if it not a leaf ie in the root tree
-	hash := hashDigest([]byte(Data))
+	hash := hashDigest(dig)
 	indexPointer := T.cache[index]
 	*indexPointer = hash
 
@@ -348,7 +355,7 @@ func (T *SparseMerkleTree) percolate(index string, Data string, wg *sync.WaitGro
 		} else {
 			parentDigest = hashDigest(append(currDigest, siblingDigest...))
 		}
-		changeList = append(changeList, &CoPathPair{ID: parentID, digest: parentDigest})
+		changeList = append(changeList, &CoPathPair{ID: parentID, Digest: parentDigest})
 		parentDigestPointer := T.cache[parentID]
 		*parentDigestPointer = parentDigest
 
@@ -370,10 +377,11 @@ func (T *SparseMerkleTree) batchPercolate(transactions BatchedTransaction, wg *s
 		Data := trans.Data
 
 		//TODO: You should not hash the value passed in if it not a leaf ie in the root tree
-		hash := hashDigest([]byte(Data))
+		dig, _ := base64.StdEncoding.DecodeString(data)
+		hash := hashDigest(dig)
 		indexPointer := T.cache[index]
 		*indexPointer = hash
-		changeList = append(changeList, &CoPathPair{ID: index, digest: hash})
+		changeList = append(changeList, &CoPathPair{ID: index, Digest: hash})
 
 		var currID string
 		for currID = index; len(currID) > 0; {
@@ -406,7 +414,7 @@ func (T *SparseMerkleTree) batchPercolate(transactions BatchedTransaction, wg *s
 			}
 			parentDigestPointer := T.cache[parentID]
 			*parentDigestPointer = parentDigest
-			changeList = append(changeList, &CoPathPair{ID: parentID, digest: parentDigest})
+			changeList = append(changeList, &CoPathPair{ID: parentID, Digest: parentDigest})
 
 			// Traverse up the tree by making the current node the parent node
 			currID = parentID
@@ -449,9 +457,9 @@ func (T *SparseMerkleTree) CGenerateProof(index string) ([]string) {
     return results
 }
 
-func (T *SparseMerkleTree) generateProof(index string) (Proof) {
+func (T *SparseMerkleTree) GenerateProof(index string) (Proof) {
 	proofResult := Proof{}
-	proofResult.queryID = index
+	proofResult.QueryID = index
 
 	var proof_t ProofType
 	var currID string
@@ -463,9 +471,9 @@ func (T *SparseMerkleTree) generateProof(index string) (Proof) {
 		proof_t = MEMBERSHIP
 		currID = index
 	}
-	proofResult.proofType = proof_t
-	proofResult.proofID = currID
-	coPath := make([]CoPathPair, 0)
+	proofResult.ProofType = proof_t
+	proofResult.ProofID = currID
+	CoPath := make([]CoPathPair, 0)
 
 	// Our stopping condition is length > 0 so we don't add the root to the copath
 	for ; len(currID) > 0; currID = getParent(currID) {
@@ -474,48 +482,48 @@ func (T *SparseMerkleTree) generateProof(index string) (Proof) {
 		siblingDigestPointer, ok := T.cache[siblingID]
 		var siblingDigest digest
 		if !ok {
-			siblingDigest = T.getEmpty(len(siblingID))
+			siblingDigest = T.getEmpty(TREE_DEPTH - len(siblingID))
 		} else {
 			siblingDigest = *siblingDigestPointer
 		}
 
-		coPathNode := CoPathPair{siblingID, siblingDigest}
-		coPath = append(coPath, coPathNode)
+		CoPathNode := CoPathPair{siblingID, siblingDigest}
+		CoPath = append(CoPath, CoPathNode)
 	}
 
-	proofResult.coPath = coPath
+	proofResult.CoPath = CoPath
 	return proofResult
 }
 
 func (T *SparseMerkleTree) verifyProof(proof Proof) (bool) {
 	// If proof of nonmembership, first make sure that there is a prefix match
-	proofIDLength := len(proof.proofID)
-	if proof.proofType == NONMEMBERSHIP {
-		if proofIDLength > len(proof.queryID) {
+	ProofIDLength := len(proof.ProofID)
+	if proof.ProofType == NONMEMBERSHIP {
+		if ProofIDLength > len(proof.QueryID) {
 			return false
 		}
 
-		for i := 0; i < proofIDLength; i++ {
-			if proof.proofID[i] != proof.queryID[i] {
+		for i := 0; i < ProofIDLength; i++ {
+			if proof.ProofID[i] != proof.QueryID[i] {
 				return false
 			}
 		}
 	}
 
-	rootDigestPointer, ok := T.cache[proof.proofID]
+	rootDigestPointer, ok := T.cache[proof.ProofID]
 	var rootDigest digest
 	if !ok {
-		rootDigest = T.getEmpty(TREE_DEPTH - proofIDLength)
+		rootDigest = T.getEmpty(TREE_DEPTH - ProofIDLength)
 	} else {
 		rootDigest = *rootDigestPointer
 	}
 
-	for i := 0; i < len(proof.coPath); i++ {
-		currNode := proof.coPath[i]
+	for i := 0; i < len(proof.CoPath); i++ {
+		currNode := proof.CoPath[i]
 		if currNode.ID[len(currNode.ID) - 1] == '0' {
-			rootDigest = hashDigest(append(currNode.digest, rootDigest...))
+			rootDigest = hashDigest(append(currNode.Digest, rootDigest...))
 		} else {
-			rootDigest = hashDigest(append(rootDigest, currNode.digest...))
+			rootDigest = hashDigest(append(rootDigest, currNode.Digest...))
 		}
 	}
 	return bytes.Equal(rootDigest, T.rootDigest)
@@ -539,13 +547,14 @@ func findConflicts(leaves []*Transaction) (map[string]*SyncBool, error) {
 	return conflicts, nil
 }
 
-func MakeTree() (*SparseMerkleTree, error) {
+func MakeTree() (*SparseMerkleTree) {
 	T := SparseMerkleTree{} 
 	T.depth = TREE_DEPTH
 	T.cache = make(map[string]*digest)
 	T.empty_cache = make(map[int]digest)
-	T.empty_cache[0] = hashDigest([]byte("0"))  
+	dig, _ := base64.StdEncoding.DecodeString("")
+	T.empty_cache[0] = hashDigest(dig)  
 	T.rootDigest = T.getEmpty(TREE_DEPTH) // FIXME: Should this be the case for an empty tree?
 	T.conflicts = make(map[string]*SyncBool)
-	return &T, nil
+	return &T
 }

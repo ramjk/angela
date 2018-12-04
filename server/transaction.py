@@ -1,16 +1,16 @@
 from typing import List
 
 class Transaction(object):
-	def __init__(self, transaction_type: str, index: str) -> None:
-		self.multi_leaf = False
-		self.transaction_type = transaction_type
-		self.index = index
+	def __init__(self, TransactionType: str, index: str) -> None:
+		self.MultiLeaf = False
+		self.TransactionType = TransactionType
+		self.Index = index
 
 	def __eq__(self, other):
-		return self.index == other.index
+		return self.Index == other.Index
 
 	def __lt__(self, other):
-		return self.index < other.index
+		return self.Index < other.Index
 
 	def from_dict(json_dict):
 		tx = Transaction('', '')
@@ -24,14 +24,14 @@ class ReadTransaction(Transaction):
 class WriteTransaction(Transaction):
 	def __init__(self, index: str, data: str) -> None:
 		Transaction.__init__(self, 'W', index)
-		self.data = data
+		self.Data = data
 
 class MultiLeafTransaction(Transaction):
 	def __init__(self, transactions: List[Transaction]) -> None:
-		self.multi_leaf = True
+		self.MultiLeaf = True
 		self.transactions = transactions
 		for index in indices: 
-			self.transaction_list.append(ReadTransaction.__init__(self, 'R', index))
+			self.transaction_list.append(ReadTransaction.__init__(self, 'R', Index))
 
 class MultiLeafReadTransaction(MultiLeafTransaction):
 	def __init__(self, indices) -> None:

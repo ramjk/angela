@@ -14,33 +14,36 @@ class TestSparseMerkleTree(unittest.TestCase):
 		epoch_length = 1000
 		tree_depth = 256
 
-		self.server = Server(port, num_worker, epoch_length, tree_depth)
-		self.client = Client("localhost", port)
+		root = Client.get_signed_root()
+		
 
-		for i in range(4):
-			print()
-		print("__________________________________________")
+		# self.server = Server(port, num_worker, epoch_length, tree_depth)
+		# self.client = Client("localhost", port)
 
-	def tearDown(self):
-		self.server.close()
-		self.client.end_session()
+		# for i in range(4):
+		# 	print()
+		# print("__________________________________________")
+
+	# def tearDown(self):
+		# self.server.close()
+		# self.client.end_session()
 
 	def test_practice(self):
-		conn, addr = self.server.socket.accept()
-		server_thread = threading.Thread(target=self.server.receive, args=(conn,))
-		server_thread.start()
-		tx = self.client.practice()
-		self.assertEqual(tx.data, "practice")
+		index = util.random_index()
+		data = util.random_string()
+		for i in range(1):
+			index = util.random_index()
+			data = util.random_string()
+			tx = Client.insert_leaf(index, data)
+		# tx = Client.insert_leaf(index, data)
+		# root = Client.get_signed_root()
+		# proof = Client.generate_proof(index)
+		# self.assertTrue(Client.verify_proof(proof, data, root))
 
-		# self.server.epoch_length = 2
-		# for i in range(2):
-		# 	print(self.client.insert_leaf(util.random_index(), util.random_string()))
-
-
-		# print("36")
-		# self.server.receive_transaction(WriteTransaction('1000', 'apple'))
-		# print("38")
-		# self.server.receive_transaction(WriteTransaction('1001', 'banana'))
+		# index = util.random_index()
+		# data = util.random_string()
+		# root = Client.get_signed_root()
+		# self.assertTrue(Client.verify_proof(Client.generate_proof(index), data, root))
 
 if __name__ == '__main__':
 	unittest.main()

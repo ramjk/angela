@@ -168,7 +168,7 @@ func (db *angelaDB) insertChangeList(changeList []*CoPathPair, currentEpoch int6
 
 	vals := []interface{}{} 
 	for _, elem := range changeList {
-	    vals = append(vals, elem.ID, elem.digest, currentEpoch)
+	    vals = append(vals, elem.ID, elem.Digest, currentEpoch)
 	}
 	//format all vals at once
 	transaction, err := db.conn.Begin()
@@ -203,7 +203,7 @@ func readRows(scanner rowScanner) (*CoPathPair, error) {
 
 	coPathPair := &CoPathPair{
 		ID:            nodeId,
-		digest:        nodeDigest,
+		Digest:        nodeDigest,
 	}
 	return coPathPair, nil
 }
