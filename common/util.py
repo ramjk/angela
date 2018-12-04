@@ -1,5 +1,8 @@
 import random, string
+import json
 from bitarray import bitarray
+
+PACKET_SIZE = 200
 
 """
 FIXME: Is this good?
@@ -46,3 +49,12 @@ def flip_coin():
 	if r > 0.5:
 		return True
 	return False
+
+def pad_packet(packet):
+	return packet.ljust(PACKET_SIZE)
+
+def send_data(sock, data: object):
+	json_dump = json.dumps(data.__dict__)
+	sock.sendall(pad_packet(str(len(json_dump)).encode()))
+	sock.sendall(pad_packet(b"data-type"))
+	sock.sendall(pad_packet(json_dump.encode()))
