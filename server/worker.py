@@ -36,7 +36,7 @@ class Worker(object):
 		else:
 			return smt_api.read(Transaction.Index)
 			
-	def batch_update(self, worker_roots=None):
+	def batch_update(self, epoch_number, worker_roots=None):
 		print("performing batch update for workerID:", self.worker_id)
 		if worker_roots:
 			transaction_list = list()
@@ -58,6 +58,6 @@ class Worker(object):
 			values.append(transaction.Data)
 
 		success, worker_root_digest = True, random_string()
-		# success, worker_root_digest = server.smt_api.batch_insert(self.prefix, keys, values)
+		# success, worker_root_digest = server.smt_api.batch_insert(self.prefix, keys, values, epoch_number)
 		return success, worker_root_digest, self.prefix
 

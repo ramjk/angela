@@ -25,6 +25,8 @@ class Server(object):
 		self.socket.bind(("localhost", port))
 		self.socket.listen()
 
+		self.epoch_number = 1
+
 		self.write_transaction_list = list()
 		self.read_transaction_list = list()
 
@@ -91,7 +93,7 @@ class Server(object):
 
 		if len(self.write_transaction_list) == self.epoch_length:
 			for leaf_worker in self.leaf_workers:
-				object_ids.append(leaf_worker.batch_update.remote())
+				object_ids.append(leaf_worker.batch_update.remote(self.epoch_number))
 
 			for object_id in object_ids:
 				success, worker_root_digest, prefix = ray.get(object_id)
@@ -99,6 +101,7 @@ class Server(object):
 
 			ray.get(self.root_worker.batch_update.remote(worker_roots))
 			self.write_transaction_list = list()
+			self.epoch_number += 1
 			
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser()

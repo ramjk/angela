@@ -27,7 +27,7 @@ def random_index(digest_size: int = 256) -> str:
 def random_string(size: int=8) -> str:
 	return ''.join(random.choices(string.ascii_uppercase + string.digits, k=size))
 
-def batch_insert(prefix, keys, values):
+def batch_insert(prefix, keys, values, epoch_number):
 	raise NotImplementedError
 
 def read(index) -> util.Proof:
