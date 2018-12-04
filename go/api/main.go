@@ -50,13 +50,16 @@ func UpdateLeaf(w http.ResponseWriter, r *http.Request) {
 	if tx.TransactionType != "W" {
 		w.WriteHeader(http.StatusBadRequest)
 	} else {
-		ok := Angela.Insert(tx.Index, tx.Data)
-		if ok {
-			w.WriteHeader(http.StatusOK)
-		} else {
-			w.WriteHeader(http.StatusBadRequest)
-		}
-		
+		// ok := Angela.Insert(tx.Index, tx.Data)
+		// if ok {
+		// 	w.WriteHeader(http.StatusOK)
+		// } else {
+		// 	w.WriteHeader(http.StatusBadRequest)
+		// }
+		Queue = append(Queue, &merkle.Transaction{ID: tx.Index, Data: tx.Data})	
+		if len(Queue) == 2048 {
+			Angela.BatchInsert(Queue)
+		}	
 	}
 }
 

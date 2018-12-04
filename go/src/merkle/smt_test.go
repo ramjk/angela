@@ -11,7 +11,7 @@ import (
 	"sort"
 )
 
-const NUMITERATIONS int = 100
+const NUMITERATIONS int = 2048
 
 // var seedNum int64 = 0
 
