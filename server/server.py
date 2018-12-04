@@ -6,9 +6,9 @@ import json
 
 from multiprocessing import Pool
 from math import log
-from server.transaction import Transaction
+from server.transaction import Transaction, WriteTransaction
 from server.worker import Worker
-from common.util import send_data
+from common.util import random_index, random_string, send_data
 
 class Server(object):
 	"""
@@ -27,15 +27,15 @@ class Server(object):
 
 		self.write_transaction_list = list()
 		self.read_transaction_list = list()
-		self.in_write_mode = False
 
 		ray.init()
 
-		self.root_depth = int(log(num_workers-1, 2))
-		self.root_worker = Worker.remote(self.root_depth, -1)
+		# num_workers includes the root node
+		self.prefix_length = int(log(num_workers-1, 2))
+		self.root_worker = Worker.remote(self.prefix_length-1, -1, self.prefix_length)
 		self.leaf_workers = leaf_workers = list()
 		for worker_id in range(num_workers-1):
-			worker = Worker.remote(tree_depth-self.root_depth, worker_id, self.root_worker)
+			worker = Worker.remote(tree_depth-self.prefix_length, worker_id, self.prefix_length, self.root_worker)
 			leaf_workers.append(worker)
 		self.root_worker.set_children.remote(leaf_workers)
 
@@ -67,7 +67,8 @@ class Server(object):
 		if tx.data == "practice":
 			send_data(conn, tx)
 
-		# self.receive_transaction(tx)
+		result = self.receive_transaction(tx)
+		send_data(conn, result)
 		conn.close()
 
 	def close(self) -> None:
@@ -76,34 +77,27 @@ class Server(object):
 		ray.shutdown()
 
 	def receive_transaction(self, transaction: Transaction) -> None:
-		if transaction.transaction_type == 'W':
+		# destination_worker_index = int(transaction.Index[:int(log(self.num_workers, 2))], 2) # FIXME: Can we use a more efficient representation of indices/node_ids?
+		destination_worker_index = int(transaction.Index, 2) >> (len(transaction.Index) - self.prefix_length)
+		object_id = self.leaf_workers[destination_worker_index].receive_transaction.remote(transaction)
+
+		if transaction.TransactionType == 'W':
 			self.write_transaction_list.append(transaction)
 		else:
-			self.read_transaction_list.append(transaction)
+			return ray.get(object_id) # If read, then return proof object
 
-		# destination_worker_index = int(transaction.index[:int(log(self.num_workers, 2))], 2) # FIXME: Can we use a more efficient representation of indices/node_ids?
-		destination_worker_index = int(transaction.index, 2) >> (len(transaction.index) - self.root_depth)
-		self.leaf_workers[destination_worker_index].receive_transaction.remote(transaction)
-
-		new_roots = list()
-		dirty_list = list()
+		worker_roots = list()
 		object_ids = list()
 
 		if len(self.write_transaction_list) == self.epoch_length:
 			for leaf_worker in self.leaf_workers:
 				object_ids.append(leaf_worker.batch_update.remote())
-				# call c-extension code here
 
 			for object_id in object_ids:
-				new_root, change_list = ray.get(object_id)
-				new_roots.append(new_root)
-				dirty_list.extend(change_list)
+				success, worker_root_digest, prefix = ray.get(object_id)
+				worker_roots.append((prefix, worker_root_digest))
 
-			print(new_roots)
-			print(dirty_list)
-
-			ray.get(self.root_worker.batch_update.remote(new_roots, dirty_list))
-
+			ray.get(self.root_worker.batch_update.remote(worker_roots))
 			self.write_transaction_list = list()
 			
 if __name__ == '__main__':
@@ -116,3 +110,8 @@ if __name__ == '__main__':
 
 	server = Server(args.port, args.num_workers, args.epoch_length, args.tree_depth)
 	server.start()
+
+	# server = Server(8008, 9, 1000, 256)
+	# for i in range(1000):
+	# 	transaction = WriteTransaction(random_index(), random_string())
+	# 	server.receive_transaction(transaction)

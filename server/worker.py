@@ -1,24 +1,26 @@
 import bisect
 import ray
-from typing import List, Optional, Tuple
 
-from server.transaction import Transaction
+from server import smt_api 
+from typing import List, Optional, Tuple
+from server.transaction import Transaction, WriteTransaction
+from common.util import random_string
 
 @ray.remote
 class Worker(object):
-	def __init__(self, depth: int, worker_id: int, parent=None):
+	def __init__(self, depth: int, worker_id: int, prefix_length: int, parent=None):
 		self.children = None
 		self.depth = depth
 		self.worker_id = worker_id
 		self.parent = parent
 		self.write_transaction_list = list()
 		self.read_transaction_list = list()
+		self.prefix = ""
 
 		if parent:
-			parent_depth = ray.get(parent.get_depth.remote())
-			prefix = format(worker_id, '0{}b'.format(parent_depth))
-			self.start = prefix + '0' * depth
-			self.end = prefix + '1' * depth
+			self.prefix = format(worker_id, '0{}b'.format(prefix_length))
+			self.start = self.prefix + '0' * depth
+			self.end = self.prefix + '1' * depth
 
 	def set_children(self, children) -> None:
 		self.children = children
@@ -26,23 +28,36 @@ class Worker(object):
 	def get_depth(self) -> int:
 		return self.depth
 
-	def receive_transaction(self, transaction: Transaction) -> None:
-		print("In worker {}".format(self.worker_id))
-		print("Transaction ID: {}".format(transaction.index))
-		if transaction.transaction_type == 'W':
+	def receive_transaction(self, transaction: Transaction) -> Optional[str]:
+		# print("In worker {}".format(self.worker_id))
+		# print("Transaction ID: {}".format(transaction.Index))
+		if transaction.TransactionType == 'W':
 			bisect.insort(self.write_transaction_list, transaction)
 		else:
-			self.read_transaction_list.append(transaction)
-
-	def batch_update(self, transaction_list=None, dirty_list=None):
+			return smt_api.read(Transaction.Index)
+			
+	def batch_update(self, worker_roots=None):
 		print("performing batch update for workerID:", self.worker_id)
-		if not transaction_list:
-			# call the c extension code here to perform batch percolate
-			new_root = ('101', "chocolate")
-			change_list = [('1001', 'x'), ('1000', 'y'), ('10010', 'z')]
-			return new_root, change_list 
-
+		if worker_roots:
+			transaction_list = list()
+			print(worker_roots)
+			for i in range(0, len(worker_roots), 2):
+				transaction_digest = worker_roots[i][1] + worker_roots[i+1][1]
+				transaction_index = worker_roots[i][0][:-1] 
+				# ^ remove last bit because that is the common prefix between the i and i+1 nodes 
+				transaction_list.append(WriteTransaction(transaction_index, transaction_digest))
+			print(len(transaction_list))
+			for transaction in transaction_list:
+				print(transaction.__dict__)
 		else:
-			print("===ROOT===")
-			# call the c extension code here to perform batch 
-			# percolate on root node
+			transaction_list = self.write_transaction_list
+
+		keys = values = list() 
+		for transaction in transaction_list:
+			keys.append(transaction.Index[len(self.prefix):])
+			values.append(transaction.Data)
+
+		success, worker_root_digest = True, random_string()
+		# success, worker_root_digest = server.smt_api.batch_insert(self.prefix, keys, values)
+		return success, worker_root_digest, self.prefix
+
