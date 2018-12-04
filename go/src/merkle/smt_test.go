@@ -89,62 +89,6 @@ func TestSortTransactions(t *testing.T) {
 // 	db.ShowTables() 
 // }
 
-func TestBatchInsert(t * testing.T) {
-	transactionLen := NUMITERATIONS
-	tree := MakeTree()
-
-	transactions := make([]*Transaction, transactionLen)
-
-	for i := 0; i < transactionLen; i++ {
-		transactions[i] = &Transaction{randomBitString(TREE_DEPTH), fmt.Sprintf("angela%d", i)}
-	}
-
-    tree.BatchInsert(transactions)
-	// for k, v := range tree.conflicts { 
-    //   fmt.Printf("key[%s] value[%s]\n", k, v.writeable)
-	// }
-	
-	for i := 0; i < transactionLen; i++ {
-		proof := tree.GenerateProof(transactions[i].id)
-
-		if len(proof.CoPath) != TREE_DEPTH {
-			t.Error("Length of the copath was not equal to TREE_DEPTH.")
-		}
-
-		if !tree.verifyProof(proof) {
-			t.Error("Proof was invalid when it was expected to be valid.")
-		}
-	}
-}
-
-func TestBatch2Insert(t * testing.T) {
-	transactionLen := NUMITERATIONS
-	tree := MakeTree()
-
-	transactions := make([]*Transaction, transactionLen)
-
-	for i := 0; i < transactionLen; i++ {
-		transactions[i] = &Transaction{randomBitString(TREE_DEPTH), fmt.Sprintf("angela%d", i)}
-	}
-
-    tree.batch2Insert(transactions)
-	// for k, v := range tree.conflicts { 
-    //   fmt.Printf("key[%s] value[%s]\n", k, v.writeable)
-	// }
-	
-	for i := 0; i < transactionLen; i++ {
-		proof := tree.GenerateProof(transactions[i].id)
-
-		if len(proof.CoPath) != TREE_DEPTH {
-			t.Error("Length of the copath was not equal to TREE_DEPTH.")
-		}
-
-		if !tree.verifyProof(proof) {
-			t.Error("Proof was invalid when it was expected to be valid.")
-		}
-	}
-}
-
 func TestSibling(t *testing.T) {
 	index := "11100010"
 	_, isLeft := getSibling(index)
@@ -177,7 +121,7 @@ func TestConstructor(t *testing.T) {
 	}
 
 	actual := tree.getEmpty(0)
-	expected := hashDigest([]byte("0"))
+	expected := hashDigest([]byte(""))
 	if !bytes.Equal(actual, expected) {
 		t.Error("0-th level empty node is incorrect.")
 	}
@@ -269,16 +213,6 @@ func TestNonMembership(t *testing.T) {
 		t.Error("Proof was not verified")
 	}
 }
-
-func TestDatabaseConnection(t *testing.T) {
-	db, err := GetReadAngelaDB()
-	if err != nil {
-		panic(err)
-	}
-	defer db.Close()
-	// Write a ping here 
-}
-
 
 
 func benchmarkInsertN(tree *SparseMerkleTree, indices []string, Data []string, b *testing.B) {
@@ -677,3 +611,68 @@ func BenchmarkBatch2Insert16384(b *testing.B) {
 	b.ResetTimer()
 	tree.batch2Insert(transactions)
 }
+
+// func TestBatchInsert(t * testing.T) {
+// 	transactionLen := NUMITERATIONS
+// 	tree := MakeTree()
+
+// 	transactions := make([]*transaction, transactionLen)
+
+// 	for i := 0; i < transactionLen; i++ {
+// 		transactions[i] = &transaction{randomBitString(TREE_DEPTH), fmt.Sprintf("angela%d", i)}
+// 	}
+
+//     tree.batchInsert(transactions)
+// 	// for k, v := range tree.conflicts { 
+//     //   fmt.Printf("key[%s] value[%s]\n", k, v.writeable)
+// 	// }
+	
+// 	for i := 0; i < transactionLen; i++ {
+// 		proof := tree.GenerateProof(transactions[i].id)
+
+// 		if len(proof.CoPath) != TREE_DEPTH {
+// 			t.Error("Length of the copath was not equal to TREE_DEPTH.")
+// 		}
+
+// 		if !tree.verifyProof(proof) {
+// 			t.Error("Proof was invalid when it was expected to be valid.")
+// 		}
+// 	}
+// }
+
+// func TestBatch2Insert(t * testing.T) {
+// 	transactionLen := NUMITERATIONS
+// 	tree := MakeTree()
+
+// 	transactions := make([]*transaction, transactionLen)
+
+// 	for i := 0; i < transactionLen; i++ {
+// 		transactions[i] = &transaction{randomBitString(TREE_DEPTH), fmt.Sprintf("angela%d", i)}
+// 	}
+
+//     tree.batch2Insert(transactions)
+// 	// for k, v := range tree.conflicts { 
+//     //   fmt.Printf("key[%s] value[%s]\n", k, v.writeable)
+// 	// }
+	
+// 	for i := 0; i < transactionLen; i++ {
+// 		proof := tree.GenerateProof(transactions[i].id)
+
+// 		if len(proof.CoPath) != TREE_DEPTH {
+// 			t.Error("Length of the copath was not equal to TREE_DEPTH.")
+// 		}
+
+// 		if !tree.verifyProof(proof) {
+// 			t.Error("Proof was invalid when it was expected to be valid.")
+// 		}
+// 	}
+// }
+
+// func TestDatabaseConnection(t *testing.T) {
+// 	db, err := GetReadAngelaDB()
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	defer db.Close()
+// 	// Write a ping here 
+// }
