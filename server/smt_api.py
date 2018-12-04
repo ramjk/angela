@@ -1,6 +1,8 @@
 from ctypes import *
+from typing import List
 import random
 import string
+from common import util
 from bitarray import bitarray
 
 lib = cdll.LoadLibrary("../go/src/main/smt_api.so")
@@ -25,6 +27,12 @@ def random_index(digest_size: int = 256) -> str:
 
 def random_string(size: int=8) -> str:
 	return ''.join(random.choices(string.ascii_uppercase + string.digits, k=size))
+
+def batch_insert(keys, values) -> List[bool]:
+	raise NotImplementedError
+
+def read(index) -> util.Proof:
+	raise NotImplementedError
 
 length = 5
 k = [random_index().encode() for i in range(length)]
