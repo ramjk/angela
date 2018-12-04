@@ -26,11 +26,20 @@ def random_index(digest_size: int = 256) -> str:
 def random_string(size: int=8) -> str:
 	return ''.join(random.choices(string.ascii_uppercase + string.digits, k=size))
 
-keys = GoSlice((c_char_p * 5)(c_char_p(random_index().encode()), c_char_p(random_index().encode()), c_char_p(random_index().encode()), c_char_p(random_index().encode()), c_char_p(random_index().encode())), 5, 5)
-values = GoSlice((c_char_p * 5)(c_char_p(random_string().encode()), c_char_p(random_string().encode()), c_char_p(random_string().encode()), c_char_p(random_string().encode()), c_char_p(random_string().encode())), 5, 5)
-lib.BatchWrite.restype = c_bool
-
+length = 5
+k = [random_index().encode() for i in range(length)]
+v = [random_string().encode() for i in range(length)]
+k_arr = (c_char_p * len(k))(*k)
+v_arr = (c_char_p * len(v))(*v)
+keys = GoSlice(k_arr, length, length)
+values = GoSlice(v_arr, length, length)
+lib.BatchWrite.restype = ndpointer(dtype=c_bool, shape=(length,))
 print(lib.BatchWrite(keys, values))
-
-
-
+c_char_p_p = POINTER(c_char_p)
+lib.argtypes = [c_char_p]
+lib.Read.restype = c_char_p_p
+result = lib.Read(random_index().encode())
+vals = [result[i].decode() for i in range(5)]
+print(vals)
+lib.FreeCPointers.argtypes = [c_char_p_p, c_int]
+lib.FreeCPointers(result, len(vals))

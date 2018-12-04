@@ -2,10 +2,12 @@ package merkle
 
 import (
 	"fmt"
+	"encoding/base64"
 	"crypto/sha256"
 	"bytes"
 	"sync"
 	"sort"
+	"strconv"
 	"runtime"
 )
 
@@ -185,6 +187,7 @@ func auroraWriteback(ch chan []*CoPathPair, quit chan bool, db *angelaDB) {
 
 func (T *SparseMerkleTree) BatchInsert(transactions BatchedTransaction) (bool, error) {
 	readChannel := make(chan []*CoPathPair)
+
 	readDB, err := GetReadAngelaDB()
 	if err != nil {
 		panic(err)
@@ -195,9 +198,12 @@ func (T *SparseMerkleTree) BatchInsert(transactions BatchedTransaction) (bool, e
 		panic(err)
 	}
 	defer writeDB.Close()
+
+
 	// fmt.Println("Cache before preload")
 	// fmt.Println(T.cache)
 	sort.Sort(BatchedTransaction(transactions))
+
 	for i := 0; i < len(transactions); i+=BATCH_READ_SIZE {
 		go T.preloadCopaths(transactions[i:min(i+BATCH_READ_SIZE, len(transactions))], readChannel, readDB)
 	}
@@ -429,6 +435,20 @@ func (T *SparseMerkleTree) isConflict(index string) (bool) {
 	return false
 }
 
+func (T *SparseMerkleTree) CGenerateProof(index string) ([]string) {
+	proof := T.generateProof(index)
+	resultLength := len(proof.coPath)*2+3
+	results := make([]string, resultLength)
+    results[0] = strconv.FormatBool(bool(proof.proofType))
+    results[1] = proof.queryID
+    results[2] = proof.proofID
+    for i := 3; i < resultLength; i += 2 {
+    	results[i] = proof.coPath[i-3].ID
+    	results[i+1] = base64.StdEncoding.EncodeToString(proof.coPath[i-3].digest)
+    }
+    return results
+}
+
 func (T *SparseMerkleTree) generateProof(index string) (Proof) {
 	proofResult := Proof{}
 	proofResult.queryID = index
@@ -438,7 +458,7 @@ func (T *SparseMerkleTree) generateProof(index string) (Proof) {
 	_, ok := T.cache[index]
 	if !ok {
 		proof_t = NONMEMBERSHIP
-		currID = T.getEmptyAncestor(currID)
+		currID = T.getEmptyAncestor(index)
 	} else {
 		proof_t = MEMBERSHIP
 		currID = index
