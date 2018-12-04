@@ -471,7 +471,8 @@ func (T *SparseMerkleTree) GenerateProof(index string) (Proof) {
 		proof_t = MEMBERSHIP
 		currID = index
 	}
-	fmt.Println(T.getEmpty(TREE_DEPTH - len(currID)))
+	fmt.Println("Call to empty")
+	fmt.Println(base64.StdEncoding.EncodeToString(T.getEmpty(TREE_DEPTH - len(currID))))
 	proofResult.ProofType = proof_t
 	proofResult.ProofID = currID
 	CoPath := make([]CoPathPair, 0)
@@ -483,7 +484,7 @@ func (T *SparseMerkleTree) GenerateProof(index string) (Proof) {
 		siblingDigestPointer, ok := T.cache[siblingID]
 		var siblingDigest digest
 		if !ok {
-			siblingDigest = T.getEmpty(len(siblingID))
+			siblingDigest = T.getEmpty(TREE_DEPTH - len(siblingID))
 		} else {
 			siblingDigest = *siblingDigestPointer
 		}

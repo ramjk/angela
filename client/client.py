@@ -48,6 +48,8 @@ class Client(object):
 
 	def verify_proof(proof, data, root):
 		proof_id_length = len(proof.ProofID)
+		print("proof", proof.__dict__)
+		print("proofID", proof.ProofID)
 		tmp =  None
 		if proof.ProofType == False:
 			if proof_id_length > len(proof.QueryID):
@@ -56,7 +58,7 @@ class Client(object):
 				if proof.ProofID[i] != proof.QueryID[i]:
 					return False
 			tmp = util.empty(256 - proof_id_length)
-			print(util.to_string(tmp))
+			print("tmp", util.to_string(tmp))
 		else:
 			tmp = util.SHA256(util.to_bytes(data))
 
