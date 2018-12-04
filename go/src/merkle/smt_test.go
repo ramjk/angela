@@ -91,7 +91,7 @@ func TestSortTransactions(t *testing.T) {
 
 func TestBatchInsert(t * testing.T) {
 	transactionLen := NUMITERATIONS
-	tree, _ := MakeTree()
+	tree := MakeTree()
 
 	transactions := make([]*Transaction, transactionLen)
 
@@ -107,7 +107,7 @@ func TestBatchInsert(t * testing.T) {
 	for i := 0; i < transactionLen; i++ {
 		proof := tree.GenerateProof(transactions[i].id)
 
-		if len(proof.coPath) != TREE_DEPTH {
+		if len(proof.CoPath) != TREE_DEPTH {
 			t.Error("Length of the copath was not equal to TREE_DEPTH.")
 		}
 
@@ -119,7 +119,7 @@ func TestBatchInsert(t * testing.T) {
 
 func TestBatch2Insert(t * testing.T) {
 	transactionLen := NUMITERATIONS
-	tree, _ := MakeTree()
+	tree := MakeTree()
 
 	transactions := make([]*Transaction, transactionLen)
 
@@ -135,7 +135,7 @@ func TestBatch2Insert(t * testing.T) {
 	for i := 0; i < transactionLen; i++ {
 		proof := tree.GenerateProof(transactions[i].id)
 
-		if len(proof.coPath) != TREE_DEPTH {
+		if len(proof.CoPath) != TREE_DEPTH {
 			t.Error("Length of the copath was not equal to TREE_DEPTH.")
 		}
 
@@ -170,7 +170,7 @@ func TestParentEmpty(t *testing.T) {
 }
 
 func TestConstructor(t *testing.T) {
-	tree, _ := MakeTree()
+	tree := MakeTree()
 
 	if !bytes.Equal(tree.empty_cache[0], tree.getEmpty(0)) {
 		t.Error("empty_cache[0] != getEmpty(0)")
@@ -189,10 +189,8 @@ func TestConstructor(t *testing.T) {
 
 func TestMembershipSmall(t *testing.T) {
 	index := "101"
-
-	tree, _ := MakeTree()
-
-	tree.insert(index, "angela")
+	tree := MakeTree()
+	tree.Insert(index, "angela")
 
 	proof := tree.GenerateProof(index)
 
@@ -202,15 +200,14 @@ func TestMembershipSmall(t *testing.T) {
 }
 
 func TestMembership(t *testing.T) {
-	tree, _ := MakeTree()
-
+	tree := MakeTree()
 	index := randomBitString(TREE_DEPTH)
 
-	tree.insert(index, "angela")
+	tree.Insert(index, "angela")
 
 	proof := tree.GenerateProof(index)
 
-	if len(proof.coPath) != TREE_DEPTH {
+	if len(proof.CoPath) != TREE_DEPTH {
 		t.Error("Length of the copath was not equal to TREE_DEPTH.")
 	}
 
@@ -220,16 +217,15 @@ func TestMembership(t *testing.T) {
 }
 
 func TestMembershipLarge(t *testing.T) {
-	tree, _ := MakeTree()
-
+	tree := MakeTree()
 	indices := make([]string, 0)
 	for i := 0; i < NUMITERATIONS; i++ {
 		indices = append(indices, randomBitString(TREE_DEPTH))
 	}
 
 	for i, bitString := range indices {
-		Data := fmt.Sprintf("angela%d", i)
-		tree.insert(bitString, Data)
+		data := fmt.Sprintf("angela%d", i)
+		tree.Insert(bitString, data)
 	}
 
 	proofs := make([]Proof, len(indices))
@@ -239,19 +235,19 @@ func TestMembershipLarge(t *testing.T) {
 	}
 
 	for i, proof := range proofs {
-		if strings.Compare(proof.proofID, proof.queryID) != 0 {
+		if strings.Compare(proof.ProofID, proof.QueryID) != 0 {
 			t.Error("proofID != queryID")
 		}
-		if strings.Compare(proof.proofID, indices[i]) != 0 {
+		if strings.Compare(proof.ProofID, indices[i]) != 0 {
 			t.Error("i-th proofID != indices[i]")
 		}
-		if len(proof.coPath) != len(proof.proofID) {
+		if len(proof.CoPath) != len(proof.ProofID) {
 			t.Error("Length of coPath != proofID")
 		}
-		if len(proof.coPath) != TREE_DEPTH {
+		if len(proof.CoPath) != TREE_DEPTH {
 			t.Error("Length of copath != TREE_DEPTH")
 		}
-		if proof.proofType == NONMEMBERSHIP {
+		if proof.ProofType == NONMEMBERSHIP {
 			t.Error("Proof of non-membership")
 		}
 		if !tree.verifyProof(proof) {
@@ -261,12 +257,11 @@ func TestMembershipLarge(t *testing.T) {
 }
 
 func TestNonMembership(t *testing.T) {
-	tree, _ := MakeTree()
-
+	tree := MakeTree()
 	queryID := randomBitString(128)
 	proof := tree.GenerateProof(queryID)
 
-	if proof.proofType == MEMBERSHIP {
+	if proof.ProofType == MEMBERSHIP {
 		t.Error("Proof should be of type nonmembership")
 	}
 
@@ -290,14 +285,13 @@ func benchmarkInsertN(tree *SparseMerkleTree, indices []string, Data []string, b
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
 		for i, index := range indices {
-			tree.insert(index, Data[i])
+			tree.Insert(index, data[i])
 		}
 	}
 }
 
 func BenchmarkInsert64(b *testing.B) {
-	tree, _ := MakeTree()
-
+	tree := MakeTree()
 	indices := make([]string, 64)
 	Data := make([]string, 64)
 
@@ -310,7 +304,7 @@ func BenchmarkInsert64(b *testing.B) {
 }
 
 func BenchmarkInsert128(b *testing.B) {
-	tree, _ := MakeTree()
+	tree := MakeTree()
 
 	indices := make([]string, 128)
 	Data := make([]string, 128)
@@ -324,8 +318,7 @@ func BenchmarkInsert128(b *testing.B) {
 }
 
 func BenchmarkInsert256(b *testing.B) {
-	tree, _ := MakeTree()
-
+	tree := MakeTree()
 	indices := make([]string, 256)
 	Data := make([]string, 256)
 
@@ -338,8 +331,7 @@ func BenchmarkInsert256(b *testing.B) {
 }
 
 func BenchmarkInsert512(b *testing.B) {
-	tree, _ := MakeTree()
-
+	tree := MakeTree()
 	indices := make([]string, 512)
 	Data := make([]string, 512)
 
@@ -352,8 +344,7 @@ func BenchmarkInsert512(b *testing.B) {
 }
 
 func BenchmarkInsert1024(b *testing.B) {
-	tree, _ := MakeTree()
-
+	tree := MakeTree()
 	indices := make([]string, 1024)
 	Data := make([]string, 1024)
 
@@ -366,8 +357,7 @@ func BenchmarkInsert1024(b *testing.B) {
 }
 
 func BenchmarkInsert2048(b *testing.B) {
-	tree, _ := MakeTree()
-
+	tree := MakeTree()
 	indices := make([]string, 2048)
 	Data := make([]string, 2048)
 
@@ -380,8 +370,7 @@ func BenchmarkInsert2048(b *testing.B) {
 }
 
 func BenchmarkInsert4096(b *testing.B) {
-	tree, _ := MakeTree()
-
+	tree := MakeTree()
 	indices := make([]string, 4096)
 	Data := make([]string, 4096)
 
@@ -394,8 +383,7 @@ func BenchmarkInsert4096(b *testing.B) {
 }
 
 func BenchmarkInsert8192(b *testing.B) {
-	tree, _ := MakeTree()
-
+	tree := MakeTree()
 	indices := make([]string, 8192)
 	Data := make([]string, 8192)
 
@@ -408,8 +396,7 @@ func BenchmarkInsert8192(b *testing.B) {
 }
 
 func BenchmarkInsert16384(b *testing.B) {
-	tree, _ := MakeTree()
-
+	tree := MakeTree()
 	indices := make([]string, 16384)
 	Data := make([]string, 16384)
 
@@ -422,8 +409,7 @@ func BenchmarkInsert16384(b *testing.B) {
 }
 
 func BenchmarkBatchInsert64(b *testing.B) {
-	tree, _ := MakeTree()
-
+	tree := MakeTree()
 	transactions := make([]*Transaction, 64)
 
 	for i := 0; i < 64; i++ {
@@ -438,8 +424,7 @@ func BenchmarkBatchInsert64(b *testing.B) {
 }
 
 func BenchmarkBatchInsert128(b *testing.B) {
-	tree, _ := MakeTree()
-
+	tree := MakeTree()
 	transactions := make([]*Transaction, 128)
 
 	for i := 0; i < 128; i++ {
@@ -454,8 +439,7 @@ func BenchmarkBatchInsert128(b *testing.B) {
 }
 
 func BenchmarkBatchInsert256(b *testing.B) {
-	tree, _ := MakeTree()
-
+	tree := MakeTree()
 	transactions := make([]*Transaction, 256)
 
 	for i := 0; i < 256; i++ {
@@ -470,8 +454,7 @@ func BenchmarkBatchInsert256(b *testing.B) {
 }
 
 func BenchmarkBatchInsert512(b *testing.B) {
-	tree, _ := MakeTree()
-
+	tree := MakeTree()
 	transactions := make([]*Transaction, 512)
 
 	for i := 0; i < 512; i++ {
@@ -486,8 +469,7 @@ func BenchmarkBatchInsert512(b *testing.B) {
 }
 
 func BenchmarkBatchInsert1024(b *testing.B) {
-	tree, _ := MakeTree()
-
+	tree := MakeTree()
 	transactions := make([]*Transaction, 1024)
 
 	for i := 0; i < 1024; i++ {
@@ -502,8 +484,7 @@ func BenchmarkBatchInsert1024(b *testing.B) {
 }
 
 func BenchmarkBatchInsert2048(b *testing.B) {
-	tree, _ := MakeTree()
-
+	tree := MakeTree()
 	transactions := make([]*Transaction, 2048)
 
 	for i := 0; i < 2048; i++ {
@@ -518,8 +499,7 @@ func BenchmarkBatchInsert2048(b *testing.B) {
 }
 
 func BenchmarkBatchInsert4096(b *testing.B) {
-	tree, _ := MakeTree()
-
+	tree := MakeTree()
 	transactions := make([]*Transaction, 4096)
 
 	for i := 0; i < 4096; i++ {
@@ -534,8 +514,7 @@ func BenchmarkBatchInsert4096(b *testing.B) {
 }
 
 func BenchmarkBatchInsert8192(b *testing.B) {
-	tree, _ := MakeTree()
-
+	tree := MakeTree()
 	transactions := make([]*Transaction, 8192)
 
 	for i := 0; i < 8192; i++ {
@@ -550,8 +529,7 @@ func BenchmarkBatchInsert8192(b *testing.B) {
 }
 
 func BenchmarkBatchInsert16384(b *testing.B) {
-	tree, _ := MakeTree()
-
+	tree := MakeTree()
 	transactions := make([]*Transaction, 16384)
 
 	for i := 0; i < 16384; i++ {
@@ -566,8 +544,7 @@ func BenchmarkBatchInsert16384(b *testing.B) {
 }
 
 func BenchmarkBatch2Insert64(b *testing.B) {
-	tree, _ := MakeTree()
-
+	tree := MakeTree()
 	transactions := make([]*Transaction, 64)
 
 	for i := 0; i < 64; i++ {
@@ -582,8 +559,7 @@ func BenchmarkBatch2Insert64(b *testing.B) {
 }
 
 func BenchmarkBatch2Insert128(b *testing.B) {
-	tree, _ := MakeTree()
-
+	tree := MakeTree()
 	transactions := make([]*Transaction, 128)
 
 	for i := 0; i < 128; i++ {
@@ -598,8 +574,7 @@ func BenchmarkBatch2Insert128(b *testing.B) {
 }
 
 func BenchmarkBatch2Insert256(b *testing.B) {
-	tree, _ := MakeTree()
-
+	tree := MakeTree()
 	transactions := make([]*Transaction, 256)
 
 	for i := 0; i < 256; i++ {
@@ -614,8 +589,7 @@ func BenchmarkBatch2Insert256(b *testing.B) {
 }
 
 func BenchmarkBatch2Insert512(b *testing.B) {
-	tree, _ := MakeTree()
-
+	tree := MakeTree()
 	transactions := make([]*Transaction, 512)
 
 	for i := 0; i < 512; i++ {
@@ -630,8 +604,7 @@ func BenchmarkBatch2Insert512(b *testing.B) {
 }
 
 func BenchmarkBatch2Insert1024(b *testing.B) {
-	tree, _ := MakeTree()
-
+	tree := MakeTree()
 	transactions := make([]*Transaction, 1024)
 
 	for i := 0; i < 1024; i++ {
@@ -646,8 +619,7 @@ func BenchmarkBatch2Insert1024(b *testing.B) {
 }
 
 func BenchmarkBatch2Insert2048(b *testing.B) {
-	tree, _ := MakeTree()
-
+	tree := MakeTree()
 	transactions := make([]*Transaction, 2048)
 
 	for i := 0; i < 2048; i++ {
@@ -662,8 +634,7 @@ func BenchmarkBatch2Insert2048(b *testing.B) {
 }
 
 func BenchmarkBatch2Insert4096(b *testing.B) {
-	tree, _ := MakeTree()
-
+	tree := MakeTree()
 	transactions := make([]*Transaction, 4096)
 
 	for i := 0; i < 4096; i++ {
@@ -678,8 +649,7 @@ func BenchmarkBatch2Insert4096(b *testing.B) {
 }
 
 func BenchmarkBatch2Insert8192(b *testing.B) {
-	tree, _ := MakeTree()
-
+	tree := MakeTree()
 	transactions := make([]*Transaction, 8192)
 
 	for i := 0; i < 8192; i++ {
@@ -694,8 +664,7 @@ func BenchmarkBatch2Insert8192(b *testing.B) {
 }
 
 func BenchmarkBatch2Insert16384(b *testing.B) {
-	tree, _ := MakeTree()
-
+	tree := MakeTree()
 	transactions := make([]*Transaction, 16384)
 
 	for i := 0; i < 16384; i++ {
