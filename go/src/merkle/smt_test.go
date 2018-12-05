@@ -12,7 +12,7 @@ import (
 )
 
 const NUMITERATIONS int = 2048
-const epochNumber uint64 = 1
+var epochNumber uint64 = 1
 // var seedNum int64 = 0
 
 func randomBitString(digestSize int) (string) {
@@ -343,6 +343,8 @@ func BenchmarkInsert16384(b *testing.B) {
 }
 
 func BenchmarkBatchInsert64(b *testing.B) {
+	epochNumber += 1
+	fmt.Println(epochNumber)
 	tree := MakeTree("")
 	transactions := make([]*Transaction, 64)
 
@@ -358,6 +360,8 @@ func BenchmarkBatchInsert64(b *testing.B) {
 }
 
 func BenchmarkBatchInsert128(b *testing.B) {
+	epochNumber += 1
+	fmt.Println(epochNumber)
 	tree := MakeTree("")
 	transactions := make([]*Transaction, 128)
 
@@ -373,6 +377,8 @@ func BenchmarkBatchInsert128(b *testing.B) {
 }
 
 func BenchmarkBatchInsert256(b *testing.B) {
+	epochNumber += 1
+	fmt.Println(epochNumber)
 	tree := MakeTree("")
 	transactions := make([]*Transaction, 256)
 
@@ -388,6 +394,8 @@ func BenchmarkBatchInsert256(b *testing.B) {
 }
 
 func BenchmarkBatchInsert512(b *testing.B) {
+	epochNumber += 1
+	fmt.Println(epochNumber)
 	tree := MakeTree("")
 	transactions := make([]*Transaction, 512)
 
@@ -403,6 +411,8 @@ func BenchmarkBatchInsert512(b *testing.B) {
 }
 
 func BenchmarkBatchInsert1024(b *testing.B) {
+	epochNumber += 1
+	fmt.Println(epochNumber)
 	tree := MakeTree("")
 	transactions := make([]*Transaction, 1024)
 
@@ -418,6 +428,8 @@ func BenchmarkBatchInsert1024(b *testing.B) {
 }
 
 func BenchmarkBatchInsert2048(b *testing.B) {
+	epochNumber += 1
+	fmt.Println(epochNumber)
 	tree := MakeTree("")
 	transactions := make([]*Transaction, 2048)
 
@@ -433,6 +445,8 @@ func BenchmarkBatchInsert2048(b *testing.B) {
 }
 
 func BenchmarkBatchInsert4096(b *testing.B) {
+	epochNumber += 1
+	fmt.Println(epochNumber)
 	tree := MakeTree("")
 	transactions := make([]*Transaction, 4096)
 
@@ -448,6 +462,8 @@ func BenchmarkBatchInsert4096(b *testing.B) {
 }
 
 func BenchmarkBatchInsert8192(b *testing.B) {
+	epochNumber += 1
+	fmt.Println(epochNumber)
 	tree := MakeTree("")
 	transactions := make([]*Transaction, 8192)
 
