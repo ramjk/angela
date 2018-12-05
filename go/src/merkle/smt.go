@@ -95,7 +95,7 @@ func (T *SparseMerkleTree) getEmptyAncestor(nodeID string) (string) {
 	}
 	return prevID
 }
-b
+
 /* Assume index is valid (for now).
 
 FIXME: What are the error cases where we return error/False?
@@ -480,11 +480,10 @@ func (T *SparseMerkleTree) GenerateProofDB(index string) (Proof) {
 	if !ok {
 		proof_t = NONMEMBERSHIP
 		ancestorIds := make([]string, 0)
-		ancestor := currID
+		ancestor := index
 		// Our stopping condition is length > 0 so we don't add the root to the copath
 		for ; len(ancestor) > 0; ancestor = getParent(ancestor) {
-			siblingID, _ := getSibling(ancestor)
-			append(ancestorIds, siblingID)
+			ancestorIds = append(ancestorIds, ancestor)
 		}
 	    fmt.Println("number of ancestors", len(ancestorIds))
 
@@ -500,6 +499,7 @@ func (T *SparseMerkleTree) GenerateProofDB(index string) (Proof) {
 		proof_t = MEMBERSHIP
 		currID = index
 	}
+	fmt.Println("currId is", currID)
 	proofResult.ProofType = proof_t
 	proofResult.ProofID = currID
 	CoPath := make([]CoPathPair, 0)
@@ -508,9 +508,9 @@ func (T *SparseMerkleTree) GenerateProofDB(index string) (Proof) {
 	// Our stopping condition is length > 0 so we don't add the root to the copath
 	for ; len(currID) > 0; currID = getParent(currID) {
 		siblingID, _ := getSibling(currID)
-		append(ids, siblingID)
+		ids = append(ids, siblingID)
 	}
-    fmt.Println("number of copath nodes", len(ids))
+    fmt.Println("copath nodes needed", ids)
 
 	copathPairs, err := readDB.retrieveLatestCopathDigests(ids)
 	if err != nil {
@@ -522,10 +522,12 @@ func (T *SparseMerkleTree) GenerateProofDB(index string) (Proof) {
 	for j := 0; j < len(copathPairs); j++ {
 		T.cache[copathPairs[j].ID] = &copathPairs[j].Digest
 	}
-	fmt.Println("length of cache",len(T.cache))
-
+	fmt.Println("The cache is", T.cache)
+	siblingID, _ := getSibling(currID)
+	fmt.Println("First sibling is ", siblingID)
 	// Our stopping condition is length > 0 so we don't add the root to the copath
 	for ; len(currID) > 0; currID = getParent(currID) {
+		fmt.Println("On iteration", currID)
 		// Append the sibling to the copath and advance current node
 		siblingID, _ := getSibling(currID)
 		siblingDigestPointer, ok := T.cache[siblingID]
@@ -538,6 +540,7 @@ func (T *SparseMerkleTree) GenerateProofDB(index string) (Proof) {
 		CoPathNode := CoPathPair{siblingID, siblingDigest}
 		CoPath = append(CoPath, CoPathNode)
 	}
+	fmt.Println("Length of CoPath", len(CoPath))
 	// 4 metadata fields and 2 times the copath length
 	proofResult.ProofLength = len(CoPath)*2+4
 	proofResult.CoPath = CoPath
