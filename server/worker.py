@@ -4,7 +4,7 @@ import ray
 from server import smt_api 
 from typing import List, Optional, Tuple
 from server.transaction import Transaction, WriteTransaction
-from common.util import random_string
+from common.util import random_string, to_bytes, to_string
 
 @ray.remote
 class Worker(object):
@@ -34,30 +34,36 @@ class Worker(object):
 		if transaction.TransactionType == 'W':
 			bisect.insort(self.write_transaction_list, transaction)
 		else:
-			return smt_api.read(Transaction.Index)
+			return smt_api.read(transaction.Index)
 			
 	def batch_update(self, epoch_number, worker_roots=None):
 		print("performing batch update for workerID:", self.worker_id)
 		if worker_roots:
 			transaction_list = list()
-			print(worker_roots)
 			for i in range(0, len(worker_roots), 2):
-				transaction_digest = worker_roots[i][1] + worker_roots[i+1][1]
-				transaction_index = worker_roots[i][0][:-1] 
-				# ^ remove last bit because that is the common prefix between the i and i+1 nodes 
+				worker_root_1 = bytearray(to_bytes(worker_roots[i][1]))
+				worker_root_2 = bytearray(to_bytes(worker_roots[i+1][1]))
+				worker_root_1.extend(worker_root_2)
+				transaction_digest = to_string(bytes(worker_root_1))
+				print("worker root 1", worker_roots[i][1])
+				print("worker root 2", worker_roots[i+1][1])
+				print("transaction_digest", transaction_digest)
+				transaction_index = worker_roots[i][0][:-1]
+				# ^ remove last bit because that is the common prefix between the i and i+1 nodes
 				transaction_list.append(WriteTransaction(transaction_index, transaction_digest))
-			print(len(transaction_list))
-			for transaction in transaction_list:
-				print(transaction.__dict__)
 		else:
 			transaction_list = self.write_transaction_list
 
-		keys = values = list() 
+		keys = list() 
+		values = list()
+		
 		for transaction in transaction_list:
-			keys.append(transaction.Index[len(self.prefix):])
+			keys.append(transaction.Index)
 			values.append(transaction.Data)
 
 		# worker_root_digest = random_string()
-		worker_root_digest = smt_api.batch_insert(self.prefix, keys, values, epoch_number)
+		worker_root_digest = smt_api.batch_insert("", keys, values, epoch_number)
+		if worker_roots:
+			print("root root", worker_root_digest)
 		return worker_root_digest, self.prefix
 

@@ -11,7 +11,7 @@ import (
 	"sort"
 )
 
-const NUMITERATIONS int = 2048
+const NUMITERATIONS int = 100
 var epochNumber uint64 = 1
 // var seedNum int64 = 0
 
@@ -628,33 +628,35 @@ func BenchmarkBatch2Insert16384(b *testing.B) {
 	tree.batch2Insert(transactions, epochNumber)
 }
 
-// func TestBatchInsert(t * testing.T) {
-// 	transactionLen := NUMITERATIONS
-// 	tree := MakeTree("")
+func TestBatchInsert(t * testing.T) {
+	// transactionLen := NUMITERATIONS
+	tree := MakeTree("")
 
-// 	transactions := make([]*transaction, transactionLen)
+	transactions := make([]*Transaction, 1)
+	fmt.Println(tree.GetLatestRoot())
+	for i := 0; i < 1; i++ {
+		transactions[i] = &Transaction{"0101101010111001011001000101101011110100001110011101000101111111110001101010111011101101101001100011001101001111000001011010101010001010111000110111010010110010110110101101111010010111101010110001011101000010000100001110011000101110000000010001111010100111", "3SL370G8"}
+	}
 
-// 	for i := 0; i < transactionLen; i++ {
-// 		transactions[i] = &transaction{randomBitString(TREE_DEPTH), fmt.Sprintf("angela%d", i)}
-// 	}
+    root, _ := tree.BatchInsert(transactions, epochNumber)
+    fmt.Println("Root", root)
 
-//     tree.batchInsert(transactions)
-// 	// for k, v := range tree.conflicts { 
-//     //   fmt.Printf("key[%s] value[%s]\n", k, v.writeable)
-// 	// }
+	// for k, v := range tree.conflicts { 
+    //   fmt.Printf("key[%s] value[%s]\n", k, v.writeable)
+	// }
 	
-// 	for i := 0; i < transactionLen; i++ {
-// 		proof := tree.GenerateProof(transactions[i].id)
+	for i := 0; i < 1; i++ {
+		proof := tree.GenerateProof(transactions[i].ID)
 
-// 		if len(proof.CoPath) != TREE_DEPTH {
-// 			t.Error("Length of the copath was not equal to TREE_DEPTH.")
-// 		}
+		if len(proof.CoPath) != TREE_DEPTH {
+			t.Error("Length of the copath was not equal to TREE_DEPTH.")
+		}
 
-// 		if !tree.verifyProof(proof) {
-// 			t.Error("Proof was invalid when it was expected to be valid.")
-// 		}
-// 	}
-// }
+		if !tree.verifyProof(proof) {
+			t.Error("Proof was invalid when it was expected to be valid.")
+		}
+	}
+}
 
 // func TestBatch2Insert(t * testing.T) {
 // 	transactionLen := NUMITERATIONS

@@ -17,6 +17,8 @@ func BatchWrite(prefix *C.char, transactionsKeys []*C.char, transactionsValues [
 	transactions := make([]*merkle.Transaction, len(transactionsKeys))
 
 	for i:=0; i < len(transactionsKeys); i++ {
+        // fmt.Println("[BatchWrite]", C.GoString(transactionsKeys[i]))
+        // fmt.Println("[BatchWrite]", C.GoString(transactionsValues[i]))
 		transactions[i] = &merkle.Transaction{C.GoString(transactionsKeys[i]), C.GoString(transactionsValues[i])}
 	}
 

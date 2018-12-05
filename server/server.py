@@ -6,6 +6,8 @@ import json
 
 from multiprocessing import Pool
 from math import log
+
+from server.smt_api import getLatestRootDigest
 from server.transaction import Transaction, WriteTransaction
 from server.worker import Worker
 from common.util import random_index, random_string, send_data
@@ -46,15 +48,15 @@ class Server(object):
 		try:
 			while True:
 				(conn, address) = self.socket.accept()
-				pool.apply_async(self.receive, (conn,))
+				# pool.apply_async(self.receive, (conn,))
+				self.receive(conn)
 		except KeyboardInterrupt as err:
+			pool.terminate()
 			self.close()
 
 	def receive(self, conn) -> None:
 		data_length = int(conn.recv(200))
 		data_type = str(conn.recv(200))
-
-		print(data_length)
 
 		tmp = msg = conn.recv(200)	
 		data_length -= len(tmp)	
@@ -66,10 +68,11 @@ class Server(object):
 
 		tx = Transaction.from_dict(json.loads(msg))
 
-		if tx.data == "practice":
+		if tx.TransactionType == "W" and tx.Data == "practice":
 			send_data(conn, tx)
 
 		result = self.receive_transaction(tx)
+		print("result", result)
 		send_data(conn, result)
 		conn.close()
 
@@ -79,9 +82,13 @@ class Server(object):
 		ray.shutdown()
 
 	def receive_transaction(self, transaction: Transaction) -> None:
+		if transaction.TransactionType == "R" and transaction.Index == "":
+			return getLatestRootDigest()
 		# destination_worker_index = int(transaction.Index[:int(log(self.num_workers, 2))], 2) # FIXME: Can we use a more efficient representation of indices/node_ids?
-		destination_worker_index = int(transaction.Index, 2) >> (len(transaction.Index) - self.prefix_length)
+		# destination_worker_index = int(transaction.Index, 2) >> (len(transaction.Index) - self.prefix_length)
+		destination_worker_index = 0
 		object_id = self.leaf_workers[destination_worker_index].receive_transaction.remote(transaction)
+
 
 		if transaction.TransactionType == 'W':
 			self.write_transaction_list.append(transaction)
@@ -92,18 +99,22 @@ class Server(object):
 		object_ids = list()
 
 		if len(self.write_transaction_list) == self.epoch_length:
-			for leaf_worker in self.leaf_workers:
-				object_ids.append(leaf_worker.batch_update.remote(self.epoch_number))
+			# for leaf_worker in self.leaf_workers:
+			# 	object_ids.append(leaf_worker.batch_update.remote(self.epoch_number))
+			ray.get(self.leaf_workers[0].batch_update.remote(self.epoch_number))
 
-			for object_id in object_ids:
-				worker_root_digest, prefix = ray.get(object_id)
-				worker_roots.append((prefix, worker_root_digest))
 
-			ray.get(self.root_worker.batch_update.remote(self.epoch_number, worker_roots))
+			# for object_id in object_ids:
+			# 	worker_root_digest, prefix = ray.get(object_id)
+			# 	worker_roots.append((prefix, worker_root_digest))
+
+			# ray.get(self.root_worker.batch_update.remote(self.epoch_number, worker_roots))
 			self.write_transaction_list = list()
 			self.epoch_number += 1
+
+		return "True"
 			
-if __name__ == '__main__':
+# if __name__ == '__main__':
 	# parser = argparse.ArgumentParser()
 	# parser.add_argument('port', type=int, help="port number")
 	# parser.add_argument('num_workers', type=int, help="number of worker nodes")
@@ -114,7 +125,7 @@ if __name__ == '__main__':
 	# server = Server(args.port, args.num_workers, args.epoch_length, args.tree_depth)
 	# server.start()
 
-	server = Server(8008, 9, 1000, 256)
-	for i in range(1000):
-		transaction = WriteTransaction(random_index(), random_string())
-		server.receive_transaction(transaction)
+	# server = Server(8008, 9, 1000, 256)
+	# for i in range(1000):
+	# 	transaction = WriteTransaction(random_index(), random_string())
+	# 	server.receive_transaction(transaction)

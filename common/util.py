@@ -2,6 +2,7 @@ import random, string
 import json
 import hashlib
 import base64
+import socket
 
 from bitarray import bitarray
 
@@ -89,8 +90,15 @@ def left_sibling(index):
 def pad_packet(packet):
 	return packet.ljust(PACKET_SIZE)
 
+def connect_and_send(sock, host, port, data):
+	sock.connect((host, port))
+	send_data(sock, data)
+
 def send_data(sock, data: object):
-	json_dump = json.dumps(data.__dict__)
-	sock.sendall(pad_packet(str(len(json_dump)).encode()))
+	if type(data) == str:
+		payload = data
+	else:
+		payload = json.dumps(data.__dict__)
+	sock.sendall(pad_packet(str(len(payload)).encode()))
 	sock.sendall(pad_packet(b"data-type"))
-	sock.sendall(pad_packet(json_dump.encode()))
+	sock.sendall(pad_packet(payload.encode()))

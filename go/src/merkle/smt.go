@@ -196,7 +196,8 @@ func auroraWriteback(ch chan []*CoPathPair, quit chan bool, db *angelaDB, prefix
 
 func (T *SparseMerkleTree) BatchInsert(transactions BatchedTransaction, epochNumber uint64) (string, error) {
 	readChannel := make(chan []*CoPathPair)
-
+	fmt.Println(transactions[0].ID)
+	fmt.Println(T.prefix)
 	readDB, err := GetReadAngelaDB()
 	if err != nil {
 		panic(err)
@@ -224,7 +225,7 @@ func (T *SparseMerkleTree) BatchInsert(transactions BatchedTransaction, epochNum
 		}
 	}
 	// fmt.Println("Cache after preload")
-	// fmt.Println(T.cache)
+	fmt.Println(T.cache)
 	T.conflicts, err = findConflicts(transactions)
 	if err != nil {
 		return "", err
@@ -358,6 +359,7 @@ func (T *SparseMerkleTree) percolate(index string, data string, wg *sync.WaitGro
 		} else {
 			parentDigest = hashDigest(append(currDigest, siblingDigest...))
 		}
+		// fmt.Println(base64.StdEncoding.EncodeToString(parentDigest))
 		changeList = append(changeList, &CoPathPair{ID: parentID, Digest: parentDigest})
 		parentDigestPointer := T.cache[parentID]
 		*parentDigestPointer = parentDigest
@@ -458,6 +460,7 @@ func (T *SparseMerkleTree) GetLatestRoot() (string) {
 		fmt.Println(err)
 		return ""
 	}
+	fmt.Println(copathPairs[0].ID)
 	return base64.StdEncoding.EncodeToString(copathPairs[0].Digest)
 }
 
@@ -639,7 +642,8 @@ func findConflicts(leaves []*Transaction) (map[string]*SyncBool, error) {
 	for i := 1; i < len(leaves); i++ {
 		x, y := leaves[i-1].ID, leaves[i].ID
 		k := len(x)
-		for idx := 0; idx < len(leaves); idx++ {
+		// This was originally len(leaves)...
+		for idx := 0; idx < len(x); idx++ {
 			var a, b byte = x[idx], y[idx]
 			if a != b {
 				k = idx
