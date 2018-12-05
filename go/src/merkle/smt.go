@@ -220,7 +220,7 @@ func auroraWritebackBatch(ch chan []*CoPathPair, quit chan bool, db *angelaDB, p
     		bufferList = append(bufferList, delta...)
     		counter += 1
     		if counter == BATCH_PERCOLATE_SIZE {
-    			_, err := db.insertChangeList(delta, epochNumber)
+    			_, err := db.insertChangeList(bufferList, epochNumber)
 	    		if err != nil {
 	    			fmt.Println(err)
 	    		}
