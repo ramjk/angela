@@ -6,9 +6,9 @@ import (
 	"crypto/sha256"
 	"bytes"
 	"sync"
-	// "sort"
+	"sort"
 	"strconv"
-	// "runtime"
+	"runtime"
 )
 
 const TREE_DEPTH int = 256
@@ -211,7 +211,7 @@ func (T *SparseMerkleTree) BatchInsert(transactions BatchedTransaction, epochNum
 
 	// fmt.Println("Cache before preload")
 	// fmt.Println(T.cache)
-	//sort.Sort(BatchedTransaction(transactions))
+	sort.Sort(BatchedTransaction(transactions))
 
 	for i := 0; i < len(transactions); i+=BATCH_READ_SIZE {
 		go T.preloadCopaths(transactions[i:min(i+BATCH_READ_SIZE, len(transactions))], readChannel, readDB)
@@ -257,63 +257,63 @@ func (T *SparseMerkleTree) BatchInsert(transactions BatchedTransaction, epochNum
 	return base64.StdEncoding.EncodeToString(T.rootDigest), nil
 }
 
-// func (T *SparseMerkleTree) batch2Insert(transactions BatchedTransaction) (bool, error) {
-// 	readChannel := make(chan []*CoPathPair)
-// 	readDB, err := GetReadAngelaDB()
-// 	if err != nil {
-// 		panic(err)
-// 	}
-// 	defer readDB.Close()
-// 	writeDB, err := GetWriteAngelaDB()
-// 	if err != nil {
-// 		panic(err)
-// 	}
-// 	sort.Sort(BatchedTransaction(transactions))
-// 	for i := 0; i < len(transactions); i+=BATCH_READ_SIZE {
-// 		go T.preloadCopaths(transactions[i:min(i+BATCH_READ_SIZE, len(transactions))], readChannel, readDB)
-// 	}
+func (T *SparseMerkleTree) batch2Insert(transactions BatchedTransaction, epochNumber uint64) (string, error) {
+	readChannel := make(chan []*CoPathPair)
+	readDB, err := GetReadAngelaDB()
+	if err != nil {
+		panic(err)
+	}
+	defer readDB.Close()
+	writeDB, err := GetWriteAngelaDB()
+	if err != nil {
+		panic(err)
+	}
+	sort.Sort(BatchedTransaction(transactions))
+	for i := 0; i < len(transactions); i+=BATCH_READ_SIZE {
+		go T.preloadCopaths(transactions[i:min(i+BATCH_READ_SIZE, len(transactions))], readChannel, readDB)
+	}
 
-// 	for i := 0; i < len(transactions); i+=BATCH_READ_SIZE {
-// 		copathPairs := <-readChannel
-// 		for j := 0; j < len(copathPairs); j++ {
-// 			T.cache[copathPairs[j].ID] = &copathPairs[j].Digest
-// 		}
-// 	}
+	for i := 0; i < len(transactions); i+=BATCH_READ_SIZE {
+		copathPairs := <-readChannel
+		for j := 0; j < len(copathPairs); j++ {
+			T.cache[copathPairs[j].ID] = &copathPairs[j].Digest
+		}
+	}
 
-// 	T.conflicts, err = findConflicts(transactions)
-// 	if err != nil {
-// 		return false, err
-// 	}
+	T.conflicts, err = findConflicts(transactions)
+	if err != nil {
+		return "", err
+	}
 
-// 	for _, Transaction := range transactions {
-// 		for currID := Transaction.ID; currID != ""; currID = getParent(currID) {
-// 			placeHolder := T.getEmpty(0)
-// 			T.cache[currID] = &placeHolder
-// 		}
-// 	}
-// 	placeHolder := T.getEmpty(0)
-// 	T.cache[""] = &placeHolder
+	for _, Transaction := range transactions {
+		for currID := Transaction.ID; currID != ""; currID = getParent(currID) {
+			placeHolder := T.getEmpty(0)
+			T.cache[currID] = &placeHolder
+		}
+	}
+	placeHolder := T.getEmpty(0)
+	T.cache[""] = &placeHolder
 
-// 	var wg sync.WaitGroup
-// 	lenTrans := len(transactions)
-// 	ch := make(chan []*CoPathPair)
-// 	quit := make(chan bool)
+	var wg sync.WaitGroup
+	lenTrans := len(transactions)
+	ch := make(chan []*CoPathPair)
+	quit := make(chan bool)
 
-// 	go auroraWriteback(ch, quit, writeDB, T.prefix)
+	go auroraWriteback(ch, quit, writeDB, T.prefix, epochNumber)
 
-// 	stepSize := len(transactions) / runtime.GOMAXPROCS(0)
-// 	for i:=0; i<len(transactions); i+=stepSize {
-// 		wg.Add(1)
-// 		go T.batchPercolate(transactions[i:min(i+stepSize, lenTrans)], &wg, ch)
-// 	}
-// 	wg.Wait()
+	stepSize := len(transactions) / runtime.GOMAXPROCS(0)
+	for i:=0; i<len(transactions); i+=stepSize {
+		wg.Add(1)
+		go T.batchPercolate(transactions[i:min(i+stepSize, lenTrans)], &wg, ch)
+	}
+	wg.Wait()
 
-// 	quit <- true
-// 	rootDigestPointer := T.cache[""]
-// 	T.rootDigest = *rootDigestPointer
+	quit <- true
+	rootDigestPointer := T.cache[""]
+	T.rootDigest = *rootDigestPointer
 
-// 	return true, nil
-// }
+	return base64.StdEncoding.EncodeToString(T.rootDigest), nil
+}
 
 func (T *SparseMerkleTree) percolate(index string, data string, wg *sync.WaitGroup, ch chan []*CoPathPair) (bool, error) {
 	defer wg.Done()

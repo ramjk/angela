@@ -12,7 +12,7 @@ import (
 )
 
 const NUMITERATIONS int = 2048
-
+const epochNumber uint64 = 1
 // var seedNum int64 = 0
 
 func randomBitString(digestSize int) (string) {
@@ -354,7 +354,7 @@ func BenchmarkBatchInsert64(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	tree.BatchInsert(transactions)
+	tree.BatchInsert(transactions, epochNumber)
 }
 
 func BenchmarkBatchInsert128(b *testing.B) {
@@ -369,7 +369,7 @@ func BenchmarkBatchInsert128(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	tree.BatchInsert(transactions)
+	tree.BatchInsert(transactions, epochNumber)
 }
 
 func BenchmarkBatchInsert256(b *testing.B) {
@@ -384,7 +384,7 @@ func BenchmarkBatchInsert256(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	tree.BatchInsert(transactions)
+	tree.BatchInsert(transactions, epochNumber)
 }
 
 func BenchmarkBatchInsert512(b *testing.B) {
@@ -399,7 +399,7 @@ func BenchmarkBatchInsert512(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	tree.BatchInsert(transactions)
+	tree.BatchInsert(transactions, epochNumber)
 }
 
 func BenchmarkBatchInsert1024(b *testing.B) {
@@ -414,7 +414,7 @@ func BenchmarkBatchInsert1024(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	tree.BatchInsert(transactions)
+	tree.BatchInsert(transactions, epochNumber)
 }
 
 func BenchmarkBatchInsert2048(b *testing.B) {
@@ -429,7 +429,7 @@ func BenchmarkBatchInsert2048(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	tree.BatchInsert(transactions)
+	tree.BatchInsert(transactions, epochNumber)
 }
 
 func BenchmarkBatchInsert4096(b *testing.B) {
@@ -444,7 +444,7 @@ func BenchmarkBatchInsert4096(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	tree.BatchInsert(transactions)
+	tree.BatchInsert(transactions, epochNumber)
 }
 
 func BenchmarkBatchInsert8192(b *testing.B) {
@@ -459,7 +459,7 @@ func BenchmarkBatchInsert8192(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	tree.BatchInsert(transactions)
+	tree.BatchInsert(transactions, epochNumber)
 }
 
 func BenchmarkBatchInsert16384(b *testing.B) {
@@ -474,7 +474,7 @@ func BenchmarkBatchInsert16384(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	tree.BatchInsert(transactions)
+	tree.BatchInsert(transactions, epochNumber)
 }
 
 func BenchmarkBatch2Insert64(b *testing.B) {
@@ -489,7 +489,7 @@ func BenchmarkBatch2Insert64(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	tree.batch2Insert(transactions)
+	tree.batch2Insert(transactions, epochNumber)
 }
 
 func BenchmarkBatch2Insert128(b *testing.B) {
@@ -504,7 +504,7 @@ func BenchmarkBatch2Insert128(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	tree.batch2Insert(transactions)
+	tree.batch2Insert(transactions, epochNumber)
 }
 
 func BenchmarkBatch2Insert256(b *testing.B) {
@@ -519,7 +519,7 @@ func BenchmarkBatch2Insert256(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	tree.batch2Insert(transactions)
+	tree.batch2Insert(transactions, epochNumber)
 }
 
 func BenchmarkBatch2Insert512(b *testing.B) {
@@ -534,7 +534,7 @@ func BenchmarkBatch2Insert512(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	tree.batch2Insert(transactions)
+	tree.batch2Insert(transactions, epochNumber)
 }
 
 func BenchmarkBatch2Insert1024(b *testing.B) {
@@ -549,7 +549,7 @@ func BenchmarkBatch2Insert1024(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	tree.batch2Insert(transactions)
+	tree.batch2Insert(transactions, epochNumber)
 }
 
 func BenchmarkBatch2Insert2048(b *testing.B) {
@@ -564,7 +564,7 @@ func BenchmarkBatch2Insert2048(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	tree.batch2Insert(transactions)
+	tree.batch2Insert(transactions, epochNumber)
 }
 
 func BenchmarkBatch2Insert4096(b *testing.B) {
@@ -579,7 +579,7 @@ func BenchmarkBatch2Insert4096(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	tree.batch2Insert(transactions)
+	tree.batch2Insert(transactions, epochNumber)
 }
 
 func BenchmarkBatch2Insert8192(b *testing.B) {
@@ -594,7 +594,7 @@ func BenchmarkBatch2Insert8192(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	tree.batch2Insert(transactions)
+	tree.batch2Insert(transactions, epochNumber)
 }
 
 func BenchmarkBatch2Insert16384(b *testing.B) {
@@ -609,7 +609,7 @@ func BenchmarkBatch2Insert16384(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	tree.batch2Insert(transactions)
+	tree.batch2Insert(transactions, epochNumber)
 }
 
 // func TestBatchInsert(t * testing.T) {
