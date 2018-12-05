@@ -34,7 +34,6 @@ def batch_insert(prefix, keys, values, epoch_number) -> str:
 	ids = GoSlice(k_arr, batch_length, batch_length)
 	digests = GoSlice(v_arr, batch_length, batch_length)
 	root = lib.BatchWrite((c_char_p)(prefix.encode()), ids, digests, epoch_number)
-	print("[batch_insert] root =", root)
 	result = root.decode()
 	return result
 

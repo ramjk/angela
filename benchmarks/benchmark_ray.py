@@ -20,10 +20,10 @@ from common import util
 from server.transaction import WriteTransaction
 from server.server import Server
 from client.client import Client
-server = Server(8088, 9, 2000, 256)
+server = Server(8088, 9, 1000, 256)
 client = Client('localhost', 8088)
 
-for i in range(1999):
+for i in range(999):
 	transaction = WriteTransaction(util.random_index(), util.random_string())
 	server.receive_transaction(transaction)
 '''

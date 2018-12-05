@@ -72,7 +72,6 @@ class Server(object):
 			send_data(conn, tx)
 
 		result = self.receive_transaction(tx)
-		print("result", result)
 		send_data(conn, result)
 		conn.close()
 
@@ -85,8 +84,7 @@ class Server(object):
 		if transaction.TransactionType == "R" and transaction.Index == "":
 			return getLatestRootDigest()
 		# destination_worker_index = int(transaction.Index[:int(log(self.num_workers, 2))], 2) # FIXME: Can we use a more efficient representation of indices/node_ids?
-		# destination_worker_index = int(transaction.Index, 2) >> (len(transaction.Index) - self.prefix_length)
-		destination_worker_index = 0
+		destination_worker_index = int(transaction.Index, 2) >> (len(transaction.Index) - self.prefix_length)
 		object_id = self.leaf_workers[destination_worker_index].receive_transaction.remote(transaction)
 
 
@@ -99,16 +97,14 @@ class Server(object):
 		object_ids = list()
 
 		if len(self.write_transaction_list) == self.epoch_length:
-			# for leaf_worker in self.leaf_workers:
-			# 	object_ids.append(leaf_worker.batch_update.remote(self.epoch_number))
-			ray.get(self.leaf_workers[0].batch_update.remote(self.epoch_number))
+			for leaf_worker in self.leaf_workers:
+				object_ids.append(leaf_worker.batch_update.remote(self.epoch_number))
 
+			for object_id in object_ids:
+				worker_root_digest, prefix = ray.get(object_id)
+				worker_roots.append((prefix, worker_root_digest))
 
-			# for object_id in object_ids:
-			# 	worker_root_digest, prefix = ray.get(object_id)
-			# 	worker_roots.append((prefix, worker_root_digest))
-
-			# ray.get(self.root_worker.batch_update.remote(self.epoch_number, worker_roots))
+			ray.get(self.root_worker.batch_update.remote(self.epoch_number, worker_roots))
 			self.write_transaction_list = list()
 			self.epoch_number += 1
 

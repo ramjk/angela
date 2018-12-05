@@ -67,8 +67,6 @@ class Client(object):
 	def verify_proof(self, proof, data, root):
 		proof_id_length = len(proof.ProofID)
 		tmp =  None
-		print("|proof_id| =", proof_id_length)
-		print("|query_id| =", len(proof.QueryID))
 		if proof.ProofType == False:
 			if proof_id_length > len(proof.QueryID):
 				return False
@@ -76,7 +74,6 @@ class Client(object):
 				if proof.ProofID[i] != proof.QueryID[i]:
 					return False
 			tmp = util.empty(256 - proof_id_length)
-			print("tmp", util.to_string(tmp))
 		else:
 			tmp = util.SHA256(util.to_bytes(data))
 
@@ -86,12 +83,6 @@ class Client(object):
 			else:
 				tmp = util.SHA256(tmp + util.to_bytes(node["Digest"]))
 		actual_digest = util.to_string(tmp)
-		print("verifier_digest", actual_digest)
-		print("server_digest", root.decode())
-		print("verifier_digest_type", type(actual_digest))
-		print("server_digest_type", type(root.decode()))
-		print(len(actual_digest))
-		print(len(root.decode()))
 		return actual_digest == root.decode()
 
 	def end_session(self):

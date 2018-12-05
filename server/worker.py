@@ -45,9 +45,6 @@ class Worker(object):
 				worker_root_2 = bytearray(to_bytes(worker_roots[i+1][1]))
 				worker_root_1.extend(worker_root_2)
 				transaction_digest = to_string(bytes(worker_root_1))
-				print("worker root 1", worker_roots[i][1])
-				print("worker root 2", worker_roots[i+1][1])
-				print("transaction_digest", transaction_digest)
 				transaction_index = worker_roots[i][0][:-1]
 				# ^ remove last bit because that is the common prefix between the i and i+1 nodes
 				transaction_list.append(WriteTransaction(transaction_index, transaction_digest))
@@ -58,12 +55,10 @@ class Worker(object):
 		values = list()
 		
 		for transaction in transaction_list:
-			keys.append(transaction.Index)
+			keys.append(transaction.Index[len(self.prefix):])
 			values.append(transaction.Data)
 
 		# worker_root_digest = random_string()
-		worker_root_digest = smt_api.batch_insert("", keys, values, epoch_number)
-		if worker_roots:
-			print("root root", worker_root_digest)
+		worker_root_digest = smt_api.batch_insert(self.prefix, keys, values, epoch_number)
 		return worker_root_digest, self.prefix
 

@@ -8,7 +8,6 @@ import (
 	"sync"
 	"sort"
 	"strconv"
-	"runtime"
 )
 
 const TREE_DEPTH int = 256
@@ -117,7 +116,7 @@ func (T *SparseMerkleTree) Insert(index string, data string) (bool) {
 		siblingDigestPointer, ok := T.cache[siblingID]
 		var siblingDigest digest
 		if !ok {
-			siblingDigest = T.getEmpty(TREE_DEPTH - len(siblingID))
+			siblingDigest = T.getEmpty(T.depth - len(siblingID))
 		} else {
 			siblingDigest = *siblingDigestPointer
 		}
@@ -196,8 +195,6 @@ func auroraWriteback(ch chan []*CoPathPair, quit chan bool, db *angelaDB, prefix
 
 func (T *SparseMerkleTree) BatchInsert(transactions BatchedTransaction, epochNumber uint64) (string, error) {
 	readChannel := make(chan []*CoPathPair)
-	fmt.Println(transactions[0].ID)
-	fmt.Println(T.prefix)
 	readDB, err := GetReadAngelaDB()
 	if err != nil {
 		panic(err)
@@ -214,6 +211,15 @@ func (T *SparseMerkleTree) BatchInsert(transactions BatchedTransaction, epochNum
 	// fmt.Println(T.cache)
 	sort.Sort(BatchedTransaction(transactions))
 
+	for _, Transaction := range transactions {
+		for currID := Transaction.ID; currID != ""; currID = getParent(currID) {
+			placeHolder := T.getEmpty(T.depth)
+			T.cache[currID] = &placeHolder
+		}
+	}
+	placeHolder := T.getEmpty(T.depth)
+	T.cache[""] = &placeHolder
+
 	for i := 0; i < len(transactions); i+=BATCH_READ_SIZE {
 		go T.preloadCopaths(transactions[i:min(i+BATCH_READ_SIZE, len(transactions))], readChannel, readDB)
 	}
@@ -225,20 +231,11 @@ func (T *SparseMerkleTree) BatchInsert(transactions BatchedTransaction, epochNum
 		}
 	}
 	// fmt.Println("Cache after preload")
-	fmt.Println(T.cache)
+	// fmt.Println(T.cache)
 	T.conflicts, err = findConflicts(transactions)
 	if err != nil {
 		return "", err
 	}
-
-	for _, Transaction := range transactions {
-		for currID := Transaction.ID; currID != ""; currID = getParent(currID) {
-			placeHolder := T.getEmpty(0)
-			T.cache[currID] = &placeHolder
-		}
-	}
-	placeHolder := T.getEmpty(0)
-	T.cache[""] = &placeHolder
 
 	var wg sync.WaitGroup
 	ch := make(chan []*CoPathPair)
@@ -251,64 +248,6 @@ func (T *SparseMerkleTree) BatchInsert(transactions BatchedTransaction, epochNum
 		go T.percolate(transactions[i].ID, transactions[i].Data, &wg, ch)
 	}
 	wg.Wait()
-	quit <- true
-	rootDigestPointer := T.cache[""]
-	T.rootDigest = *rootDigestPointer
-
-	return base64.StdEncoding.EncodeToString(T.rootDigest), nil
-}
-
-func (T *SparseMerkleTree) batch2Insert(transactions BatchedTransaction, epochNumber uint64) (string, error) {
-	readChannel := make(chan []*CoPathPair)
-	readDB, err := GetReadAngelaDB()
-	if err != nil {
-		panic(err)
-	}
-	defer readDB.Close()
-	writeDB, err := GetWriteAngelaDB()
-	if err != nil {
-		panic(err)
-	}
-	sort.Sort(BatchedTransaction(transactions))
-	for i := 0; i < len(transactions); i+=BATCH_READ_SIZE {
-		go T.preloadCopaths(transactions[i:min(i+BATCH_READ_SIZE, len(transactions))], readChannel, readDB)
-	}
-
-	for i := 0; i < len(transactions); i+=BATCH_READ_SIZE {
-		copathPairs := <-readChannel
-		for j := 0; j < len(copathPairs); j++ {
-			T.cache[copathPairs[j].ID] = &copathPairs[j].Digest
-		}
-	}
-
-	T.conflicts, err = findConflicts(transactions)
-	if err != nil {
-		return "", err
-	}
-
-	for _, Transaction := range transactions {
-		for currID := Transaction.ID; currID != ""; currID = getParent(currID) {
-			placeHolder := T.getEmpty(0)
-			T.cache[currID] = &placeHolder
-		}
-	}
-	placeHolder := T.getEmpty(0)
-	T.cache[""] = &placeHolder
-
-	var wg sync.WaitGroup
-	lenTrans := len(transactions)
-	ch := make(chan []*CoPathPair)
-	quit := make(chan bool)
-
-	go auroraWriteback(ch, quit, writeDB, T.prefix, epochNumber)
-
-	stepSize := len(transactions) / runtime.GOMAXPROCS(0)
-	for i:=0; i<len(transactions); i+=stepSize {
-		wg.Add(1)
-		go T.batchPercolate(transactions[i:min(i+stepSize, lenTrans)], &wg, ch)
-	}
-	wg.Wait()
-
 	quit <- true
 	rootDigestPointer := T.cache[""]
 	T.rootDigest = *rootDigestPointer
@@ -346,7 +285,7 @@ func (T *SparseMerkleTree) percolate(index string, data string, wg *sync.WaitGro
 		siblingDigestPointer, ok := T.cache[siblingID]
 		var siblingDigest digest
 		if !ok {
-			siblingDigest = T.getEmpty(TREE_DEPTH - len(siblingID))
+			siblingDigest = T.getEmpty(T.depth - len(siblingID))
 		} else {
 			siblingDigest = *siblingDigestPointer
 		}
@@ -404,7 +343,7 @@ func (T *SparseMerkleTree) batchPercolate(transactions BatchedTransaction, wg *s
 			siblingDigestPointer, ok := T.cache[siblingID]
 			var siblingDigest digest
 			if !ok {
-				siblingDigest = T.getEmpty(TREE_DEPTH - len(siblingID))
+				siblingDigest = T.getEmpty(T.depth - len(siblingID))
 			} else {
 				siblingDigest = *siblingDigestPointer
 			}
@@ -460,7 +399,6 @@ func (T *SparseMerkleTree) GetLatestRoot() (string) {
 		fmt.Println(err)
 		return ""
 	}
-	fmt.Println(copathPairs[0].ID)
 	return base64.StdEncoding.EncodeToString(copathPairs[0].Digest)
 }
 
@@ -550,7 +488,7 @@ func (T *SparseMerkleTree) GenerateProofDB(index string) (Proof) {
 		siblingDigestPointer, ok := T.cache[siblingID]
 		var siblingDigest digest
 		if !ok {
-			siblingDigest = T.getEmpty(TREE_DEPTH - len(siblingID))
+			siblingDigest = T.getEmpty(T.depth - len(siblingID))
 		} else {
 			siblingDigest = *siblingDigestPointer
 		}
@@ -589,7 +527,7 @@ func (T *SparseMerkleTree) GenerateProof(index string) (Proof) {
 		siblingDigestPointer, ok := T.cache[siblingID]
 		var siblingDigest digest
 		if !ok {
-			siblingDigest = T.getEmpty(TREE_DEPTH - len(siblingID))
+			siblingDigest = T.getEmpty(T.depth - len(siblingID))
 		} else {
 			siblingDigest = *siblingDigestPointer
 		}
@@ -620,7 +558,7 @@ func (T *SparseMerkleTree) verifyProof(proof Proof) (bool) {
 	rootDigestPointer, ok := T.cache[proof.ProofID]
 	var rootDigest digest
 	if !ok {
-		rootDigest = T.getEmpty(TREE_DEPTH - ProofIDLength)
+		rootDigest = T.getEmpty(T.depth - ProofIDLength)
 	} else {
 		rootDigest = *rootDigestPointer
 	}
@@ -657,12 +595,12 @@ func findConflicts(leaves []*Transaction) (map[string]*SyncBool, error) {
 
 func MakeTree(prefix string) (*SparseMerkleTree) {
 	T := SparseMerkleTree{} 
-	T.depth = TREE_DEPTH
+	T.depth = TREE_DEPTH - len(prefix)
 	T.cache = make(map[string]*digest)
 	T.empty_cache = make(map[int]digest)
 	dig, _ := base64.StdEncoding.DecodeString("")
 	T.empty_cache[0] = hashDigest(dig)  
-	T.rootDigest = T.getEmpty(TREE_DEPTH) // FIXME: Should this be the case for an empty tree?
+	T.rootDigest = T.getEmpty(T.depth) // FIXME: Should this be the case for an empty tree?
 	T.conflicts = make(map[string]*SyncBool)
 	T.prefix = prefix
 	return &T
