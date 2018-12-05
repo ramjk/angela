@@ -99,22 +99,22 @@ class Server(object):
 				success, worker_root_digest, prefix = ray.get(object_id)
 				worker_roots.append((prefix, worker_root_digest))
 
-			ray.get(self.root_worker.batch_update.remote(worker_roots))
+			ray.get(self.root_worker.batch_update.remote(self.epoch_number, worker_roots))
 			self.write_transaction_list = list()
 			self.epoch_number += 1
 			
 if __name__ == '__main__':
-	parser = argparse.ArgumentParser()
-	parser.add_argument('port', type=int, help="port number")
-	parser.add_argument('num_workers', type=int, help="number of worker nodes")
-	parser.add_argument('epoch_length', type=int, help="number of transactions per epoch")
-	parser.add_argument('tree_depth', type=int, help="depth of tree")
-	args = parser.parse_args()
+	# parser = argparse.ArgumentParser()
+	# parser.add_argument('port', type=int, help="port number")
+	# parser.add_argument('num_workers', type=int, help="number of worker nodes")
+	# parser.add_argument('epoch_length', type=int, help="number of transactions per epoch")
+	# parser.add_argument('tree_depth', type=int, help="depth of tree")
+	# args = parser.parse_args()
 
-	server = Server(args.port, args.num_workers, args.epoch_length, args.tree_depth)
-	server.start()
+	# server = Server(args.port, args.num_workers, args.epoch_length, args.tree_depth)
+	# server.start()
 
-	# server = Server(8008, 9, 1000, 256)
-	# for i in range(1000):
-	# 	transaction = WriteTransaction(random_index(), random_string())
-	# 	server.receive_transaction(transaction)
+	server = Server(8008, 9, 1000, 256)
+	for i in range(1000):
+		transaction = WriteTransaction(random_index(), random_string())
+		server.receive_transaction(transaction)
