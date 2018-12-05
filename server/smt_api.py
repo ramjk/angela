@@ -9,9 +9,9 @@ import os
 lib = cdll.LoadLibrary("go/src/main/smt_api.so")
 from numpy.ctypeslib import ndpointer
 
-# class GoSlice(Structure):
-#     _fields_ = [("data", POINTER(c_char_p)),
-#                 ("len", c_longlong), ("cap", c_longlong)]
+class GoSlice(Structure):
+    _fields_ = [("data", POINTER(c_char_p)),
+                ("len", c_longlong), ("cap", c_longlong)]
 
 lib.BatchWrite.argtypes = [c_char_p, GoSlice, GoSlice, c_int]	
 lib.BatchWrite.restype = c_char_p
