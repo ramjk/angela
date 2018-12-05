@@ -207,6 +207,36 @@ func (T *SparseMerkleTree) preloadCopaths(transactions BatchedTransaction, read 
 	return true, nil
 }
 
+// Writes back to the database after receiving a set number of transactions
+func auroraWritebackBatch(ch chan []*CoPathPair, quit chan bool, db *angelaDB, prefix string, epochNumber uint64) {
+	bufferList := make([]*CoPathPair, 0)
+	counter := 0
+    for {
+    	select {
+    	case delta := <-ch:
+    		// write back to aurora of the changelist from the channel
+    		// fmt.Println("Changelist")
+    		// fmt.Println(delta)
+    		bufferList = append(bufferList, delta...)
+    		counter += 1
+    		if counter == BATCH_PERCOLATE_SIZE {
+    			_, err := db.insertChangeList(delta, epochNumber)
+	    		if err != nil {
+	    			fmt.Println(err)
+	    		}
+	    		counter = 0
+	    		bufferList = nil
+    		}
+    		// fmt.Println("Printing the number of rows affected")
+    		// fmt.Println(numRowsAffected)
+    	case <-quit:
+    		fmt.Println("Done Writing")
+    		return
+    	}
+    }
+}
+
+// Writes back to the database whenever a changelist is submitted 
 func auroraWriteback(ch chan []*CoPathPair, quit chan bool, db *angelaDB, prefix string, epochNumber uint64) {
     for {
     	select {
@@ -214,10 +244,7 @@ func auroraWriteback(ch chan []*CoPathPair, quit chan bool, db *angelaDB, prefix
     		// write back to aurora of the changelist from the channel
     		// fmt.Println("Changelist")
     		// fmt.Println(delta)
-    		for i:=0; i < len(delta); i++ {
-    			delta[i].ID = prefix + delta[i].ID
-    		}
-    		_, err := db.insertChangeList(delta, epochNumber)
+			_, err := db.insertChangeList(delta, epochNumber)
     		if err != nil {
     			fmt.Println(err)
     		}
@@ -278,7 +305,7 @@ func (T *SparseMerkleTree) BatchInsert(transactions BatchedTransaction, epochNum
 	ch := make(chan []*CoPathPair)
 	quit := make(chan bool)
 
-	go auroraWriteback(ch, quit, writeDB, T.prefix, epochNumber)
+	go auroraWritebackBatch(ch, quit, writeDB, T.prefix, epochNumber)
 
 	for i:=0; i<len(transactions); i++ {
 		wg.Add(1)
