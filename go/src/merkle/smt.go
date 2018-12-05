@@ -95,7 +95,7 @@ func (T *SparseMerkleTree) getEmptyAncestor(nodeID string) (string) {
 	}
 	return prevID
 }
-
+b
 /* Assume index is valid (for now).
 
 FIXME: What are the error cases where we return error/False?
@@ -479,6 +479,22 @@ func (T *SparseMerkleTree) GenerateProofDB(index string) (Proof) {
 	// _, ok := T.cache[index]
 	if !ok {
 		proof_t = NONMEMBERSHIP
+		ancestorIds := make([]string, 0)
+		ancestor := currID
+		// Our stopping condition is length > 0 so we don't add the root to the copath
+		for ; len(ancestor) > 0; ancestor = getParent(ancestor) {
+			siblingID, _ := getSibling(ancestor)
+			append(ancestorIds, siblingID)
+		}
+	    fmt.Println("number of ancestors", len(ancestorIds))
+
+		copathPairs, err := readDB.retrieveLatestCopathDigests(ancestorIds)
+		if err != nil {
+			fmt.Println(err)
+		}
+		for j := 0; j < len(copathPairs); j++ {
+			T.cache[copathPairs[j].ID] = &copathPairs[j].Digest
+		}
 		currID = T.getEmptyAncestor(index)
 	} else {
 		proof_t = MEMBERSHIP
@@ -488,17 +504,13 @@ func (T *SparseMerkleTree) GenerateProofDB(index string) (Proof) {
 	proofResult.ProofID = currID
 	CoPath := make([]CoPathPair, 0)
 
-	copaths := make(map[string]bool)
+	ids := make([]string, 0)
 	// Our stopping condition is length > 0 so we don't add the root to the copath
 	for ; len(currID) > 0; currID = getParent(currID) {
 		siblingID, _ := getSibling(currID)
-		copaths[siblingID] = true
+		append(ids, siblingID)
 	}
-	ids := make([]string, 0, len(copaths))
-    for k := range copaths {
-        ids = append(ids, k)
-    }
-    fmt.Println("number of copaths", len(ids))
+    fmt.Println("number of copath nodes", len(ids))
 
 	copathPairs, err := readDB.retrieveLatestCopathDigests(ids)
 	if err != nil {
