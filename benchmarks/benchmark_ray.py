@@ -15,23 +15,35 @@ from common import util
 # 	client.insert_leaf(util.random_index(), util.random_string())
 	
 # '''
+
+
 setup = '''
 from common import util
 from server.transaction import WriteTransaction
 from server.server import Server
 from client.client import Client
-server = Server(8088, 9, 1000, 256)
+server = Server(8088, 9, {}, 256, {})
 client = Client('localhost', 8088)
 
-for i in range(999):
+for i in range({}):
 	transaction = WriteTransaction(util.random_index(), util.random_string())
 	server.receive_transaction(transaction)
 '''
 stmt = '''
 transaction = WriteTransaction(util.random_index(), util.random_string())
 server.receive_transaction(transaction)
-server.close()
 '''
-
-duration = timeit.timeit(stmt=stmt, setup=setup, number=1)
-print(duration)
+durations = list()
+num_inserts = list()
+flag = True
+for i in range(6, 12):
+	durations.append(timeit.timeit(stmt=stmt, setup=setup.format(2**i, flag, 2**i - 1), number=1))
+	flag = False
+	num_inserts.append(2**i)
+plt.plot(num_inserts, durations, label="w/ Ray (Local)",color="blue")
+plt.xticks([i for i in num_inserts], num_inserts)
+plt.title("Durations of Single, Random Inserts")
+plt.ylabel('Duration of random insert workload (seconds)')
+plt.xlabel('Number of random inserts')
+plt.gcf().set_size_inches(24, 12, forward=True)
+plt.savefig('benchmarks/ray.pdf', bbox_inches='tight')

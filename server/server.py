@@ -17,7 +17,7 @@ class Server(object):
 	Assumptions:
 	    - N = num_workers where N - 1 is a power of two.
 	"""
-	def __init__(self, port: int, num_workers: int, epoch_length: int, tree_depth: int):
+	def __init__(self, port: int, num_workers: int, epoch_length: int, tree_depth: int, flag: bool):
 		self.port = port
 		self.num_workers = num_workers
 		self.epoch_length = epoch_length
@@ -32,7 +32,8 @@ class Server(object):
 		self.write_transaction_list = list()
 		self.read_transaction_list = list()
 
-		ray.init()
+		if flag:
+			ray.init()
 
 		# num_workers includes the root node
 		self.prefix_length = int(log(num_workers-1, 2))
@@ -78,6 +79,7 @@ class Server(object):
 	def close(self) -> None:
 		print("Closing server...")
 		self.socket.close()
+		map(lambda worker: ray.shutdown(worker), self.leaf_workers)
 		ray.shutdown()
 
 	def receive_transaction(self, transaction: Transaction) -> None:
@@ -96,7 +98,10 @@ class Server(object):
 		worker_roots = list()
 		object_ids = list()
 
+		print(len(self.write_transaction_list))
+		print(self.epoch_length)
 		if len(self.write_transaction_list) == self.epoch_length:
+			print("WRITING")
 			for leaf_worker in self.leaf_workers:
 				object_ids.append(leaf_worker.batch_update.remote(self.epoch_number))
 
