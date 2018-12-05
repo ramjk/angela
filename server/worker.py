@@ -57,7 +57,7 @@ class Worker(object):
 			keys.append(transaction.Index[len(self.prefix):])
 			values.append(transaction.Data)
 
-		# success, worker_root_digest = True, random_string()
-		success, worker_root_digest = smt_api.batch_insert(self.prefix, keys, values, epoch_number)
-		return success, worker_root_digest, self.prefix
+		# worker_root_digest = random_string()
+		worker_root_digest = smt_api.batch_insert(self.prefix, keys, values, epoch_number)
+		return worker_root_digest, self.prefix
 
