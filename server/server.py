@@ -96,7 +96,7 @@ class Server(object):
 				object_ids.append(leaf_worker.batch_update.remote(self.epoch_number))
 
 			for object_id in object_ids:
-				success, worker_root_digest, prefix = ray.get(object_id)
+				worker_root_digest, prefix = ray.get(object_id)
 				worker_roots.append((prefix, worker_root_digest))
 
 			ray.get(self.root_worker.batch_update.remote(self.epoch_number, worker_roots))
