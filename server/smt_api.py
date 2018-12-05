@@ -20,6 +20,8 @@ c_char_p_p = POINTER(c_char_p)
 lib.Read.argtypes = [c_char_p]
 lib.Read.restype = c_char_p_p
 
+lib.GetLatestRoot.restype = c_char_p
+
 lib.FreeCPointers.argtypes = [c_char_p_p, c_int]
 
 def batch_insert(prefix, keys, values, epoch_number) -> str:
@@ -32,8 +34,8 @@ def batch_insert(prefix, keys, values, epoch_number) -> str:
 	ids = GoSlice(k_arr, batch_length, batch_length)
 	digests = GoSlice(v_arr, batch_length, batch_length)
 	root = lib.BatchWrite((c_char_p)(prefix.encode()), ids, digests, epoch_number)
-	print(root)
-	return root.decode()
+	result = root.decode()
+	return result
 
 # If there is nothing in the tree, this will segfault
 def read(index) -> Proof:
@@ -54,5 +56,7 @@ def read(index) -> Proof:
 	lib.FreeCPointers(result, proofDict["ProofLength"])
 	return Proof.from_dict(proofDict)
 
-# batch_insert("00", ["0"*254], ["hello"], 1)
-read("0"*256)
+def getLatestRootDigest() -> string:
+	root = lib.GetLatestRoot()
+	result = root.decode()
+	return result

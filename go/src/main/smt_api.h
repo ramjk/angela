@@ -74,6 +74,8 @@ extern char* BatchWrite(char* p0, GoSlice p1, GoSlice p2, GoUint64 p3);
 
 extern char** Read(char* p0);
 
+extern char* GetLatestRoot();
+
 extern void FreeCPointers(char** p0, GoInt p1);
 
 #ifdef __cplusplus

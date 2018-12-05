@@ -40,7 +40,7 @@ func Read(nodeId *C.char) **C.char {
 	id := C.GoString(nodeId)
     results := tree.CGenerateProof(id)
     resultLength := len(results)
-    fmt.Println("received", resultLength)
+    // fmt.Println("received", resultLength)
 
     // allocate space for all the node ids and digests and other fields in proof
     cArray := C.malloc(C.size_t(resultLength) * C.size_t(unsafe.Sizeof(uintptr(0))))
@@ -51,6 +51,12 @@ func Read(nodeId *C.char) **C.char {
     	a[i] = C.CString(results[i])
     }
     return (**C.char)(cArray)
+}
+
+//export GetLatestRoot
+func GetLatestRoot() *C.char {
+    tree := merkle.MakeTree("")
+    return C.CString(tree.GetLatestRoot())
 }
 
 //export FreeCPointers

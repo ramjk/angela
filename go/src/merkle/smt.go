@@ -446,6 +446,21 @@ func (T *SparseMerkleTree) isConflict(index string) (bool) {
 	return false
 }
 
+func (T *SparseMerkleTree) GetLatestRoot() (string) {
+	readDB, err := GetReadAngelaDB()
+	if err != nil {
+		panic(err)
+	}
+	defer readDB.Close()
+	rootId := []string{""}
+	copathPairs, err := readDB.retrieveLatestCopathDigests(rootId)
+	if err != nil {
+		fmt.Println(err)
+		return ""
+	}
+	return base64.StdEncoding.EncodeToString(copathPairs[0].Digest)
+}
+
 func (T *SparseMerkleTree) CGenerateProof(index string) ([]string) {
 	proof := T.GenerateProofDB(index)
 	results := make([]string, proof.ProofLength)
@@ -471,6 +486,7 @@ func (T *SparseMerkleTree) GenerateProofDB(index string) (Proof) {
 	
 	var proof_t ProofType
 	var currID string
+	var startingIndex string
 	indexCheck := []string{index}
 	fmt.Println("Index to check", indexCheck)
 	indexPair, err := readDB.retrieveLatestCopathDigests(indexCheck)
@@ -494,23 +510,23 @@ func (T *SparseMerkleTree) GenerateProofDB(index string) (Proof) {
 		for j := 0; j < len(copathPairs); j++ {
 			T.cache[copathPairs[j].ID] = &copathPairs[j].Digest
 		}
-		currID = T.getEmptyAncestor(index)
+		startingIndex = T.getEmptyAncestor(index)
 	} else {
 		proof_t = MEMBERSHIP
-		currID = index
+		startingIndex = index
 	}
-	fmt.Println("currId is", currID)
+	fmt.Println("startingIndex is", startingIndex)
 	proofResult.ProofType = proof_t
-	proofResult.ProofID = currID
+	proofResult.ProofID = startingIndex
 	CoPath := make([]CoPathPair, 0)
 
+	currID = startingIndex
 	ids := make([]string, 0)
 	// Our stopping condition is length > 0 so we don't add the root to the copath
 	for ; len(currID) > 0; currID = getParent(currID) {
 		siblingID, _ := getSibling(currID)
 		ids = append(ids, siblingID)
 	}
-    fmt.Println("copath nodes needed", ids)
 
 	copathPairs, err := readDB.retrieveLatestCopathDigests(ids)
 	if err != nil {
@@ -522,12 +538,10 @@ func (T *SparseMerkleTree) GenerateProofDB(index string) (Proof) {
 	for j := 0; j < len(copathPairs); j++ {
 		T.cache[copathPairs[j].ID] = &copathPairs[j].Digest
 	}
-	fmt.Println("The cache is", T.cache)
-	siblingID, _ := getSibling(currID)
-	fmt.Println("First sibling is ", siblingID)
+
+	currID = startingIndex
 	// Our stopping condition is length > 0 so we don't add the root to the copath
 	for ; len(currID) > 0; currID = getParent(currID) {
-		fmt.Println("On iteration", currID)
 		// Append the sibling to the copath and advance current node
 		siblingID, _ := getSibling(currID)
 		siblingDigestPointer, ok := T.cache[siblingID]
