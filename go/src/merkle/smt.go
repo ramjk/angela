@@ -25,6 +25,7 @@ type SparseMerkleTree struct {
 	rootDigest digest
 	empty_cache map[int]digest
 	conflicts map[string]*SyncBool
+	prefix string
 }
 
 type SyncBool struct {
@@ -156,7 +157,7 @@ func (T *SparseMerkleTree) preloadCopaths(transactions BatchedTransaction, read 
 
 	ids := make([]string, 0, len(copaths))
     for k := range copaths {
-        ids = append(ids, k)
+        ids = append(ids, T.prefix + k)
     }
 
 	copathPairs, err := db.retrieveLatestCopathDigests(ids)
@@ -165,18 +166,21 @@ func (T *SparseMerkleTree) preloadCopaths(transactions BatchedTransaction, read 
 		read <- copathPairs
 		return false, err
 	}
+
 	read <- copathPairs
 	return true, nil
 }
 
-func auroraWriteback(ch chan []*CoPathPair, quit chan bool, db *angelaDB) {
-	var epochNumber int64 = 1
+func auroraWriteback(ch chan []*CoPathPair, quit chan bool, db *angelaDB, prefix string, epochNumber uint64) {
     for {
     	select {
     	case delta := <-ch:
     		// write back to aurora of the changelist from the channel
     		// fmt.Println("Changelist")
     		// fmt.Println(delta)
+    		for i:=0; i < len(delta); i++ {
+    			delta[i].ID = prefix + delta[i].ID
+    		}
     		_, err := db.insertChangeList(delta, epochNumber)
     		if err != nil {
     			fmt.Println(err)
@@ -190,7 +194,7 @@ func auroraWriteback(ch chan []*CoPathPair, quit chan bool, db *angelaDB) {
     }
 }
 
-func (T *SparseMerkleTree) BatchInsert(transactions BatchedTransaction) (bool, error) {
+func (T *SparseMerkleTree) BatchInsert(transactions BatchedTransaction, epochNumber uint64) (string, error) {
 	readChannel := make(chan []*CoPathPair)
 
 	readDB, err := GetReadAngelaDB()
@@ -216,14 +220,14 @@ func (T *SparseMerkleTree) BatchInsert(transactions BatchedTransaction) (bool, e
 	for i := 0; i < len(transactions); i+=BATCH_READ_SIZE {
 		copathPairs := <-readChannel
 		for j := 0; j < len(copathPairs); j++ {
-			T.cache[copathPairs[j].ID] = &copathPairs[j].Digest
+			T.cache[copathPairs[j].ID[len(T.prefix):]] = &copathPairs[j].Digest
 		}
 	}
 	// fmt.Println("Cache after preload")
 	// fmt.Println(T.cache)
 	T.conflicts, err = findConflicts(transactions)
 	if err != nil {
-		return false, err
+		return "", err
 	}
 
 	for _, Transaction := range transactions {
@@ -239,7 +243,7 @@ func (T *SparseMerkleTree) BatchInsert(transactions BatchedTransaction) (bool, e
 	ch := make(chan []*CoPathPair)
 	quit := make(chan bool)
 
-	go auroraWriteback(ch, quit, writeDB)
+	go auroraWriteback(ch, quit, writeDB, T.prefix, epochNumber)
 
 	for i:=0; i<len(transactions); i++ {
 		wg.Add(1)
@@ -250,10 +254,10 @@ func (T *SparseMerkleTree) BatchInsert(transactions BatchedTransaction) (bool, e
 	rootDigestPointer := T.cache[""]
 	T.rootDigest = *rootDigestPointer
 
-	return true, nil
+	return base64.StdEncoding.EncodeToString(T.rootDigest), nil
 }
 
-func (T *SparseMerkleTree) batch2Insert(transactions BatchedTransaction) (bool, error) {
+func (T *SparseMerkleTree) batch2Insert(transactions BatchedTransaction, epochNumber uint64) (string, error) {
 	readChannel := make(chan []*CoPathPair)
 	readDB, err := GetReadAngelaDB()
 	if err != nil {
@@ -278,7 +282,7 @@ func (T *SparseMerkleTree) batch2Insert(transactions BatchedTransaction) (bool, 
 
 	T.conflicts, err = findConflicts(transactions)
 	if err != nil {
-		return false, err
+		return "", err
 	}
 
 	for _, Transaction := range transactions {
@@ -295,7 +299,7 @@ func (T *SparseMerkleTree) batch2Insert(transactions BatchedTransaction) (bool, 
 	ch := make(chan []*CoPathPair)
 	quit := make(chan bool)
 
-	go auroraWriteback(ch, quit, writeDB)
+	go auroraWriteback(ch, quit, writeDB, T.prefix, epochNumber)
 
 	stepSize := len(transactions) / runtime.GOMAXPROCS(0)
 	for i:=0; i<len(transactions); i+=stepSize {
@@ -308,7 +312,7 @@ func (T *SparseMerkleTree) batch2Insert(transactions BatchedTransaction) (bool, 
 	rootDigestPointer := T.cache[""]
 	T.rootDigest = *rootDigestPointer
 
-	return true, nil
+	return base64.StdEncoding.EncodeToString(T.rootDigest), nil
 }
 
 func (T *SparseMerkleTree) percolate(index string, data string, wg *sync.WaitGroup, ch chan []*CoPathPair) (bool, error) {
@@ -442,18 +446,119 @@ func (T *SparseMerkleTree) isConflict(index string) (bool) {
 	return false
 }
 
+func (T *SparseMerkleTree) GetLatestRoot() (string) {
+	readDB, err := GetReadAngelaDB()
+	if err != nil {
+		panic(err)
+	}
+	defer readDB.Close()
+	rootId := []string{""}
+	copathPairs, err := readDB.retrieveLatestCopathDigests(rootId)
+	if err != nil {
+		fmt.Println(err)
+		return ""
+	}
+	return base64.StdEncoding.EncodeToString(copathPairs[0].Digest)
+}
+
 func (T *SparseMerkleTree) CGenerateProof(index string) ([]string) {
-	proof := T.GenerateProof(index)
-	resultLength := len(proof.CoPath)*2+3
-	results := make([]string, resultLength)
+	proof := T.GenerateProofDB(index)
+	results := make([]string, proof.ProofLength)
     results[0] = strconv.FormatBool(bool(proof.ProofType))
     results[1] = proof.QueryID
     results[2] = proof.ProofID
-    for i := 3; i < resultLength; i += 2 {
-    	results[i] = proof.CoPath[i-3].ID
-    	results[i+1] = base64.StdEncoding.EncodeToString(proof.CoPath[i-3].Digest)
+    results[3] = strconv.FormatInt(int64(proof.ProofLength), 10)
+    for i := 4; i < proof.ProofLength; i += 2 {
+    	results[i] = proof.CoPath[(i-4)/2].ID
+    	results[i+1] = base64.StdEncoding.EncodeToString(proof.CoPath[(i-4)/2].Digest)
     }
     return results
+}
+
+func (T *SparseMerkleTree) GenerateProofDB(index string) (Proof) {
+	readDB, err := GetReadAngelaDB()
+	if err != nil {
+		panic(err)
+	}
+	defer readDB.Close()
+	proofResult := Proof{}
+	proofResult.QueryID = index
+	
+	var proof_t ProofType
+	var currID string
+	var startingIndex string
+	indexCheck := []string{index}
+	fmt.Println("Index to check", indexCheck)
+	indexPair, err := readDB.retrieveLatestCopathDigests(indexCheck)
+	ok := err == nil && len(indexPair) > 0
+
+	// _, ok := T.cache[index]
+	if !ok {
+		proof_t = NONMEMBERSHIP
+		ancestorIds := make([]string, 0)
+		ancestor := index
+		// Our stopping condition is length > 0 so we don't add the root to the copath
+		for ; len(ancestor) > 0; ancestor = getParent(ancestor) {
+			ancestorIds = append(ancestorIds, ancestor)
+		}
+	    fmt.Println("number of ancestors", len(ancestorIds))
+
+		copathPairs, err := readDB.retrieveLatestCopathDigests(ancestorIds)
+		if err != nil {
+			fmt.Println(err)
+		}
+		for j := 0; j < len(copathPairs); j++ {
+			T.cache[copathPairs[j].ID] = &copathPairs[j].Digest
+		}
+		startingIndex = T.getEmptyAncestor(index)
+	} else {
+		proof_t = MEMBERSHIP
+		startingIndex = index
+	}
+	fmt.Println("startingIndex is", startingIndex)
+	proofResult.ProofType = proof_t
+	proofResult.ProofID = startingIndex
+	CoPath := make([]CoPathPair, 0)
+
+	currID = startingIndex
+	ids := make([]string, 0)
+	// Our stopping condition is length > 0 so we don't add the root to the copath
+	for ; len(currID) > 0; currID = getParent(currID) {
+		siblingID, _ := getSibling(currID)
+		ids = append(ids, siblingID)
+	}
+
+	copathPairs, err := readDB.retrieveLatestCopathDigests(ids)
+	if err != nil {
+		fmt.Println(err)
+		proofResult.CoPath = CoPath
+		return proofResult
+	}
+
+	for j := 0; j < len(copathPairs); j++ {
+		T.cache[copathPairs[j].ID] = &copathPairs[j].Digest
+	}
+
+	currID = startingIndex
+	// Our stopping condition is length > 0 so we don't add the root to the copath
+	for ; len(currID) > 0; currID = getParent(currID) {
+		// Append the sibling to the copath and advance current node
+		siblingID, _ := getSibling(currID)
+		siblingDigestPointer, ok := T.cache[siblingID]
+		var siblingDigest digest
+		if !ok {
+			siblingDigest = T.getEmpty(TREE_DEPTH - len(siblingID))
+		} else {
+			siblingDigest = *siblingDigestPointer
+		}
+		CoPathNode := CoPathPair{siblingID, siblingDigest}
+		CoPath = append(CoPath, CoPathNode)
+	}
+	fmt.Println("Length of CoPath", len(CoPath))
+	// 4 metadata fields and 2 times the copath length
+	proofResult.ProofLength = len(CoPath)*2+4
+	proofResult.CoPath = CoPath
+	return proofResult	
 }
 
 func (T *SparseMerkleTree) GenerateProof(index string) (Proof) {
@@ -546,7 +651,7 @@ func findConflicts(leaves []*Transaction) (map[string]*SyncBool, error) {
 	return conflicts, nil
 }
 
-func MakeTree() (*SparseMerkleTree) {
+func MakeTree(prefix string) (*SparseMerkleTree) {
 	T := SparseMerkleTree{} 
 	T.depth = TREE_DEPTH
 	T.cache = make(map[string]*digest)
@@ -555,5 +660,6 @@ func MakeTree() (*SparseMerkleTree) {
 	T.empty_cache[0] = hashDigest(dig)  
 	T.rootDigest = T.getEmpty(TREE_DEPTH) // FIXME: Should this be the case for an empty tree?
 	T.conflicts = make(map[string]*SyncBool)
+	T.prefix = prefix
 	return &T
 }

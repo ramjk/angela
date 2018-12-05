@@ -159,7 +159,7 @@ func (db *angelaDB) getChangeListInsertStmt(numNodes int) (*sql.Stmt, error) {
 	return changeListStmt, nil
 }
 
-func (db *angelaDB) insertChangeList(changeList []*CoPathPair, currentEpoch int64) (int64, error) {
+func (db *angelaDB) insertChangeList(changeList []*CoPathPair, currentEpoch uint64) (int64, error) {
 	stmt, err := db.getChangeListInsertStmt(len(changeList))
 
 	if err != nil {
@@ -236,7 +236,7 @@ func (db *angelaDB) getCopathQueryStmt(numNodes int) (*sql.Stmt, error) {
 	var buffer bytes.Buffer
 	buffer.WriteString(`SELECT n1.nodeId, n1.nodeDigest 
 			  			FROM nodes AS n1
-			  			LEFT JOIN 
+			  			INNER JOIN 
 			  			(SELECT nodeId, MAX(epochNumber)
 			  			FROM nodes
 			  			WHERE nodeId IN (`)
@@ -275,7 +275,6 @@ func (db *angelaDB) retrieveLatestCopathDigests(copaths []string) ([]*CoPathPair
 		}
 		results = append(results, copathPair)
 	}
-
 	return results, nil
 }
 

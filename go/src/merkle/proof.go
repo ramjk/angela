@@ -16,9 +16,10 @@ type Proof struct {
 	ProofType    ProofType
 	QueryID      string
 	ProofID      string
+	ProofLength  int
 	CoPath       []CoPathPair
 }
 
-func MakeProof(proofType ProofType, queryID string, proofID string, coPath []CoPathPair) (*Proof) {
-	return &Proof{proofType, queryID, proofID, coPath}
+func MakeProof(proofType ProofType, queryID string, proofID string, proofLength int, coPath []CoPathPair) (*Proof) {
+	return &Proof{proofType, queryID, proofID, proofLength, coPath}
 }

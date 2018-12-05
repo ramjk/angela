@@ -12,7 +12,7 @@ import (
 )
 
 const NUMITERATIONS int = 2048
-
+var epochNumber uint64 = 1
 // var seedNum int64 = 0
 
 func randomBitString(digestSize int) (string) {
@@ -114,7 +114,7 @@ func TestParentEmpty(t *testing.T) {
 }
 
 func TestConstructor(t *testing.T) {
-	tree := MakeTree()
+	tree := MakeTree("")
 
 	if !bytes.Equal(tree.empty_cache[0], tree.getEmpty(0)) {
 		t.Error("empty_cache[0] != getEmpty(0)")
@@ -133,7 +133,7 @@ func TestConstructor(t *testing.T) {
 
 func TestMembershipSmall(t *testing.T) {
 	index := "101"
-	tree := MakeTree()
+	tree := MakeTree("")
 	tree.Insert(index, "angela")
 
 	proof := tree.GenerateProof(index)
@@ -144,7 +144,7 @@ func TestMembershipSmall(t *testing.T) {
 }
 
 func TestMembership(t *testing.T) {
-	tree := MakeTree()
+	tree := MakeTree("")
 	index := randomBitString(TREE_DEPTH)
 
 	tree.Insert(index, "angela")
@@ -161,7 +161,7 @@ func TestMembership(t *testing.T) {
 }
 
 func TestMembershipLarge(t *testing.T) {
-	tree := MakeTree()
+	tree := MakeTree("")
 	indices := make([]string, 0)
 	for i := 0; i < NUMITERATIONS; i++ {
 		indices = append(indices, randomBitString(TREE_DEPTH))
@@ -201,7 +201,7 @@ func TestMembershipLarge(t *testing.T) {
 }
 
 func TestNonMembership(t *testing.T) {
-	tree := MakeTree()
+	tree := MakeTree("")
 	queryID := randomBitString(128)
 	proof := tree.GenerateProof(queryID)
 
@@ -225,7 +225,7 @@ func benchmarkInsertN(tree *SparseMerkleTree, indices []string, data []string, b
 }
 
 func BenchmarkInsert64(b *testing.B) {
-	tree := MakeTree()
+	tree := MakeTree("")
 	indices := make([]string, 64)
 	Data := make([]string, 64)
 
@@ -238,7 +238,7 @@ func BenchmarkInsert64(b *testing.B) {
 }
 
 func BenchmarkInsert128(b *testing.B) {
-	tree := MakeTree()
+	tree := MakeTree("")
 
 	indices := make([]string, 128)
 	Data := make([]string, 128)
@@ -252,7 +252,7 @@ func BenchmarkInsert128(b *testing.B) {
 }
 
 func BenchmarkInsert256(b *testing.B) {
-	tree := MakeTree()
+	tree := MakeTree("")
 	indices := make([]string, 256)
 	Data := make([]string, 256)
 
@@ -265,7 +265,7 @@ func BenchmarkInsert256(b *testing.B) {
 }
 
 func BenchmarkInsert512(b *testing.B) {
-	tree := MakeTree()
+	tree := MakeTree("")
 	indices := make([]string, 512)
 	Data := make([]string, 512)
 
@@ -278,7 +278,7 @@ func BenchmarkInsert512(b *testing.B) {
 }
 
 func BenchmarkInsert1024(b *testing.B) {
-	tree := MakeTree()
+	tree := MakeTree("")
 	indices := make([]string, 1024)
 	Data := make([]string, 1024)
 
@@ -291,7 +291,7 @@ func BenchmarkInsert1024(b *testing.B) {
 }
 
 func BenchmarkInsert2048(b *testing.B) {
-	tree := MakeTree()
+	tree := MakeTree("")
 	indices := make([]string, 2048)
 	Data := make([]string, 2048)
 
@@ -304,7 +304,7 @@ func BenchmarkInsert2048(b *testing.B) {
 }
 
 func BenchmarkInsert4096(b *testing.B) {
-	tree := MakeTree()
+	tree := MakeTree("")
 	indices := make([]string, 4096)
 	Data := make([]string, 4096)
 
@@ -317,7 +317,7 @@ func BenchmarkInsert4096(b *testing.B) {
 }
 
 func BenchmarkInsert8192(b *testing.B) {
-	tree := MakeTree()
+	tree := MakeTree("")
 	indices := make([]string, 8192)
 	Data := make([]string, 8192)
 
@@ -330,7 +330,7 @@ func BenchmarkInsert8192(b *testing.B) {
 }
 
 func BenchmarkInsert16384(b *testing.B) {
-	tree := MakeTree()
+	tree := MakeTree("")
 	indices := make([]string, 16384)
 	Data := make([]string, 16384)
 
@@ -343,7 +343,9 @@ func BenchmarkInsert16384(b *testing.B) {
 }
 
 func BenchmarkBatchInsert64(b *testing.B) {
-	tree := MakeTree()
+	epochNumber += 1
+	fmt.Println(epochNumber)
+	tree := MakeTree("")
 	transactions := make([]*Transaction, 64)
 
 	for i := 0; i < 64; i++ {
@@ -354,11 +356,13 @@ func BenchmarkBatchInsert64(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	tree.BatchInsert(transactions)
+	tree.BatchInsert(transactions, epochNumber)
 }
 
 func BenchmarkBatchInsert128(b *testing.B) {
-	tree := MakeTree()
+	epochNumber += 1
+	fmt.Println(epochNumber)
+	tree := MakeTree("")
 	transactions := make([]*Transaction, 128)
 
 	for i := 0; i < 128; i++ {
@@ -369,11 +373,13 @@ func BenchmarkBatchInsert128(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	tree.BatchInsert(transactions)
+	tree.BatchInsert(transactions, epochNumber)
 }
 
 func BenchmarkBatchInsert256(b *testing.B) {
-	tree := MakeTree()
+	epochNumber += 1
+	fmt.Println(epochNumber)
+	tree := MakeTree("")
 	transactions := make([]*Transaction, 256)
 
 	for i := 0; i < 256; i++ {
@@ -384,11 +390,13 @@ func BenchmarkBatchInsert256(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	tree.BatchInsert(transactions)
+	tree.BatchInsert(transactions, epochNumber)
 }
 
 func BenchmarkBatchInsert512(b *testing.B) {
-	tree := MakeTree()
+	epochNumber += 1
+	fmt.Println(epochNumber)
+	tree := MakeTree("")
 	transactions := make([]*Transaction, 512)
 
 	for i := 0; i < 512; i++ {
@@ -399,11 +407,13 @@ func BenchmarkBatchInsert512(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	tree.BatchInsert(transactions)
+	tree.BatchInsert(transactions, epochNumber)
 }
 
 func BenchmarkBatchInsert1024(b *testing.B) {
-	tree := MakeTree()
+	epochNumber += 1
+	fmt.Println(epochNumber)
+	tree := MakeTree("")
 	transactions := make([]*Transaction, 1024)
 
 	for i := 0; i < 1024; i++ {
@@ -414,11 +424,13 @@ func BenchmarkBatchInsert1024(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	tree.BatchInsert(transactions)
+	tree.BatchInsert(transactions, epochNumber)
 }
 
 func BenchmarkBatchInsert2048(b *testing.B) {
-	tree := MakeTree()
+	epochNumber += 1
+	fmt.Println(epochNumber)
+	tree := MakeTree("")
 	transactions := make([]*Transaction, 2048)
 
 	for i := 0; i < 2048; i++ {
@@ -429,11 +441,13 @@ func BenchmarkBatchInsert2048(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	tree.BatchInsert(transactions)
+	tree.BatchInsert(transactions, epochNumber)
 }
 
 func BenchmarkBatchInsert4096(b *testing.B) {
-	tree := MakeTree()
+	epochNumber += 1
+	fmt.Println(epochNumber)
+	tree := MakeTree("")
 	transactions := make([]*Transaction, 4096)
 
 	for i := 0; i < 4096; i++ {
@@ -444,11 +458,13 @@ func BenchmarkBatchInsert4096(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	tree.BatchInsert(transactions)
+	tree.BatchInsert(transactions, epochNumber)
 }
 
 func BenchmarkBatchInsert8192(b *testing.B) {
-	tree := MakeTree()
+	epochNumber += 1
+	fmt.Println(epochNumber)
+	tree := MakeTree("")
 	transactions := make([]*Transaction, 8192)
 
 	for i := 0; i < 8192; i++ {
@@ -459,11 +475,11 @@ func BenchmarkBatchInsert8192(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	tree.BatchInsert(transactions)
+	tree.BatchInsert(transactions, epochNumber)
 }
 
 func BenchmarkBatchInsert16384(b *testing.B) {
-	tree := MakeTree()
+	tree := MakeTree("")
 	transactions := make([]*Transaction, 16384)
 
 	for i := 0; i < 16384; i++ {
@@ -474,11 +490,11 @@ func BenchmarkBatchInsert16384(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	tree.BatchInsert(transactions)
+	tree.BatchInsert(transactions, epochNumber)
 }
 
 func BenchmarkBatch2Insert64(b *testing.B) {
-	tree := MakeTree()
+	tree := MakeTree("")
 	transactions := make([]*Transaction, 64)
 
 	for i := 0; i < 64; i++ {
@@ -489,11 +505,11 @@ func BenchmarkBatch2Insert64(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	tree.batch2Insert(transactions)
+	tree.batch2Insert(transactions, epochNumber)
 }
 
 func BenchmarkBatch2Insert128(b *testing.B) {
-	tree := MakeTree()
+	tree := MakeTree("")
 	transactions := make([]*Transaction, 128)
 
 	for i := 0; i < 128; i++ {
@@ -504,11 +520,11 @@ func BenchmarkBatch2Insert128(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	tree.batch2Insert(transactions)
+	tree.batch2Insert(transactions, epochNumber)
 }
 
 func BenchmarkBatch2Insert256(b *testing.B) {
-	tree := MakeTree()
+	tree := MakeTree("")
 	transactions := make([]*Transaction, 256)
 
 	for i := 0; i < 256; i++ {
@@ -519,11 +535,11 @@ func BenchmarkBatch2Insert256(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	tree.batch2Insert(transactions)
+	tree.batch2Insert(transactions, epochNumber)
 }
 
 func BenchmarkBatch2Insert512(b *testing.B) {
-	tree := MakeTree()
+	tree := MakeTree("")
 	transactions := make([]*Transaction, 512)
 
 	for i := 0; i < 512; i++ {
@@ -534,11 +550,11 @@ func BenchmarkBatch2Insert512(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	tree.batch2Insert(transactions)
+	tree.batch2Insert(transactions, epochNumber)
 }
 
 func BenchmarkBatch2Insert1024(b *testing.B) {
-	tree := MakeTree()
+	tree := MakeTree("")
 	transactions := make([]*Transaction, 1024)
 
 	for i := 0; i < 1024; i++ {
@@ -549,11 +565,11 @@ func BenchmarkBatch2Insert1024(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	tree.batch2Insert(transactions)
+	tree.batch2Insert(transactions, epochNumber)
 }
 
 func BenchmarkBatch2Insert2048(b *testing.B) {
-	tree := MakeTree()
+	tree := MakeTree("")
 	transactions := make([]*Transaction, 2048)
 
 	for i := 0; i < 2048; i++ {
@@ -564,11 +580,11 @@ func BenchmarkBatch2Insert2048(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	tree.batch2Insert(transactions)
+	tree.batch2Insert(transactions, epochNumber)
 }
 
 func BenchmarkBatch2Insert4096(b *testing.B) {
-	tree := MakeTree()
+	tree := MakeTree("")
 	transactions := make([]*Transaction, 4096)
 
 	for i := 0; i < 4096; i++ {
@@ -579,11 +595,11 @@ func BenchmarkBatch2Insert4096(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	tree.batch2Insert(transactions)
+	tree.batch2Insert(transactions, epochNumber)
 }
 
 func BenchmarkBatch2Insert8192(b *testing.B) {
-	tree := MakeTree()
+	tree := MakeTree("")
 	transactions := make([]*Transaction, 8192)
 
 	for i := 0; i < 8192; i++ {
@@ -594,11 +610,11 @@ func BenchmarkBatch2Insert8192(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	tree.batch2Insert(transactions)
+	tree.batch2Insert(transactions, epochNumber)
 }
 
 func BenchmarkBatch2Insert16384(b *testing.B) {
-	tree := MakeTree()
+	tree := MakeTree("")
 	transactions := make([]*Transaction, 16384)
 
 	for i := 0; i < 16384; i++ {
@@ -609,12 +625,12 @@ func BenchmarkBatch2Insert16384(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	tree.batch2Insert(transactions)
+	tree.batch2Insert(transactions, epochNumber)
 }
 
 // func TestBatchInsert(t * testing.T) {
 // 	transactionLen := NUMITERATIONS
-// 	tree := MakeTree()
+// 	tree := MakeTree("")
 
 // 	transactions := make([]*transaction, transactionLen)
 
@@ -642,7 +658,7 @@ func BenchmarkBatch2Insert16384(b *testing.B) {
 
 // func TestBatch2Insert(t * testing.T) {
 // 	transactionLen := NUMITERATIONS
-// 	tree := MakeTree()
+// 	tree := MakeTree("")
 
 // 	transactions := make([]*transaction, transactionLen)
 
