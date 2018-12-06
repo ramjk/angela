@@ -32,7 +32,7 @@ class Client(object):
 		return msg
 
 	def practice():
-		r = requests.get("http://34.220.129.4:8000/merkletree")
+		r = requests.get("http://34.216.83.103:8000/merkletree")
 		return transaction.Transaction.from_dict(json.loads(r.text))
 
 	def get_leaf(self):
@@ -46,12 +46,12 @@ class Client(object):
 		# return False
 
 		tx = transaction.WriteTransaction(index, data)
-		r = requests.post("http://34.220.129.4:5000/merkletree/update", data=tx.__dict__)
+		r = requests.post("http://34.216.83.103:5000/merkletree/update", data=tx.__dict__)
 		print(r.text)
 
 	def generate_proof(index):
 		tx = transaction.ReadTransaction(index)
-		r = requests.get("http://34.220.129.4:5000/merkletree/prove", params=tx.__dict__)
+		r = requests.get("http://34.216.83.103:5000/merkletree/prove", params=tx.__dict__)
 		if (r.status_code == 400):
 			return None
 		return util.Proof.from_dict(r.json())
@@ -61,7 +61,7 @@ class Client(object):
 		# return util.Proof.from_dict(json_dict)
 
 	def get_signed_root():
-		r = requests.get("http://34.220.129.4:5000/merkletree/root")
+		r = requests.get("http://34.216.83.103:5000/merkletree/root")
 		return r.text
 
 	def verify_proof(proof, data, root):
