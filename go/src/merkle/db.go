@@ -56,6 +56,8 @@ type angelaDB struct {
 	batchWrite *sql.Stmt
 	singleRead *sql.Stmt
 	singleWrite *sql.Stmt
+	batchReadSize int
+	batchWriteSize int
 }
 
 func getAngelaWriteConnectionString() string {
@@ -66,7 +68,7 @@ func getAngelaReadConnectionString() string {
 	return readConnectionString
 }
 
-func GetReadAngelaDB() (*angelaDB, error) {
+func GetReadAngelaDB(batchReadSize int) (*angelaDB, error) {
 	// Use db to perform SQL operations on database
 	conn, err := sql.Open("mysql", getAngelaReadConnectionString())
 	if err != nil {
@@ -81,23 +83,19 @@ func GetReadAngelaDB() (*angelaDB, error) {
 	}
 	angela := &angelaDB{conn: conn,}
 
-	if angela.batchRead, err = conn.Prepare(getCopathQueryString(BATCH_READ_SIZE)); err != nil {
+	angela.batchReadSize = batchReadSize
+
+	if angela.batchRead, err = conn.Prepare(getCopathQueryString(batchReadSize)); err != nil {
 		return nil, fmt.Errorf("[aurora]: prepare batchRead: %v", err)
-	}
-	if angela.batchWrite, err = conn.Prepare(getChangeListInsertString(BATCH_PERCOLATE_SIZE)); err != nil {
-		return nil, fmt.Errorf("[aurora]: prepare batchWrite: %v", err)
 	}
 	if angela.singleRead, err = conn.Prepare(singleReadStmt); err != nil {
 		return nil, fmt.Errorf("[aurora]: prepare singleRead: %v", err)
-	}
-	if angela.singleWrite, err = conn.Prepare(singleInsertStmt); err != nil {
-		return nil, fmt.Errorf("[aurora]: prepare singleWrite: %v", err)
 	}
 
 	return angela, nil
 }
 
-func GetWriteAngelaDB() (*angelaDB, error) {
+func GetWriteAngelaDB(batchWriteSize int) (*angelaDB, error) {
 	// Use db to perform SQL operations on database
 	conn, err := sql.Open("mysql", getAngelaWriteConnectionString())
 
@@ -114,14 +112,10 @@ func GetWriteAngelaDB() (*angelaDB, error) {
 
 	angela := &angelaDB{conn: conn,}
 
-	if angela.batchRead, err = conn.Prepare(getCopathQueryString(BATCH_READ_SIZE)); err != nil {
-		return nil, fmt.Errorf("[aurora]: prepare batchRead: %v", err)
-	}
-	if angela.batchWrite, err = conn.Prepare(getChangeListInsertString(BATCH_PERCOLATE_SIZE)); err != nil {
+	angela.batchWriteSize = batchWriteSize
+
+	if angela.batchWrite, err = conn.Prepare(getChangeListInsertString(batchWriteSize)); err != nil {
 		return nil, fmt.Errorf("[aurora]: prepare batchWrite: %v", err)
-	}
-	if angela.singleRead, err = conn.Prepare(singleReadStmt); err != nil {
-		return nil, fmt.Errorf("[aurora]: prepare singleRead: %v", err)
 	}
 	if angela.singleWrite, err = conn.Prepare(singleInsertStmt); err != nil {
 		return nil, fmt.Errorf("[aurora]: prepare singleWrite: %v", err)
@@ -205,11 +199,12 @@ func (db *angelaDB) getChangeListInsertStmt(numNodes int) (*sql.Stmt, error) {
 func (db *angelaDB) insertChangeList(changeList []*CoPathPair, currentEpoch uint64) (int64, error) {
 	var stmt *sql.Stmt
 	var err error
-	if (len(changeList) == BATCH_PERCOLATE_SIZE) {
+	if (len(changeList) == db.batchWriteSize) {
 		stmt = db.batchWrite
 	} else if (len(changeList) == 1) {
 		stmt = db.singleWrite
 	} else {
+		fmt.Println("DB", db)
 		stmt, err = db.getChangeListInsertStmt(len(changeList))
 	}
 
@@ -308,7 +303,7 @@ func (db *angelaDB) getCopathQueryStmt(numNodes int) (*sql.Stmt, error) {
 func (db *angelaDB) retrieveLatestCopathDigests(copaths []string) ([]*CoPathPair, error) {
 	var stmt *sql.Stmt
 	var err error
-	if (len(copaths) == BATCH_READ_SIZE) {
+	if (len(copaths) == db.batchReadSize) {
 		stmt = db.batchRead
 	} else if (len(copaths) == 1) {
 		stmt = db.singleRead
