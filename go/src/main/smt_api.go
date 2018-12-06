@@ -58,6 +58,7 @@ func Read(nodeId *C.char) **C.char {
 //export GetLatestRoot
 func GetLatestRoot() *C.char {
     tree := merkle.MakeTree("")
+    fmt.Println("Go: 61")
     return C.CString(tree.GetLatestRoot())
 }
 

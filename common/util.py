@@ -95,10 +95,14 @@ def connect_and_send(sock, host, port, data):
 	send_data(sock, data)
 
 def send_data(sock, data: object):
+	print(data)
 	if type(data) == str:
 		payload = data
 	else:
 		payload = json.dumps(data.__dict__)
 	sock.sendall(pad_packet(str(len(payload)).encode()))
+	print("Sent data-length")
 	sock.sendall(pad_packet(b"data-type"))
+	print("Sent data-type")
 	sock.sendall(pad_packet(payload.encode()))
+	print("Sent payload")

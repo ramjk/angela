@@ -26,6 +26,7 @@ class Client(object):
 			msg += tmp
 			data_length -= len(tmp)
 
+		print("Received data")
 		self.socket.close()
 		self.socket = socket.socket()
 		return msg
@@ -83,6 +84,7 @@ class Client(object):
 			else:
 				tmp = util.SHA256(tmp + util.to_bytes(node["Digest"]))
 		actual_digest = util.to_string(tmp)
+		print("verification", actual_digest)
 		return actual_digest == root.decode()
 
 	def end_session(self):

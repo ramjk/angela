@@ -16,7 +16,7 @@ class TestSparseMerkleTree(unittest.TestCase):
 
 		# root = Client.get_signed_root()
 	
-		self.server = Server(port, num_worker, epoch_length, tree_depth)
+		self.server = Server(port, num_worker, epoch_length, True, tree_depth)
 		self.server_thread = threading.Thread(target=self.server.start)
 		self.client = Client("localhost", port)
 
@@ -33,8 +33,11 @@ class TestSparseMerkleTree(unittest.TestCase):
 		index = util.random_index()
 		data = util.random_string()
 		self.client.insert_leaf(index, data)
-		root = self.client.get_signed_root()
+		print("Getting signed root")
+		# root = self.client.get_signed_root()
+		print("Generating proof")
 		proof = self.client.generate_proof(index)
+		print("root", root)
 		self.assertTrue(self.client.verify_proof(proof, data, root))
 
 		# index = util.random_index()

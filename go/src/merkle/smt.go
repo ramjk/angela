@@ -4,7 +4,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"crypto/sha256"
-	"bytes"
+	// "bytes"
 	"sync"
 	"sort"
 	"strconv"
@@ -99,13 +99,47 @@ func (T *SparseMerkleTree) getEmptyAncestor(nodeID string) (string) {
 
 FIXME: What are the error cases where we return error/False?
 */
-func (T *SparseMerkleTree) Insert(index string, data string) (bool) {
+func (T *SparseMerkleTree) Insert(index string, data string, epochNumber uint64) (bool) {
+	readChannel := make(chan []*CoPathPair)
+	readDB, err := GetReadAngelaDB()
+	if err != nil {
+		panic(err)
+	}
+	defer readDB.Close()
+	writeDB, err := GetWriteAngelaDB()
+	if err != nil {
+		panic(err)
+	}
+	defer writeDB.Close()
+
+	for currID := index; currID != ""; currID = getParent(currID) {
+		placeHolder := T.getEmpty(T.depth)
+		T.cache[currID] = &placeHolder
+	}
+	placeHolder := T.getEmpty(T.depth)
+	T.cache[""] = &placeHolder
+
+	go T.preloadCopaths(BatchedTransaction{&Transaction{ID: index, Data: data}}, readChannel, readDB)
+
+	copathPairs := <-readChannel
+	for j := 0; j < len(copathPairs); j++ {
+		T.cache[copathPairs[j].ID[len(T.prefix):]] = &copathPairs[j].Digest
+	}
+
+	ch := make(chan []*CoPathPair)
+	quit := make(chan bool)
+
+	go auroraWriteback(ch, quit, writeDB, T.prefix, epochNumber)
+
 	dig, _ := base64.StdEncoding.DecodeString(data)
 	hash := hashDigest(dig)
 	T.cache[index] = &hash
 
 	//FIXME: Actual copy?
 	var currID string
+	changeList := make([]*CoPathPair, 0)
+	changeList = append(changeList, &CoPathPair{ID: index, Digest: hashDigest(dig)})
+
 	for currID = index; len(currID) > 0; {
 		// Get both the parent and sibling IDs
 		siblingID, isLeft := getSibling(currID)
@@ -130,10 +164,13 @@ func (T *SparseMerkleTree) Insert(index string, data string) (bool) {
 			parentDigest = hashDigest(append(currDigest, siblingDigest...))
 		}
 		T.cache[parentID] = &parentDigest
+		changeList = append(changeList, &CoPathPair{ID: parentID, Digest: parentDigest})
 
 		// Traverse up the tree by making the current node the parent node
 		currID = parentID
 	}
+	ch <- changeList
+	quit <- true
 	rootDigestPointer := T.cache[currID]
 	T.rootDigest = *rootDigestPointer
 	return true
@@ -388,13 +425,16 @@ func (T *SparseMerkleTree) isConflict(index string) (bool) {
 }
 
 func (T *SparseMerkleTree) GetLatestRoot() (string) {
+	fmt.Println(428)
 	readDB, err := GetReadAngelaDB()
 	if err != nil {
 		panic(err)
 	}
+	fmt.Println(433)
 	defer readDB.Close()
 	rootId := []string{""}
 	copathPairs, err := readDB.retrieveLatestCopathDigests(rootId)
+	fmt.Println(437)
 	if err != nil {
 		fmt.Println(err)
 		return ""
@@ -571,7 +611,7 @@ func (T *SparseMerkleTree) verifyProof(proof Proof) (bool) {
 			rootDigest = hashDigest(append(rootDigest, currNode.Digest...))
 		}
 	}
-	return bytes.Equal(rootDigest, T.rootDigest)
+	return base64.StdEncoding.EncodeToString(rootDigest) == T.GetLatestRoot()
 }
 
 // leaves must be sorted before findConflicts is called

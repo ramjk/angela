@@ -44,18 +44,22 @@ func getAngelaWriteConnectionString() string {
 }
 
 func getAngelaReadConnectionString() string {
+	fmt.Println("got it")
 	return readConnectionString
 }
 
 func GetReadAngelaDB() (*angelaDB, error) {
 	// Use db to perform SQL operations on database
 	conn, err := sql.Open("mysql", getAngelaReadConnectionString())
-
+	fmt.Println("mysql opened")
 	if err != nil {
+		fmt.Println("[ERROR]")
 		return nil, fmt.Errorf("[aurora]: could not open a connection: %v", err)
 	}
 
+	fmt.Println("preping")
 	err = conn.Ping()
+	fmt.Println("Pinged")
 
 	if err != nil {
 		conn.Close()
@@ -74,7 +78,9 @@ func GetWriteAngelaDB() (*angelaDB, error) {
 		return nil, fmt.Errorf("[aurora]: could not open a connection: %v", err)
 	}
 
+	fmt.Println("preping")
 	err = conn.Ping()
+	fmt.Println("Pinged")
 
 	if err != nil {
 		conn.Close()

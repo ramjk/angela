@@ -42,7 +42,7 @@ for i in range(6, 12):
 	num_inserts.append(2**i)
 plt.plot(num_inserts, durations, label="w/ Ray (Local)",color="blue")
 plt.xticks([i for i in num_inserts], num_inserts)
-plt.title("Durations of Single, Random Inserts")
+plt.title("Durations of Batched, Random Inserts")
 plt.ylabel('Duration of random insert workload (seconds)')
 plt.xlabel('Number of random inserts')
 plt.gcf().set_size_inches(24, 12, forward=True)
