@@ -139,8 +139,6 @@ func TestMembershipSmall(t *testing.T) {
 	index := "101"
 	tree := MakeTree("")
 	tree.Insert(index, "angela", epochNumber)
-	fmt.Println("Finished inserting")
-
 	proof := tree.GenerateProofDB(index)
 
 	if !tree.verifyProof(proof) {
@@ -590,15 +588,14 @@ func TestBatchInsert(t * testing.T) {
 		transactions[i] = &Transaction{"0101101010111001011001000101101011110100001110011101000101111111110001101010111011101101101001100011001101001111000001011010101010001010111000110111010010110010110110101101111010010111101010110001011101000010000100001110011000101110000000010001111010100111", "3SL370G8"}
 	}
 
-    root, _ := tree.BatchInsert(transactions, epochNumber, baselineBatchReadSize, baselineBatchPercolateSize, baselineBatchWriteSize)
-    fmt.Println("Root", root)
+    tree.BatchInsert(transactions, epochNumber, baselineBatchReadSize, baselineBatchPercolateSize, baselineBatchWriteSize)
 
 	// for k, v := range tree.conflicts { 
     //   fmt.Printf("key[%s] value[%s]\n", k, v.writeable)
 	// }
 	
 	for i := 0; i < 1; i++ {
-		proof := tree.GenerateProof(transactions[i].ID)
+		proof := tree.GenerateProofDB(transactions[i].ID)
 
 		if len(proof.CoPath) != TREE_DEPTH {
 			t.Error("Length of the copath was not equal to TREE_DEPTH.")
@@ -610,13 +607,13 @@ func TestBatchInsert(t * testing.T) {
 	}
 }
 
-func TestDatabaseConnection(t *testing.T) {
-	db, err := GetReadAngelaDB()
-	if err != nil {
-		panic(err)
-	}
-	defer db.Close()
-	// Write a ping here 
-	db.DropTable()
-	db.CreateTable()
-}
+// func TestDatabaseConnection(t *testing.T) {
+// 	db, err := GetReadAngelaDB()
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	defer db.Close()
+// 	// Write a ping here 
+// 	db.DropTable()
+// 	db.CreateTable()
+// }
