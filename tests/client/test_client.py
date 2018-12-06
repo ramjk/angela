@@ -16,7 +16,7 @@ class TestSparseMerkleTree(unittest.TestCase):
 
 		# root = Client.get_signed_root()
 	
-		self.server = Server(port, num_worker, epoch_length, True, tree_depth)
+		self.server = Server(port, num_worker, epoch_length, tree_depth, True)
 		self.server_thread = threading.Thread(target=self.server.start)
 		self.client = Client("localhost", port)
 
