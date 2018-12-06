@@ -71,4 +71,3 @@ class Worker(object):
 		if worker_roots:
 			print("Root from smt_api:", worker_root_digest)
 		return worker_root_digest, self.prefix
-

@@ -3,6 +3,7 @@ import json
 import requests
 import hashlib
 import base64
+import timeit
 
 from server import transaction
 from common import util
@@ -32,7 +33,7 @@ class Client(object):
 		return msg
 
 	def practice():
-		r = requests.get("http://34.216.83.103:8000/merkletree")
+		r = requests.get("http://34.212.85.30:8000/merkletree")
 		return transaction.Transaction.from_dict(json.loads(r.text))
 
 	def get_leaf(self):
@@ -46,12 +47,11 @@ class Client(object):
 		# return False
 
 		tx = transaction.WriteTransaction(index, data)
-		r = requests.post("http://34.216.83.103:5000/merkletree/update", data=tx.__dict__)
-		print(r.text)
+		requests.post("http://34.212.85.30:5000/merkletree/update", data=tx.__dict__)
 
 	def generate_proof(index):
 		tx = transaction.ReadTransaction(index)
-		r = requests.get("http://34.216.83.103:5000/merkletree/prove", params=tx.__dict__)
+		r = requests.get("http://34.212.85.30:5000/merkletree/prove", params=tx.__dict__)
 		if (r.status_code == 400):
 			return None
 		return util.Proof.from_dict(r.json())
@@ -61,7 +61,7 @@ class Client(object):
 		# return util.Proof.from_dict(json_dict)
 
 	def get_signed_root():
-		r = requests.get("http://34.216.83.103:5000/merkletree/root")
+		r = requests.get("http://34.212.85.30:5000/merkletree/root")
 		return r.text
 
 	def verify_proof(proof, data, root):
@@ -90,24 +90,3 @@ class Client(object):
 	def end_session(self):
 		print("Ending session...")
 		self.socket.close()
-
-if __name__ == '__main__':
-	indices = [util.random_index() for i in range(1000)]
-	data = [util.random_string() for i in range(1000)]
-	
-	for i in range(1000):
-		print("Insert {}".format(i))
-		Client.insert_leaf(indices[i], data[i])
-
-	root = Client.get_signed_root()
-
-	for i in range(1000):
-		print("Generate proof {}".format(i))
-		proof = Client.generate_proof(indices[i])
-		print("Verify proof {}".format(i))
-		accept = Client.verify_proof(proof, data[i], root)
-		if accept:
-			print("Pass!")
-		else:
-			print("Fail...")
-			break

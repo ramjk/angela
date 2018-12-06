@@ -1,6 +1,7 @@
 import argparse
 import ray
 import random
+import timeit
 
 from flask import Flask, jsonify, request
 from werkzeug.exceptions import BadRequest
@@ -49,7 +50,13 @@ def generate_proof():
 	if not (multi_leaf and transaction_type and index):
 		raise BadRequest("For proof, specify multi_leaf, transaction_type, index")
 
-	return jsonify(read(index).__dict__)
+	worker_id = random.randint(0, num_workers)
+	if worker_id < num_workers-1:
+		worker_response = ray.get(ray_info['leaf_workers'][worker_id].process_read.remote(index))
+	else:
+		worker_response = ray.get(ray_info['root_worker'].process_read.remote(index))
+
+	return jsonify(worker_response.__dict__)
 
 @app.route("/merkletree/update", methods=['POST'])
 def update_leaf():
