@@ -44,22 +44,17 @@ func getAngelaWriteConnectionString() string {
 }
 
 func getAngelaReadConnectionString() string {
-	fmt.Println("got it")
 	return readConnectionString
 }
 
 func GetReadAngelaDB() (*angelaDB, error) {
 	// Use db to perform SQL operations on database
 	conn, err := sql.Open("mysql", getAngelaReadConnectionString())
-	fmt.Println("mysql opened")
 	if err != nil {
-		fmt.Println("[ERROR]")
 		return nil, fmt.Errorf("[aurora]: could not open a connection: %v", err)
 	}
 
-	fmt.Println("preping")
 	err = conn.Ping()
-	fmt.Println("Pinged")
 
 	if err != nil {
 		conn.Close()
@@ -78,9 +73,7 @@ func GetWriteAngelaDB() (*angelaDB, error) {
 		return nil, fmt.Errorf("[aurora]: could not open a connection: %v", err)
 	}
 
-	fmt.Println("preping")
 	err = conn.Ping()
-	fmt.Println("Pinged")
 
 	if err != nil {
 		conn.Close()
@@ -243,11 +236,11 @@ func (db *angelaDB) getCopathQueryStmt(numNodes int) (*sql.Stmt, error) {
 	buffer.WriteString(`SELECT n1.nodeId, n1.nodeDigest 
 			  			FROM nodes AS n1
 			  			INNER JOIN 
-			  			(SELECT nodeId, MAX(epochNumber)
+			  			(SELECT nodeId, MAX(epochNumber) as maxEpoch
 			  			FROM nodes
 			  			WHERE nodeId IN (`)
 	buffer.WriteString(strings.Repeat("?,", numNodes - 1))
-	buffer.WriteString("?) GROUP BY nodeId) AS latest ON n1.nodeId=latest.nodeId")
+	buffer.WriteString("?) GROUP BY nodeId) AS latest ON n1.nodeId=latest.nodeId AND n1.epochNumber=latest.maxEpoch")
 
     stmt := buffer.String()
     copathStmt, err := db.conn.Prepare(stmt)

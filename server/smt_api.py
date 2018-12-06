@@ -57,8 +57,6 @@ def read(index) -> Proof:
 	return Proof.from_dict(proofDict)
 
 def getLatestRootDigest() -> string:
-	print("60")
 	root = lib.GetLatestRoot()
-	print("62")
 	result = root.decode()
 	return result

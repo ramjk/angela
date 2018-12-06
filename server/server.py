@@ -4,6 +4,7 @@ import argparse
 import ray
 import json
 
+from flask import Flask
 from multiprocessing import Process
 from math import log
 
@@ -11,6 +12,8 @@ from server.smt_api import getLatestRootDigest
 from server.transaction import Transaction, WriteTransaction
 from server.worker import Worker
 from common.util import random_index, random_string, send_data
+
+app = Flask(__name__)
 
 class Server(object):
 	"""

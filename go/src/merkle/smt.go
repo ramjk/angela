@@ -224,7 +224,7 @@ func auroraWriteback(ch chan []*CoPathPair, quit chan bool, db *angelaDB, prefix
     		// fmt.Println("Printing the number of rows affected")
     		// fmt.Println(numRowsAffected)
     	case <-quit:
-    		fmt.Println("Done Writing")
+    		// fmt.Println("Done Writing")
     		return
     	}
     }
@@ -425,16 +425,13 @@ func (T *SparseMerkleTree) isConflict(index string) (bool) {
 }
 
 func (T *SparseMerkleTree) GetLatestRoot() (string) {
-	fmt.Println(428)
 	readDB, err := GetReadAngelaDB()
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(433)
 	defer readDB.Close()
 	rootId := []string{""}
 	copathPairs, err := readDB.retrieveLatestCopathDigests(rootId)
-	fmt.Println(437)
 	if err != nil {
 		fmt.Println(err)
 		return ""
@@ -469,7 +466,7 @@ func (T *SparseMerkleTree) GenerateProofDB(index string) (Proof) {
 	var currID string
 	var startingIndex string
 	indexCheck := []string{index}
-	fmt.Println("Index to check", indexCheck)
+	// fmt.Println("Index to check", indexCheck)
 	indexPair, err := readDB.retrieveLatestCopathDigests(indexCheck)
 	ok := err == nil && len(indexPair) > 0
 
@@ -482,7 +479,7 @@ func (T *SparseMerkleTree) GenerateProofDB(index string) (Proof) {
 		for ; len(ancestor) > 0; ancestor = getParent(ancestor) {
 			ancestorIds = append(ancestorIds, ancestor)
 		}
-	    fmt.Println("number of ancestors", len(ancestorIds))
+	    // fmt.Println("number of ancestors", len(ancestorIds))
 
 		copathPairs, err := readDB.retrieveLatestCopathDigests(ancestorIds)
 		if err != nil {
@@ -496,7 +493,7 @@ func (T *SparseMerkleTree) GenerateProofDB(index string) (Proof) {
 		proof_t = MEMBERSHIP
 		startingIndex = index
 	}
-	fmt.Println("startingIndex is", startingIndex)
+	// fmt.Println("startingIndex is", startingIndex)
 	proofResult.ProofType = proof_t
 	proofResult.ProofID = startingIndex
 	CoPath := make([]CoPathPair, 0)
@@ -535,7 +532,7 @@ func (T *SparseMerkleTree) GenerateProofDB(index string) (Proof) {
 		CoPathNode := CoPathPair{siblingID, siblingDigest}
 		CoPath = append(CoPath, CoPathNode)
 	}
-	fmt.Println("Length of CoPath", len(CoPath))
+	// fmt.Println("Length of CoPath", len(CoPath))
 	// 4 metadata fields and 2 times the copath length
 	proofResult.ProofLength = len(CoPath)*2+4
 	proofResult.CoPath = CoPath

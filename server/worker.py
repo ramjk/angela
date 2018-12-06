@@ -13,7 +13,7 @@ class Worker(object):
 		self.depth = depth
 		self.worker_id = worker_id
 		self.parent = parent
-		self.write_transaction_list = list()
+		self.queue = list()
 		self.read_transaction_list = list()
 		self.prefix = ""
 
@@ -28,16 +28,25 @@ class Worker(object):
 	def get_depth(self) -> int:
 		return self.depth
 
-	def receive_transaction(self, transaction: Transaction) -> Optional[str]:
-		# print("In worker {}".format(self.worker_id))
-		# print("Transaction ID: {}".format(transaction.Index))
-		if transaction.TransactionType == 'W':
-			bisect.insort(self.write_transaction_list, transaction)
+	# def receive_transaction(self, transaction: Transaction) -> Optional[str]:
+	# 	# print("In worker {}".format(self.worker_id))
+	# 	# print("Transaction ID: {}".format(transaction.Index))
+	# 	if transaction.TransactionType == 'W':
+	# 		bisect.insort(self.queue, transaction)
+	# 	else:
+	# 		return smt_api.read(transaction.Index)
+
+	def process_read(self, index: str) -> None:
+		if index == "":
+			return smt_api.getLatestRootDigest()
 		else:
-			return smt_api.read(transaction.Index)
+			return smt_api.read(index)
+
+	def queue_write(self, index: str, data: str) -> None:
+		write_transaction = WriteTransaction(index, data)
+		bisect.insort(self.queue, write_transaction)
 			
 	def batch_update(self, epoch_number, worker_roots=None):
-		print("performing batch update for workerID:", self.worker_id)
 		if worker_roots:
 			transaction_list = list()
 			for i in range(0, len(worker_roots), 2):
@@ -49,16 +58,17 @@ class Worker(object):
 				# ^ remove last bit because that is the common prefix between the i and i+1 nodes
 				transaction_list.append(WriteTransaction(transaction_index, transaction_digest))
 		else:
-			transaction_list = self.write_transaction_list
+			transaction_list = self.queue
 
 		keys = list() 
 		values = list()
 		
 		for transaction in transaction_list:
-			keys.append(transaction.Index[len(self.prefix):])
-			values.append(transaction.Data)
+			keys.append(transaction.index[len(self.prefix):])
+			values.append(transaction.data)
 
-		# worker_root_digest = random_string()
 		worker_root_digest = smt_api.batch_insert(self.prefix, keys, values, epoch_number)
+		if worker_roots:
+			print("Root from smt_api:", worker_root_digest)
 		return worker_root_digest, self.prefix
 

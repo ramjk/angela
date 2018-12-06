@@ -6,7 +6,6 @@ import "C"
 
 import (
 	"merkle"
-	"fmt"
 	"unsafe"
 )
 
@@ -58,7 +57,6 @@ func Read(nodeId *C.char) **C.char {
 //export GetLatestRoot
 func GetLatestRoot() *C.char {
     tree := merkle.MakeTree("")
-    fmt.Println("Go: 61")
     return C.CString(tree.GetLatestRoot())
 }
 
@@ -66,7 +64,7 @@ func GetLatestRoot() *C.char {
 func FreeCPointers(pointer **C.char, numItems int) {
 	p := unsafe.Pointer(pointer)
     a := (*[1<<30]*C.char)(p)[:numItems:numItems]
-    fmt.Println("About to free this many pointers", numItems+1)
+    // fmt.Println("About to free this many pointers", numItems+1)
 
     for idx:=0; idx<numItems; idx++  {
         C.free(unsafe.Pointer(a[idx]))

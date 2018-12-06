@@ -38,34 +38,33 @@ class Client(object):
 	def get_leaf(self):
 		raise NotImplementedError
 
-	def insert_leaf(self, index, data):
+	def insert_leaf(index, data):
+		# util.connect_and_send(self.socket, self.host, self.port, tx)
+		# msg = self._listen()
+		# if msg == "True":
+		# 	return True
+		# return False
+
 		tx = transaction.WriteTransaction(index, data)
+		r = requests.post("http://localhost:5000/merkletree/update", data=tx.__dict__)
+		print(r.text)
 
-		util.connect_and_send(self.socket, self.host, self.port, tx)
-		msg = self._listen()
-		if msg == "True":
-			return True
-		return False
-
-	def generate_proof(self, index):
-		# tx = transaction.ReadTransaction(index)
-		# r = requests.get("http://localhost:8000/merkletree/prove", params=tx.__dict__)
-		# if (r.status_code == 400):
-		# 	return None
-		# return util.Proof.from_dict(r.json())
+	def generate_proof(index):
 		tx = transaction.ReadTransaction(index)
-		util.connect_and_send(self.socket, self.host, self.port, tx)
-		json_dict = json.loads(self._listen())
-		return util.Proof.from_dict(json_dict)
+		r = requests.get("http://localhost:5000/merkletree/prove", params=tx.__dict__)
+		if (r.status_code == 400):
+			return None
+		return util.Proof.from_dict(r.json())
+		# tx = transaction.ReadTransaction(index)
+		# util.connect_and_send(self.socket, self.host, self.port, tx)
+		# json_dict = json.loads(self._listen())
+		# return util.Proof.from_dict(json_dict)
 
-	def get_signed_root(self, ):
-		# r = requests.get("http://localhost:8000/merkletree/root")
-		tx = transaction.ReadTransaction("")
-		util.connect_and_send(self.socket, self.host, self.port, tx)
-		root = self._listen()
-		return root.rstrip() # Must strip padded bytes
+	def get_signed_root():
+		r = requests.get("http://localhost:5000/merkletree/root")
+		return r.text
 
-	def verify_proof(self, proof, data, root):
+	def verify_proof(proof, data, root):
 		proof_id_length = len(proof.ProofID)
 		tmp =  None
 		if proof.ProofType == False:
@@ -85,8 +84,30 @@ class Client(object):
 				tmp = util.SHA256(tmp + util.to_bytes(node["Digest"]))
 		actual_digest = util.to_string(tmp)
 		print("verification", actual_digest)
-		return actual_digest == root.decode()
+		print("root", root)
+		return actual_digest == root
 
 	def end_session(self):
 		print("Ending session...")
 		self.socket.close()
+
+if __name__ == '__main__':
+	indices = [util.random_index() for i in range(1000)]
+	data = [util.random_string() for i in range(1000)]
+	
+	for i in range(1000):
+		print("Insert {}".format(i))
+		Client.insert_leaf(indices[i], data[i])
+
+	root = Client.get_signed_root()
+
+	for i in range(1000):
+		print("Generate proof {}".format(i))
+		proof = Client.generate_proof(indices[i])
+		print("Verify proof {}".format(i))
+		accept = Client.verify_proof(proof, data[i], root)
+		if accept:
+			print("Pass!")
+		else:
+			print("Fail...")
+			break
