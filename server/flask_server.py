@@ -26,6 +26,10 @@ def calculate_worker_id(index: str, prefix_length: int) -> int:
 
 @app.route("/merkletree/root", methods=['GET'])
 def get_root():
+	print(request.endpoint)
+	print(request.url_rule)
+	print(request.path)
+
 	worker_id = random.randint(0, num_workers)
 	# 9-th "worker" is the root
 	if worker_id < num_workers-1:
@@ -113,4 +117,4 @@ if __name__ == '__main__':
 	ray_info['root_worker'] = root_worker
 	ray_info['prefix_length'] = prefix_length
 
-	app.run(threaded=True)
+	app.run(host='0.0.0.0', threaded=True)

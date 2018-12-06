@@ -552,11 +552,13 @@ func TestBatchInsert(t * testing.T) {
 // 	}
 // }
 
-// func TestDatabaseConnection(t *testing.T) {
-// 	db, err := GetReadAngelaDB()
-// 	if err != nil {
-// 		panic(err)
-// 	}
-// 	defer db.Close()
-// 	// Write a ping here 
-// }
+func TestDatabaseConnection(t *testing.T) {
+	db, err := GetReadAngelaDB()
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+	// Write a ping here 
+	db.DropTable()
+	db.CreateTable()
+}

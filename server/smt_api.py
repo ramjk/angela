@@ -1,7 +1,6 @@
 from ctypes import *
 from typing import List
 from common.util import Proof
-from bitarray import bitarray
 import random
 import string
 import os
