@@ -124,7 +124,7 @@ func (T *SparseMerkleTree) Insert(index string, data string, epochNumber uint64)
 	ch := make(chan []*CoPathPair)
 	quit := make(chan bool)
 
-	go auroraWriteback(ch, quit, writeDB, T.prefix, epochNumber)
+	go auroraWritebackBatch(ch, quit, writeDB, T.prefix, epochNumber, 1)
 
 	dig, _ := base64.StdEncoding.DecodeString(data)
 	hash := hashDigest(dig)
