@@ -42,11 +42,10 @@ def read(index) -> Proof:
 	numMetaData = 4
 	result = lib.Read(index.encode())
 	proofDict = {}
-	for i in range(4):
-		proofDict["ProofType"] = bool(result[0].decode())
-		proofDict["QueryID"] = result[1].decode()
-		proofDict["ProofID"] = result[2].decode()
-		proofDict["ProofLength"] = int(result[3].decode())
+	proofDict["ProofType"] = (result[0].decode() == "true")
+	proofDict["QueryID"] = result[1].decode()
+	proofDict["ProofID"] = result[2].decode()
+	proofDict["ProofLength"] = int(result[3].decode())
 	# print("correct number should be", proofDict["ProofLength"])
 	coPath = []
 	for i in range(numMetaData, proofDict["ProofLength"], 2):
