@@ -347,8 +347,6 @@ func BenchmarkInsert2048(b *testing.B) {
 // }
 
 func BenchmarkBatchInsert64(b *testing.B) {
-	epochNumber += 1
-	fmt.Println(epochNumber)
 	tree := MakeTree("")
 	transactions := make([]*Transaction, 64)
 
@@ -363,221 +361,254 @@ func BenchmarkBatchInsert64(b *testing.B) {
 
 	batchReadSizes := []int{10, 20, 50, 64}
 	for _, val := range batchReadSizes {
+		epochNumber += 1
+		fmt.Println(epochNumber)
 		b.Run(fmt.Sprintf("batchReadSize%d", val), func(b *testing.B) {
-			b.ResetTimer()
-			tree.BatchInsert(transactions, epochNumber, val, baselineBatchPercolateSize, baselineBatchWriteSize)
+			// b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				tree.BatchInsert(transactions, epochNumber, val, baselineBatchPercolateSize, baselineBatchWriteSize)			
+			}
 		})
 	}
 
 	batchPercolateSizes := []int{1, 5, 10, 25}
 	for _, val := range batchPercolateSizes {
+		epochNumber += 1
+		fmt.Println(epochNumber)
 		b.Run(fmt.Sprintf("batchPercolateSize%d", val), func(b *testing.B) {
-			b.ResetTimer()
-			tree.BatchInsert(transactions, epochNumber, baselineBatchReadSize, val, baselineBatchWriteSize)
+			// b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				tree.BatchInsert(transactions, epochNumber, baselineBatchReadSize, val, baselineBatchWriteSize)			
+			}
 		})
 	}
 
 	batchWriteSizes := []int{10, 20, 50, 64}
 	for _, val := range batchWriteSizes {
+		epochNumber += 1
+		fmt.Println(epochNumber)
 		b.Run(fmt.Sprintf("batchWriteSize%d", val), func(b *testing.B) {
-			b.ResetTimer()
-			tree.BatchInsert(transactions, epochNumber, baselineBatchReadSize, baselineBatchPercolateSize, val)
+			// b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				tree.BatchInsert(transactions, epochNumber, baselineBatchReadSize, baselineBatchPercolateSize, val)			
+			}
 		})
 	}	
 }
 
-// func BenchmarkBatchInsert128(b *testing.B) {
-// 	epochNumber += 1
-// 	fmt.Println(epochNumber)
-// 	tree := MakeTree("")
-// 	transactions := make([]*Transaction, 128)
+func BenchmarkBatchInsert128(b *testing.B) {
+	epochNumber += 1
+	fmt.Println(epochNumber)
+	tree := MakeTree("")
+	transactions := make([]*Transaction, 128)
 
-// 	for i := 0; i < 128; i++ {
-// 		index := randomBitString(TREE_DEPTH)
-// 		d := fmt.Sprintf("angela%d", i)
-// 		t := Transaction{ID: index, Data: d}
-// 		transactions[i] = &t
-// 	}
+	for i := 0; i < 128; i++ {
+		index := randomBitString(TREE_DEPTH)
+		d := fmt.Sprintf("angela%d", i)
+		t := Transaction{ID: index, Data: d}
+		transactions[i] = &t
+	}
 
-// 	sort.Sort(BatchedTransaction(transactions))
-// }
+	sort.Sort(BatchedTransaction(transactions))
+	batchReadSizes := []int{25, 50, 100, 128}
+	for _, val := range batchReadSizes {
+		epochNumber += 1
+		fmt.Println(epochNumber)
+		b.Run(fmt.Sprintf("batchReadSize%d", val), func(b *testing.B) {
+			// b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				tree.BatchInsert(transactions, epochNumber, val, baselineBatchPercolateSize, baselineBatchWriteSize)			
+			}
+		})
+	}
 
-// func BenchmarkBatchInsert256(b *testing.B) {
-// 	epochNumber += 1
-// 	fmt.Println(epochNumber)
-// 	tree := MakeTree("")
-// 	transactions := make([]*Transaction, 256)
+	batchPercolateSizes := []int{1, 5, 10, 25}
+	for _, val := range batchPercolateSizes {
+		epochNumber += 1
+		fmt.Println(epochNumber)
+		b.Run(fmt.Sprintf("batchPercolateSize%d", val), func(b *testing.B) {
+			// b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				tree.BatchInsert(transactions, epochNumber, baselineBatchReadSize, val, baselineBatchWriteSize)			
+			}
+		})
+	}
 
-// 	for i := 0; i < 256; i++ {
-// 		index := randomBitString(TREE_DEPTH)
-// 		d := fmt.Sprintf("angela%d", i)
-// 		t := Transaction{ID: index, Data: d}
-// 		transactions[i] = &t
-// 	}
+	batchWriteSizes := []int{25, 50}
+	for _, val := range batchWriteSizes {
+		epochNumber += 1
+		fmt.Println(epochNumber)
+		b.Run(fmt.Sprintf("batchWriteSize%d", val), func(b *testing.B) {
+			// b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				tree.BatchInsert(transactions, epochNumber, baselineBatchReadSize, baselineBatchPercolateSize, val)			
+			}
+		})
+	}	
+}
 
-// 	// tree.BatchInsertRPW(transactions, epochNumber)
-// }
+// Benchmarks below this run the same grid searches
+func runBatchInsertStandardBenchMarks(tree *SparseMerkleTree, transactions BatchedTransaction, epochNumber uint64, b *testing.B) {
+	sort.Sort(BatchedTransaction(transactions))
+	batchReadSizes := []int{25, 50, 100, 200}
+	for _, val := range batchReadSizes {
+		epochNumber += 1
+		fmt.Println(epochNumber)
+		b.Run(fmt.Sprintf("batchReadSize%d", val), func(b *testing.B) {
+			// b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				tree.BatchInsert(transactions, epochNumber, val, baselineBatchPercolateSize, baselineBatchWriteSize)
+			}
+		})
+	}
 
-// func BenchmarkBatchInsert512(b *testing.B) {
-// 	epochNumber += 1
-// 	fmt.Println(epochNumber)
-// 	tree := MakeTree("")
-// 	transactions := make([]*Transaction, 512)
+	batchPercolateSizes := []int{1, 5, 10, 25}
+	for _, val := range batchPercolateSizes {
+		epochNumber += 1
+		fmt.Println(epochNumber)
+		b.Run(fmt.Sprintf("batchPercolateSize%d", val), func(b *testing.B) {
+			// b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				tree.BatchInsert(transactions, epochNumber, baselineBatchReadSize, val, baselineBatchWriteSize)
+			}
+		})
+	}
 
-// 	for i := 0; i < 512; i++ {
-// 		index := randomBitString(TREE_DEPTH)
-// 		d := fmt.Sprintf("angela%d", i)
-// 		t := Transaction{ID: index, Data: d}
-// 		transactions[i] = &t
-// 	}
+	batchWriteSizes := []int{25, 50}
+	for _, val := range batchWriteSizes {
+		epochNumber += 1
+		fmt.Println(epochNumber)
+		b.Run(fmt.Sprintf("batchWriteSize%d", val), func(b *testing.B) {
+			// b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				tree.BatchInsert(transactions, epochNumber, baselineBatchReadSize, baselineBatchPercolateSize, val)			
+			}
+		})
+	}	
+}
 
-// 	b.ResetTimer()
-// 	// tree.BatchInsert(transactions, epochNumber)
-// }
+func BenchmarkBatchInsert256(b *testing.B) {
+	tree := MakeTree("")
+	transactions := make([]*Transaction, 256)
 
-// func BenchmarkBatchInsert1024(b *testing.B) {
-// 	epochNumber += 1
-// 	fmt.Println(epochNumber)
-// 	tree := MakeTree("")
-// 	transactions := make([]*Transaction, 1024)
+	for i := 0; i < 256; i++ {
+		index := randomBitString(TREE_DEPTH)
+		d := fmt.Sprintf("angela%d", i)
+		t := Transaction{ID: index, Data: d}
+		transactions[i] = &t
+	}
+	runBatchInsertStandardBenchMarks(tree, transactions, epochNumber, b)
+}
 
-// 	for i := 0; i < 1024; i++ {
-// 		index := randomBitString(TREE_DEPTH)
-// 		d := fmt.Sprintf("angela%d", i)
-// 		t := Transaction{ID: index, Data: d}
-// 		transactions[i] = &t
-// 	}
+func BenchmarkBatchInsert512(b *testing.B) {
+	tree := MakeTree("")
+	transactions := make([]*Transaction, 512)
 
-// 	b.ResetTimer()
-// 	// tree.BatchInsert(transactions, epochNumber)
-// }
+	for i := 0; i < 512; i++ {
+		index := randomBitString(TREE_DEPTH)
+		d := fmt.Sprintf("angela%d", i)
+		t := Transaction{ID: index, Data: d}
+		transactions[i] = &t
+	}
 
-// func BenchmarkBatchInsert2048(b *testing.B) {
-// 	epochNumber += 1
-// 	fmt.Println(epochNumber)
-// 	tree := MakeTree("")
-// 	transactions := make([]*Transaction, 2048)
+	runBatchInsertStandardBenchMarks(tree, transactions, epochNumber, b)
+}
 
-// 	for i := 0; i < 2048; i++ {
-// 		index := randomBitString(TREE_DEPTH)
-// 		d := fmt.Sprintf("angela%d", i)
-// 		t := Transaction{ID: index, Data: d}
-// 		transactions[i] = &t
-// 	}
+func BenchmarkBatchInsert1024(b *testing.B) {
+	tree := MakeTree("")
+	transactions := make([]*Transaction, 1024)
 
-// 	b.ResetTimer()
-// 	// tree.BatchInsert(transactions, epochNumber)
-// }
+	for i := 0; i < 1024; i++ {
+		index := randomBitString(TREE_DEPTH)
+		d := fmt.Sprintf("angela%d", i)
+		t := Transaction{ID: index, Data: d}
+		transactions[i] = &t
+	}
 
-// func BenchmarkBatchInsert4096(b *testing.B) {
-// 	epochNumber += 1
-// 	fmt.Println(epochNumber)
-// 	tree := MakeTree("")
-// 	transactions := make([]*Transaction, 4096)
+	runBatchInsertStandardBenchMarks(tree, transactions, epochNumber, b)
+}
 
-// 	for i := 0; i < 4096; i++ {
-// 		index := randomBitString(TREE_DEPTH)
-// 		d := fmt.Sprintf("angela%d", i)
-// 		t := Transaction{ID: index, Data: d}
-// 		transactions[i] = &t
-// 	}
+func BenchmarkBatchInsert2048(b *testing.B) {
+	tree := MakeTree("")
+	transactions := make([]*Transaction, 2048)
 
-// 	b.ResetTimer()
+	for i := 0; i < 2048; i++ {
+		index := randomBitString(TREE_DEPTH)
+		d := fmt.Sprintf("angela%d", i)
+		t := Transaction{ID: index, Data: d}
+		transactions[i] = &t
+	}
 
-// 	// tree.BatchInsert(transactions, epochNumber)
-// }
+	runBatchInsertStandardBenchMarks(tree, transactions, epochNumber, b)
+}
 
-// func BenchmarkBatchInsert8192(b *testing.B) {
-// 	epochNumber += 1
-// 	fmt.Println(epochNumber)
-// 	tree := MakeTree("")
-// 	transactions := make([]*Transaction, 8192)
+func BenchmarkBatchInsert4096(b *testing.B) {
+	tree := MakeTree("")
+	transactions := make([]*Transaction, 4096)
 
-// 	for i := 0; i < 8192; i++ {
-// 		index := randomBitString(TREE_DEPTH)
-// 		d := fmt.Sprintf("angela%d", i)
-// 		t := Transaction{ID: index, Data: d}
-// 		transactions[i] = &t
-// 	}
+	for i := 0; i < 4096; i++ {
+		index := randomBitString(TREE_DEPTH)
+		d := fmt.Sprintf("angela%d", i)
+		t := Transaction{ID: index, Data: d}
+		transactions[i] = &t
+	}
+	runBatchInsertStandardBenchMarks(tree, transactions, epochNumber, b)
+}
 
-// 	b.ResetTimer()
+func BenchmarkBatchInsert8192(b *testing.B) {
+	tree := MakeTree("")
+	transactions := make([]*Transaction, 8192)
 
-// 	// tree.BatchInsert(transactions, epochNumber)
-// }
+	for i := 0; i < 8192; i++ {
+		index := randomBitString(TREE_DEPTH)
+		d := fmt.Sprintf("angela%d", i)
+		t := Transaction{ID: index, Data: d}
+		transactions[i] = &t
+	}
+	runBatchInsertStandardBenchMarks(tree, transactions, epochNumber, b)
+}
 
-// func BenchmarkBatchInsert16384(b *testing.B) {
-// 	tree := MakeTree("")
-// 	transactions := make([]*Transaction, 16384)
+func BenchmarkBatchInsert16384(b *testing.B) {
+	tree := MakeTree("")
+	transactions := make([]*Transaction, 16384)
 
-// 	for i := 0; i < 16384; i++ {
-// 		index := randomBitString(TREE_DEPTH)
-// 		d := fmt.Sprintf("angela%d", i)
-// 		t := Transaction{ID: index, Data: d}
-// 		transactions[i] = &t
-// 	}
+	for i := 0; i < 16384; i++ {
+		index := randomBitString(TREE_DEPTH)
+		d := fmt.Sprintf("angela%d", i)
+		t := Transaction{ID: index, Data: d}
+		transactions[i] = &t
+	}
+	runBatchInsertStandardBenchMarks(tree, transactions, epochNumber, b)
+}
 
-// 	b.ResetTimer()
+func TestBatchInsert(t * testing.T) {
+	// transactionLen := NUMITERATIONS
+	tree := MakeTree("")
 
-// 	// tree.BatchInsert(transactions, epochNumber)
-// }
+	transactions := make([]*Transaction, 1)
+	for i := 0; i < 1; i++ {
+		transactions[i] = &Transaction{"0101101010111001011001000101101011110100001110011101000101111111110001101010111011101101101001100011001101001111000001011010101010001010111000110111010010110010110110101101111010010111101010110001011101000010000100001110011000101110000000010001111010100111", "3SL370G8"}
+	}
 
-// func TestBatchInsert(t * testing.T) {
-// 	// transactionLen := NUMITERATIONS
-// 	tree := MakeTree("")
+    root, _ := tree.BatchInsert(transactions, epochNumber, baselineBatchReadSize, baselineBatchPercolateSize, baselineBatchWriteSize)
+    fmt.Println("Root", root)
 
-// 	transactions := make([]*Transaction, 1)
-// 	fmt.Println(tree.GetLatestRoot())
-// 	for i := 0; i < 1; i++ {
-// 		transactions[i] = &Transaction{"0101101010111001011001000101101011110100001110011101000101111111110001101010111011101101101001100011001101001111000001011010101010001010111000110111010010110010110110101101111010010111101010110001011101000010000100001110011000101110000000010001111010100111", "3SL370G8"}
-// 	}
-
-//     root, _ := tree.BatchInsert(transactions, epochNumber)
-//     fmt.Println("Root", root)
-
-// 	// for k, v := range tree.conflicts { 
-//     //   fmt.Printf("key[%s] value[%s]\n", k, v.writeable)
-// 	// }
+	// for k, v := range tree.conflicts { 
+    //   fmt.Printf("key[%s] value[%s]\n", k, v.writeable)
+	// }
 	
-// 	for i := 0; i < 1; i++ {
-// 		proof := tree.GenerateProof(transactions[i].ID)
+	for i := 0; i < 1; i++ {
+		proof := tree.GenerateProof(transactions[i].ID)
 
-// 		if len(proof.CoPath) != TREE_DEPTH {
-// 			t.Error("Length of the copath was not equal to TREE_DEPTH.")
-// 		}
+		if len(proof.CoPath) != TREE_DEPTH {
+			t.Error("Length of the copath was not equal to TREE_DEPTH.")
+		}
 
-// 		if !tree.verifyProof(proof) {
-// 			t.Error("Proof was invalid when it was expected to be valid.")
-// 		}
-// 	}
-// }
-
-// func TestBatch2Insert(t * testing.T) {
-// 	transactionLen := NUMITERATIONS
-// 	tree := MakeTree("")
-
-// 	transactions := make([]*transaction, transactionLen)
-
-// 	for i := 0; i < transactionLen; i++ {
-// 		transactions[i] = &transaction{randomBitString(TREE_DEPTH), fmt.Sprintf("angela%d", i)}
-// 	}
-
-//     tree.batch2Insert(transactions)
-// 	// for k, v := range tree.conflicts { 
-//     //   fmt.Printf("key[%s] value[%s]\n", k, v.writeable)
-// 	// }
-	
-// 	for i := 0; i < transactionLen; i++ {
-// 		proof := tree.GenerateProofDB(transactions[i].id)
-
-// 		if len(proof.CoPath) != TREE_DEPTH {
-// 			t.Error("Length of the copath was not equal to TREE_DEPTH.")
-// 		}
-
-// 		if !tree.verifyProof(proof) {
-// 			t.Error("Proof was invalid when it was expected to be valid.")
-// 		}
-// 	}
-// }
+		if !tree.verifyProof(proof) {
+			t.Error("Proof was invalid when it was expected to be valid.")
+		}
+	}
+}
 
 func TestDatabaseConnection(t *testing.T) {
 	db, err := GetReadAngelaDB()

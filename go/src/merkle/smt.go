@@ -11,9 +11,6 @@ import (
 
 const TREE_DEPTH int = 256
 
-const BASELINE_BATCH_READ_SIZE = 50
-const BASELINE_BATCH_WRITE_SIZE = 50
-
 type digest = []byte
 
 type SparseMerkleTree struct {
@@ -241,7 +238,8 @@ func auroraWritebackBatch(
 	    			fmt.Println(err)
 	    		}			
     		}
-    		fmt.Println("Done Writing")
+    		// fmt.Println("Done Writing")
+    		db.Close()
     		return
     	}
     }
@@ -255,18 +253,18 @@ func (T *SparseMerkleTree) BatchInsert(
 	batchWriteSize int) (string, error) {
 
 	readChannel := make(chan []*CoPathPair)
-	readDB, err := GetReadAngelaDB(batchReadSize)
+	readDB, err := GetReadAngelaDB()
 	if err != nil {
 		panic(err)
 	}
 	defer readDB.Close()
-	writeDB, err := GetWriteAngelaDB(batchWriteSize)
+
+	// Closing of this DB happens in auroraWriteback or when findConflicts errors
+	writeDB, err := GetWriteAngelaDB()
 	if err != nil {
 		panic(err)
 	}
-	defer writeDB.Close()
-
-
+	
 	// fmt.Println("Cache before preload")
 	// fmt.Println(T.cache)
 
@@ -293,6 +291,7 @@ func (T *SparseMerkleTree) BatchInsert(
 	// fmt.Println(T.cache)
 	T.conflicts, err = findConflicts(transactions)
 	if err != nil {
+		writeDB.Close()
 		return "", err
 	}
 
@@ -302,7 +301,7 @@ func (T *SparseMerkleTree) BatchInsert(
 
 	go auroraWritebackBatch(ch, quit, writeDB, T.prefix, epochNumber, batchWriteSize)
 
-	for i:=0; i<len(transactions); i++ {
+	for i:=0; i<len(transactions); i+=batchPercolateSize {
 		wg.Add(1)
 		go T.batchPercolate(transactions[i:min(i+batchPercolateSize, len(transactions))], &wg, ch)
 	}
@@ -400,7 +399,7 @@ func (T *SparseMerkleTree) isConflict(index string) (bool) {
 }
 
 func (T *SparseMerkleTree) GetLatestRoot() (string) {
-	readDB, err := GetReadAngelaDB(BASELINE_BATCH_READ_SIZE)
+	readDB, err := GetReadAngelaDB()
 	if err != nil {
 		panic(err)
 	}
@@ -429,7 +428,7 @@ func (T *SparseMerkleTree) CGenerateProof(index string) ([]string) {
 }
 
 func (T *SparseMerkleTree) GenerateProofDB(index string) (Proof) {
-	readDB, err := GetReadAngelaDB(BASELINE_BATCH_READ_SIZE)
+	readDB, err := GetReadAngelaDB()
 	if err != nil {
 		panic(err)
 	}
