@@ -344,7 +344,7 @@ func BenchmarkInsert16384(b *testing.B) {
 
 func BenchmarkBatchInsert64(b *testing.B) {
 	epochNumber += 1
-	fmt.Println(epochNumber)
+	//fmt.Println(epochNumber)
 	tree := MakeTree("")
 	transactions := make([]*Transaction, 64)
 
@@ -354,14 +354,18 @@ func BenchmarkBatchInsert64(b *testing.B) {
 		t := Transaction{ID: index, Data: d}
 		transactions[i] = &t
 	}
+	sort.Sort(BatchedTransaction(transactions))
+
 
 	b.ResetTimer()
-	tree.BatchInsert(transactions, epochNumber)
+	for i:=0; i<b.N; i++ {
+		tree.BatchInsert(transactions, epochNumber)
+	}	
 }
 
 func BenchmarkBatchInsert128(b *testing.B) {
 	epochNumber += 1
-	fmt.Println(epochNumber)
+	//fmt.Println(epochNumber)
 	tree := MakeTree("")
 	transactions := make([]*Transaction, 128)
 
@@ -371,14 +375,18 @@ func BenchmarkBatchInsert128(b *testing.B) {
 		t := Transaction{ID: index, Data: d}
 		transactions[i] = &t
 	}
+	sort.Sort(BatchedTransaction(transactions))
+
 
 	b.ResetTimer()
-	tree.BatchInsert(transactions, epochNumber)
+	for i:=0; i<b.N; i++ {
+		tree.BatchInsert(transactions, epochNumber)
+	}	
 }
 
 func BenchmarkBatchInsert256(b *testing.B) {
 	epochNumber += 1
-	fmt.Println(epochNumber)
+	//fmt.Println(epochNumber)
 	tree := MakeTree("")
 	transactions := make([]*Transaction, 256)
 
@@ -388,14 +396,18 @@ func BenchmarkBatchInsert256(b *testing.B) {
 		t := Transaction{ID: index, Data: d}
 		transactions[i] = &t
 	}
+	sort.Sort(BatchedTransaction(transactions))
+
 
 	b.ResetTimer()
-	tree.BatchInsert(transactions, epochNumber)
+	for i:=0; i<b.N; i++ {
+		tree.BatchInsert(transactions, epochNumber)
+	}	
 }
 
 func BenchmarkBatchInsert512(b *testing.B) {
 	epochNumber += 1
-	fmt.Println(epochNumber)
+	//fmt.Println(epochNumber)
 	tree := MakeTree("")
 	transactions := make([]*Transaction, 512)
 
@@ -405,14 +417,17 @@ func BenchmarkBatchInsert512(b *testing.B) {
 		t := Transaction{ID: index, Data: d}
 		transactions[i] = &t
 	}
+	sort.Sort(BatchedTransaction(transactions))
 
 	b.ResetTimer()
-	tree.BatchInsert(transactions, epochNumber)
+	for i:=0; i<b.N; i++ {
+		tree.BatchInsert(transactions, epochNumber)
+	}	
 }
 
 func BenchmarkBatchInsert1024(b *testing.B) {
 	epochNumber += 1
-	fmt.Println(epochNumber)
+	//fmt.Println(epochNumber)
 	tree := MakeTree("")
 	transactions := make([]*Transaction, 1024)
 
@@ -422,14 +437,17 @@ func BenchmarkBatchInsert1024(b *testing.B) {
 		t := Transaction{ID: index, Data: d}
 		transactions[i] = &t
 	}
+	sort.Sort(BatchedTransaction(transactions))
 
 	b.ResetTimer()
-	tree.BatchInsert(transactions, epochNumber)
+	for i:=0; i<b.N; i++ {
+		tree.BatchInsert(transactions, epochNumber)
+	}	
 }
 
 func BenchmarkBatchInsert2048(b *testing.B) {
 	epochNumber += 1
-	fmt.Println(epochNumber)
+	//fmt.Println(epochNumber)
 	tree := MakeTree("")
 	transactions := make([]*Transaction, 2048)
 
@@ -439,14 +457,17 @@ func BenchmarkBatchInsert2048(b *testing.B) {
 		t := Transaction{ID: index, Data: d}
 		transactions[i] = &t
 	}
+	sort.Sort(BatchedTransaction(transactions))
 
 	b.ResetTimer()
-	tree.BatchInsert(transactions, epochNumber)
+	for i:=0; i<b.N; i++ {
+		tree.BatchInsert(transactions, epochNumber)
+	}	
 }
 
 func BenchmarkBatchInsert4096(b *testing.B) {
 	epochNumber += 1
-	fmt.Println(epochNumber)
+	//fmt.Println(epochNumber)
 	tree := MakeTree("")
 	transactions := make([]*Transaction, 4096)
 
@@ -456,14 +477,17 @@ func BenchmarkBatchInsert4096(b *testing.B) {
 		t := Transaction{ID: index, Data: d}
 		transactions[i] = &t
 	}
+	sort.Sort(BatchedTransaction(transactions))
 
 	b.ResetTimer()
-	tree.BatchInsert(transactions, epochNumber)
+	for i:=0; i<b.N; i++ {
+		tree.BatchInsert(transactions, epochNumber)
+	}	
 }
 
 func BenchmarkBatchInsert8192(b *testing.B) {
 	epochNumber += 1
-	fmt.Println(epochNumber)
+	//fmt.Println(epochNumber)
 	tree := MakeTree("")
 	transactions := make([]*Transaction, 8192)
 
@@ -473,9 +497,12 @@ func BenchmarkBatchInsert8192(b *testing.B) {
 		t := Transaction{ID: index, Data: d}
 		transactions[i] = &t
 	}
+	sort.Sort(BatchedTransaction(transactions))
 
 	b.ResetTimer()
-	tree.BatchInsert(transactions, epochNumber)
+	for i:=0; i<b.N; i++ {
+		tree.BatchInsert(transactions, epochNumber)
+	}	
 }
 
 func BenchmarkBatchInsert16384(b *testing.B) {
@@ -488,9 +515,12 @@ func BenchmarkBatchInsert16384(b *testing.B) {
 		t := Transaction{ID: index, Data: d}
 		transactions[i] = &t
 	}
+	sort.Sort(BatchedTransaction(transactions))
 
 	b.ResetTimer()
-	tree.BatchInsert(transactions, epochNumber)
+	for i:=0; i<b.N; i++ {
+		tree.BatchInsert(transactions, epochNumber)
+	}	
 }
 
 func TestBatchInsert(t * testing.T) {
@@ -502,6 +532,7 @@ func TestBatchInsert(t * testing.T) {
 	for i := 0; i < 1; i++ {
 		transactions[i] = &Transaction{"0101101010111001011001000101101011110100001110011101000101111111110001101010111011101101101001100011001101001111000001011010101010001010111000110111010010110010110110101101111010010111101010110001011101000010000100001110011000101110000000010001111010100111", "3SL370G8"}
 	}
+	sort.Sort(BatchedTransaction(transactions))
 
     root, _ := tree.BatchInsert(transactions, epochNumber)
     fmt.Println("Root", root)
