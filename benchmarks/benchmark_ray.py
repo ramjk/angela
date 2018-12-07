@@ -27,7 +27,7 @@ for i in range({}):
 	Client.insert_leaf(indices[i], data[i])
 '''
 
-print(timeit.timeit(stmt="Client.insert_leaf(indices[-1], data[-1])", setup=setup.format(2048, 2048, 2047), number=1))
+print(timeit.timeit(stmt="Client.insert_leaf(indices[-1], data[-1])", setup=setup.format(256, 256, 255), number=1))
 
 # durations_8 = [1.765327169999999, 2.6414496519999986, 4.583681233, 8.643308655999999, 15.488765152999996, 32.219870587]
 # num_inserts_8 = [64, 128, 256, 512, 1024, 2048]

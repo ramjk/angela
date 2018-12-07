@@ -109,7 +109,7 @@ if __name__ == '__main__':
 	epoch_length = args.epoch_length
 	tree_depth = args.tree_depth
 
-	ray.init()
+	ray.init(redis_address="localhost:6379")
 
 	prefix_length = int(log(num_workers-1, 2))
 	root_worker = Worker.remote(prefix_length-1, -1, prefix_length)
@@ -124,4 +124,4 @@ if __name__ == '__main__':
 	ray_info['root_worker'] = root_worker
 	ray_info['prefix_length'] = prefix_length
 
-	app.run(host='0.0.0.0', threaded=True)
+	app.run(host='0.0.0.0')
