@@ -278,7 +278,7 @@ func (T *SparseMerkleTree) BatchInsert(
 	T.cache[""] = &placeHolder
 
 	for i := 0; i < len(transactions); i+=batchReadSize {
-		go T.preloadCopaths(transactions[i:min(i+batchReadSize, len(transactions))], readChannel, readDB)
+		go T.preloadCopaths(transactions[i:Min(i+batchReadSize, len(transactions))], readChannel, readDB)
 	}
 
 	for i := 0; i < len(transactions); i+=batchReadSize {
@@ -303,7 +303,7 @@ func (T *SparseMerkleTree) BatchInsert(
 
 	for i:=0; i<len(transactions); i+=batchPercolateSize {
 		wg.Add(1)
-		go T.batchPercolate(transactions[i:min(i+batchPercolateSize, len(transactions))], &wg, ch)
+		go T.batchPercolate(transactions[i:Min(i+batchPercolateSize, len(transactions))], &wg, ch)
 	}
 	wg.Wait()
 	quit <- true
