@@ -12,17 +12,23 @@ import (
 //export BatchWrite
 func BatchWrite(prefix *C.char, transactionsKeys []*C.char, transactionsValues []*C.char, epochNumber uint64) *C.char {
 	tree := merkle.MakeTree(C.GoString(prefix))
+	numTransactions := len(transactionsKeys)
+	transactions := make([]*merkle.Transaction, numTransactions)
 
-	transactions := make([]*merkle.Transaction, len(transactionsKeys))
-
-	for i:=0; i < len(transactionsKeys); i++ {
-        // fmt.Println("[BatchWrite]", C.GoString(transactionsKeys[i]))
-        // fmt.Println("[BatchWrite]", C.GoString(transactionsValues[i]))
+	for i:=0; i < numTransactions; i++ {
 		transactions[i] = &merkle.Transaction{C.GoString(transactionsKeys[i]), C.GoString(transactionsValues[i])}
 	}
+	// confirm benchmarks before using below optimizations
+	// optimalBatchReadSize := merkle.Min(200, int(numTransactions*0.05))
+	// optimalBatchPercolateSize := merkle.Min(25, int(numTransactions*0.02))
+	optimalBatchReadSize := 50
+	optimalBatchPercolateSize := 10
+	optimalBatchWriteSize := 50
 
-	root, _ := tree.BatchInsert(transactions, epochNumber)
+	// Optimal values for batchread, batchpercolate and batchwrite size obtained through benchmarking
+	root, _ := tree.BatchInsert(transactions, epochNumber, optimalBatchReadSize, optimalBatchPercolateSize, optimalBatchWriteSize)
 
+	// support for returning boolean values from BatchInsert
 	// onesSlice := make([]bool, len(transactionsKeys))
 	// for i := range onesSlice {
  //    	onesSlice[i] = worked

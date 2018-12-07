@@ -6,15 +6,10 @@ import (
 	"crypto/sha256"
 	// "bytes"
 	"sync"
-	"sort"
 	"strconv"
 )
 
 const TREE_DEPTH int = 256
-
-const BATCH_READ_SIZE int = 50
-
-const BATCH_PERCOLATE_SIZE int = 50
 
 type digest = []byte
 
@@ -129,7 +124,7 @@ func (T *SparseMerkleTree) Insert(index string, data string, epochNumber uint64)
 	ch := make(chan []*CoPathPair)
 	quit := make(chan bool)
 
-	go auroraWriteback(ch, quit, writeDB, T.prefix, epochNumber)
+	go auroraWritebackBatch(ch, quit, writeDB, T.prefix, epochNumber, 1)
 
 	dig, _ := base64.StdEncoding.DecodeString(data)
 	hash := hashDigest(dig)
@@ -207,46 +202,71 @@ func (T *SparseMerkleTree) preloadCopaths(transactions BatchedTransaction, read 
 	return true, nil
 }
 
-func auroraWriteback(ch chan []*CoPathPair, quit chan bool, db *angelaDB, prefix string, epochNumber uint64) {
+// Writes back to the database after receiving a set number of transactions
+func auroraWritebackBatch(
+	ch chan []*CoPathPair, 
+	quit chan bool, 
+	db *angelaDB, 
+	prefix string, 
+	epochNumber uint64, 
+	batchWriteSize int) {
+
+	bufferList := make([]*CoPathPair, 0)
+	counter := 0
     for {
     	select {
     	case delta := <-ch:
     		// write back to aurora of the changelist from the channel
     		// fmt.Println("Changelist")
     		// fmt.Println(delta)
-    		for i:=0; i < len(delta); i++ {
-    			delta[i].ID = prefix + delta[i].ID
-    		}
-    		_, err := db.insertChangeList(delta, epochNumber)
-    		if err != nil {
-    			fmt.Println(err)
+    		bufferList = append(bufferList, delta...)
+    		counter += 1
+    		if counter == batchWriteSize {
+    			_, err := db.insertChangeList(bufferList, epochNumber)
+	    		if err != nil {
+	    			fmt.Println(err)
+	    		}
+	    		counter = 0
+	    		bufferList = nil
     		}
     		// fmt.Println("Printing the number of rows affected")
     		// fmt.Println(numRowsAffected)
     	case <-quit:
+    		if len(bufferList) > 0 {
+    			_, err := db.insertChangeList(bufferList, epochNumber)
+	    		if err != nil {
+	    			fmt.Println(err)
+	    		}			
+    		}
     		// fmt.Println("Done Writing")
+    		db.Close()
     		return
     	}
     }
 }
 
-func (T *SparseMerkleTree) BatchInsert(transactions BatchedTransaction, epochNumber uint64) (string, error) {
+func (T *SparseMerkleTree) BatchInsert(
+	transactions BatchedTransaction, 
+	epochNumber uint64, 
+	batchReadSize int, 
+	batchPercolateSize int, 
+	batchWriteSize int) (string, error) {
+
 	readChannel := make(chan []*CoPathPair)
 	readDB, err := GetReadAngelaDB()
 	if err != nil {
 		panic(err)
 	}
 	defer readDB.Close()
+
+	// Closing of this DB happens in auroraWriteback or when findConflicts errors
 	writeDB, err := GetWriteAngelaDB()
 	if err != nil {
 		panic(err)
 	}
-	defer writeDB.Close()
-
-
+	
 	// fmt.Println("Cache before preload")
 	// fmt.Println(T.cache)
-	sort.Sort(BatchedTransaction(transactions))
 
 	for _, Transaction := range transactions {
 		for currID := Transaction.ID; currID != ""; currID = getParent(currID) {
@@ -257,11 +277,11 @@ func (T *SparseMerkleTree) BatchInsert(transactions BatchedTransaction, epochNum
 	placeHolder := T.getEmpty(T.depth)
 	T.cache[""] = &placeHolder
 
-	for i := 0; i < len(transactions); i+=BATCH_READ_SIZE {
-		go T.preloadCopaths(transactions[i:min(i+BATCH_READ_SIZE, len(transactions))], readChannel, readDB)
+	for i := 0; i < len(transactions); i+=batchReadSize {
+		go T.preloadCopaths(transactions[i:Min(i+batchReadSize, len(transactions))], readChannel, readDB)
 	}
 
-	for i := 0; i < len(transactions); i+=BATCH_READ_SIZE {
+	for i := 0; i < len(transactions); i+=batchReadSize {
 		copathPairs := <-readChannel
 		for j := 0; j < len(copathPairs); j++ {
 			T.cache[copathPairs[j].ID[len(T.prefix):]] = &copathPairs[j].Digest
@@ -271,6 +291,7 @@ func (T *SparseMerkleTree) BatchInsert(transactions BatchedTransaction, epochNum
 	// fmt.Println(T.cache)
 	T.conflicts, err = findConflicts(transactions)
 	if err != nil {
+		writeDB.Close()
 		return "", err
 	}
 
@@ -278,11 +299,11 @@ func (T *SparseMerkleTree) BatchInsert(transactions BatchedTransaction, epochNum
 	ch := make(chan []*CoPathPair)
 	quit := make(chan bool)
 
-	go auroraWriteback(ch, quit, writeDB, T.prefix, epochNumber)
+	go auroraWritebackBatch(ch, quit, writeDB, T.prefix, epochNumber, batchWriteSize)
 
-	for i:=0; i<len(transactions); i++ {
+	for i:=0; i<len(transactions); i+=batchPercolateSize {
 		wg.Add(1)
-		go T.percolate(transactions[i].ID, transactions[i].Data, &wg, ch)
+		go T.batchPercolate(transactions[i:Min(i+batchPercolateSize, len(transactions))], &wg, ch)
 	}
 	wg.Wait()
 	quit <- true
@@ -292,9 +313,22 @@ func (T *SparseMerkleTree) BatchInsert(transactions BatchedTransaction, epochNum
 	return base64.StdEncoding.EncodeToString(T.rootDigest), nil
 }
 
-func (T *SparseMerkleTree) percolate(index string, data string, wg *sync.WaitGroup, ch chan []*CoPathPair) (bool, error) {
+func (T *SparseMerkleTree) batchPercolate(transactions BatchedTransaction, wg *sync.WaitGroup, ch chan []*CoPathPair) (bool, error) {
 	defer wg.Done()
+	status := true
+	for _, trans := range transactions {
+		index := trans.ID
+		data := trans.Data
+		ok, err := T.percolate(index, data, ch)
+		if err != nil {
+			fmt.Println(err)
+		}
+		status = status && ok
+	}
+	return status, nil
+}
 
+func (T *SparseMerkleTree) percolate(index string, data string, ch chan []*CoPathPair) (bool, error) {
 	changeList := make([]*CoPathPair, 0)
 
 	dig, _ := base64.StdEncoding.DecodeString(data)
@@ -345,66 +379,6 @@ func (T *SparseMerkleTree) percolate(index string, data string, wg *sync.WaitGro
 	}
 	rootDigestPointer := T.cache[currID]
 	T.rootDigest = *rootDigestPointer
-	ch <- changeList
-	return true, nil
-}
-
-func (T *SparseMerkleTree) batchPercolate(transactions BatchedTransaction, wg *sync.WaitGroup, ch chan []*CoPathPair) (bool, error) {
-	defer wg.Done()
-	changeList := make([]*CoPathPair, 0)
-	
-	for _, trans := range transactions {
-		index := trans.ID
-		data := trans.Data
-
-		//TODO: You should not hash the value passed in if it not a leaf ie in the root tree
-		dig, _ := base64.StdEncoding.DecodeString(data)
-		hash := hashDigest(dig)
-		indexPointer := T.cache[index]
-		*indexPointer = hash
-		changeList = append(changeList, &CoPathPair{ID: index, Digest: hash})
-
-		var currID string
-		for currID = index; len(currID) > 0; {
-			// Get both the parent and sibling IDs
-			siblingID, isLeft := getSibling(currID)
-			parentID := getParent(currID)
-
-			//conflict check
-			if T.isConflict(parentID) {
-				continue
-			}
-
-			// Get the digest of the current node and sibling
-			currDigestPointer := T.cache[currID] // currID will always be in cache
-			siblingDigestPointer, ok := T.cache[siblingID]
-			var siblingDigest digest
-			if !ok {
-				siblingDigest = T.getEmpty(T.depth - len(siblingID))
-			} else {
-				siblingDigest = *siblingDigestPointer
-			}
-			currDigest := *currDigestPointer
-
-			// Hash the digests of the left and right children
-			var parentDigest digest
-			if isLeft {
-				parentDigest = hashDigest(append(siblingDigest, currDigest...))
-			} else {
-				parentDigest = hashDigest(append(currDigest, siblingDigest...))
-			}
-			parentDigestPointer := T.cache[parentID]
-			*parentDigestPointer = parentDigest
-			changeList = append(changeList, &CoPathPair{ID: parentID, Digest: parentDigest})
-
-			// Traverse up the tree by making the current node the parent node
-			currID = parentID
-		}
-		rootDigestPointer := T.cache[currID]
-		T.rootDigest = *rootDigestPointer
-
-		continue
-	}
 	ch <- changeList
 	return true, nil
 }

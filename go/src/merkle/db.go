@@ -23,7 +23,7 @@ const createTableStmt = `
 		nodeId VARBINARY(256) NOT NULL,
 		nodeDigest VARBINARY(256) NOT NULL,
 		epochNumber BIGINT NOT NULL,
-		PRIMARY KEY (epochNumber, nodeId)
+		PRIMARY KEY (nodeId, epochNumber)
 	)`
 const showTablesStmt = "SHOW TABLES"
 const getLastThousandNodesStmt = `
@@ -32,7 +32,6 @@ const getLastThousandNodesStmt = `
 	ORDER BY id DESC
 	LIMIT 1000
 	`
-const createNodeIDIndex = `CREATE INDEX nodeID ON nodes (nodeId)`
 const showMaxPacketSizeStmt = `SHOW VARIABLES LIKE 'version'`
 
 type angelaDB struct {
@@ -60,7 +59,6 @@ func GetReadAngelaDB() (*angelaDB, error) {
 		conn.Close()
 		return nil, fmt.Errorf("[aurora]: unable to ping the database: %v", err)
 	}
-
 	angela := &angelaDB{conn: conn,}
 	return angela, nil
 }
@@ -87,10 +85,6 @@ func GetWriteAngelaDB() (*angelaDB, error) {
 func (db *angelaDB) CreateTable() error {
 	fmt.Println(createTableStmt)
 	_, err := db.conn.Exec(createTableStmt)
-	if err != nil {
-		return err
-	}
-	_, err = db.conn.Exec(createNodeIDIndex)
 	if err != nil {
 		return err
 	}
@@ -142,16 +136,19 @@ func (db *angelaDB) ShowTables() error {
 	return nil
 }
 
-func (db *angelaDB) getChangeListInsertStmt(numNodes int) (*sql.Stmt, error) {
+func getChangeListInsertString(numNodes int) (string) {
 	var buffer bytes.Buffer
 
 	buffer.WriteString("INSERT into nodes(nodeId, nodeDigest, epochNumber) VALUES ")
 	buffer.WriteString(strings.Repeat("(?, ?, ?),", numNodes - 1))
     buffer.WriteString("(?, ?, ?)")
     buffer.WriteString(" ON DUPLICATE KEY UPDATE nodeDigest=VALUES(nodeDigest)")
-    stmt := buffer.String()
+    stmt := buffer.String()	
+    return stmt
+}
 
-    changeListStmt, err := db.conn.Prepare(stmt)
+func (db *angelaDB) getChangeListInsertStmt(numNodes int) (*sql.Stmt, error) {
+    changeListStmt, err := db.conn.Prepare(getChangeListInsertString(numNodes))
 	if err != nil {
 		return nil, fmt.Errorf("[aurora]: error in preparing write statement: %v", err)		
 	}
@@ -160,7 +157,6 @@ func (db *angelaDB) getChangeListInsertStmt(numNodes int) (*sql.Stmt, error) {
 
 func (db *angelaDB) insertChangeList(changeList []*CoPathPair, currentEpoch uint64) (int64, error) {
 	stmt, err := db.getChangeListInsertStmt(len(changeList))
-
 	if err != nil {
 		return -1, fmt.Errorf("[aurora]: error in making changeList statement: %v", err)
 	}
@@ -229,9 +225,8 @@ func (db *angelaDB) getLastThousandNodes() ([]*CoPathPair, error) {
 
 	return results, nil
 }
- 
-func (db *angelaDB) getCopathQueryStmt(numNodes int) (*sql.Stmt, error) {
 
+func getCopathQueryString(numNodes int) (string) {
 	var buffer bytes.Buffer
 	buffer.WriteString(`SELECT n1.nodeId, n1.nodeDigest 
 			  			FROM nodes AS n1
@@ -243,7 +238,11 @@ func (db *angelaDB) getCopathQueryStmt(numNodes int) (*sql.Stmt, error) {
 	buffer.WriteString("?) GROUP BY nodeId) AS latest ON n1.nodeId=latest.nodeId AND n1.epochNumber=latest.maxEpoch")
 
     stmt := buffer.String()
-    copathStmt, err := db.conn.Prepare(stmt)
+    return stmt	
+}
+ 
+func (db *angelaDB) getCopathQueryStmt(numNodes int) (*sql.Stmt, error) {
+    copathStmt, err := db.conn.Prepare(getCopathQueryString(numNodes))
 	if err != nil {
 		return nil, fmt.Errorf("[aurora]: error in preparing get statement: %v", err)		
 	}
@@ -261,7 +260,6 @@ func (db *angelaDB) retrieveLatestCopathDigests(copaths []string) ([]*CoPathPair
 	}
 	rows, err := stmt.Query(vals...)
 	if err != nil {
-		fmt.Println(err)
 		return make([]*CoPathPair, 0), fmt.Errorf("[aurora]: error in querying copath statement: %v", err)
 	}
 	defer rows.Close()
