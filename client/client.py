@@ -32,9 +32,9 @@ class Client(object):
 		self.socket = socket.socket()
 		return msg
 
-	def practice():
-		r = requests.get("http://localhost:8000/merkletree")
-		return transaction.Transaction.from_dict(json.loads(r.text))
+	def benchmark(num_inserts):
+		r = requests.get("http://localhost:5000/merkletree/bench", params={"num_inserts": num_inserts})
+		return r.text
 
 	def get_leaf(self):
 		raise NotImplementedError

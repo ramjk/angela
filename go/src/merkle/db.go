@@ -54,6 +54,7 @@ func GetReadAngelaDB() (*angelaDB, error) {
 	}
 
 	err = conn.Ping()
+	conn.SetMaxIdleConns(0)
 
 	if err != nil {
 		conn.Close()
@@ -72,6 +73,7 @@ func GetWriteAngelaDB() (*angelaDB, error) {
 	}
 
 	err = conn.Ping()
+	conn.SetMaxIdleConns(0)
 
 	if err != nil {
 		conn.Close()

@@ -16,18 +16,26 @@ from common import util
 	
 # '''
 
+num_inserts = 256
 
 setup = '''
-from common import util
+import time
 from client.client import Client
-indices = [util.random_index() for i in range({})]
-data = [util.random_string() for i in range({})]
+from common.util import random_index, random_string
 
-for i in range({}):
-	Client.insert_leaf(indices[i], data[i])
+Client.benchmark({})
+time.sleep(2)
+index = random_index()
+data = random_string() 
 '''
-
-print(timeit.timeit(stmt="Client.insert_leaf(indices[-1], data[-1])", setup=setup.format(256, 256, 255), number=1))
+durations=[]
+for i in range(5):
+	print("Iteration {}".format(i))
+	res = timeit.timeit(stmt="Client.insert_leaf(index, data)", setup=setup.format(num_inserts-1), number=1)
+	print("Duration is {}".format(res))
+	durations.append(res)
+print("Durations", durations)
+print("Average time", sum(durations)/len(durations))
 
 # durations_8 = [1.765327169999999, 2.6414496519999986, 4.583681233, 8.643308655999999, 15.488765152999996, 32.219870587]
 # num_inserts_8 = [64, 128, 256, 512, 1024, 2048]

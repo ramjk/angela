@@ -8,6 +8,7 @@ from werkzeug.exceptions import BadRequest
 from math import log
 
 from server.smt_api import getLatestRootDigest, read, batch_insert
+from common.util import random_index, random_string
 # from server.transaction import Transaction, WriteTransaction
 from server.worker import Worker
 # from common.util import random_index, random_string, send_data
@@ -25,12 +26,21 @@ epoch_number = 1
 def calculate_worker_id(index: str, prefix_length: int) -> int:
 	return int(index, 2) >> (len(index) - prefix_length)
 
+@app.route("/merkletree/bench", methods=['GET'])
+def benchmark():
+	num_inserts = request.args.get('num_inserts')
+
+	indices = [util.random_index() for i in range(num_inserts)]
+	data = [util.random_string() for i in range(num_inserts)]
+
+	for i in range(num_inserts):
+		worker_id = calculate_worker_id(indices[i], ray_info['prefix_length'])
+		ray.get(ray_info['leaf_workers'][worker_id].queue_write.remote(indices[i], data[i]))
+
+	return "Workload generated", 200
+
 @app.route("/merkletree/root", methods=['GET'])
 def get_root():
-	print(request.endpoint)
-	print(request.url_rule)
-	print(request.path)
-
 	worker_id = random.randint(0, num_workers)
 	# 9-th "worker" is the root
 	if worker_id < num_workers-1:
@@ -81,7 +91,7 @@ def update_leaf():
 		print(err)
 		raise BadRequest("Uhh something went wrong...")
 
-	if request_count == epoch_length:
+	if request_count % epoch_length == 0:
 		object_ids = list()
 		worker_roots = list()
 
@@ -92,8 +102,8 @@ def update_leaf():
 			worker_root_digest, prefix = ray.get(object_id)
 			worker_roots.append((prefix, worker_root_digest))
 
-		ray.get(ray_info['root_worker'].batch_update.remote(epoch_number, worker_roots))
-		request_count = 0
+		output = ray.get(ray_info['root_worker'].batch_update.remote(epoch_number, worker_roots))
+		timeit.timeit(stmt=stmt, setup=setup, number=1)
 		epoch_number += 1 # FIXME: This should be a persistent value
 
 	return "Request for inserting has been committed", 200

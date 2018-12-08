@@ -5,7 +5,7 @@ import random
 import string
 import os
 
-lib = cdll.LoadLibrary("go/src/main/smt_api.so")
+lib = cdll.LoadLibrary("/home/ubuntu/angela/go/src/main/smt_api.so")
 from numpy.ctypeslib import ndpointer
 
 class GoSlice(Structure):
