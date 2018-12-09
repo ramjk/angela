@@ -442,7 +442,7 @@ func (T *SparseMerkleTree) CGenerateProof(index string) ([]string) {
     return results
 }
 
-// IDs dealth with here should be non-virtual (i.e. no prefix involved)
+// IDs dealt with here should be non-virtual (i.e. no prefix involved)
 func (T *SparseMerkleTree) GenerateProofDB(index string) (Proof) {
 	readDB, err := GetReadAngelaDB()
 	if err != nil {
@@ -582,6 +582,7 @@ func (T *SparseMerkleTree) verifyProof(proof Proof) (bool) {
 	var rootDigest digest
 	rootDigest, ok := T.getLatestNode(proof.ProofID) 
 	if !ok {
+		fmt.Println("not ok rootDigest verify")
 		rootDigest = T.getEmpty(T.depth - ProofIDLength)
 	}
 
@@ -597,6 +598,12 @@ func (T *SparseMerkleTree) verifyProof(proof Proof) (bool) {
 	if !good {
 		fmt.Println("Root Digest Calculated", base64.StdEncoding.EncodeToString(rootDigest))
 		fmt.Println("Latest Root", T.GetLatestRoot())
+		fmt.Println("ProofIDLength", ProofIDLength)
+		fmt.Println("Length of copath", len(proof.CoPath))
+		fmt.Println("first copath item id", proof.CoPath[0].ID)
+		fmt.Println("first copath item digest", proof.CoPath[0].Digest)
+		fmt.Println("last copath item id", proof.CoPath[255].ID)
+		fmt.Println("last copath item digest", proof.CoPath[255].Digest)
 	}
 	return good
 }

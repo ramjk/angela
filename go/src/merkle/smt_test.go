@@ -595,20 +595,25 @@ func TestBatchInsert(t * testing.T) {
 				id = randomBitString(TREE_DEPTH)
 			}
 			transactions[i] = &Transaction{id, fmt.Sprintf("angela%d", i)}
-
+			closed[id] = true
 		}
+		if len(closed) != transactionLen {
+			fmt.Println("set is not correct length")
+		}
+		sort.Sort(BatchedTransaction(transactions))
 
-	    tree.BatchInsert(transactions, epochNumber+uint64(j), baselineBatchReadSize, baselineBatchPercolateSize, baselineBatchWriteSize)
-
+	    root, err := tree.BatchInsert(transactions, epochNumber+uint64(j), baselineBatchReadSize, baselineBatchPercolateSize, baselineBatchWriteSize)
+	    if err != nil {
+	    	fmt.Println(err)
+	    }
+	    fmt.Println("Root received from Batch Insert ", root)
 		// for k, v := range tree.conflicts { 
 	    //   fmt.Printf("key[%s] value[%s]\n", k, v.writeable)
 		// }
 
-		fmt.Println(tree.GetLatestRoot())
+		fmt.Println("Root from latest root ", tree.GetLatestRoot())
 		// cache is not reset here but since we can only use "" as a prefix it is ok	
 		for i := 0; i < transactionLen; i++ {
-			tree.cache = make(map[string]*digest)
-
 			proof := tree.GenerateProofDB(testPrefix+transactions[i].ID)
 
 			if len(proof.CoPath) != TREE_DEPTH {
