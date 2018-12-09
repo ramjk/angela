@@ -8,13 +8,13 @@ from client.client import Client
 
 max_batch = 1024
 batches = [2**i for i in range(6, int(log(max_batch, 2)) + 1)]
-iterations = 10
 global_soundness_error = 0
+epoch_number = 1
 
 for batch_size in batches:
 	soundness_error = 0
 	print("[batch_size {}]".format(batch_size))
-	pid = subprocess.Popen(['python', '-m', 'server.flask_server', str(9), str(batch_size), str(256)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+	pid = subprocess.Popen(['python', '-m', 'server.flask_server', str(9), str(batch_size), str(256), str(epoch_number)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 	time.sleep(5)
 	iterations = int(max_batch / batch_size)
 	for i in range(iterations):
@@ -23,6 +23,7 @@ for batch_size in batches:
 		inserts = 0
 		indices = list()
 		datas = list()
+
 		while inserts < batch_size:
 			is_member = util.flip_coin()
 			index = util.random_index()
@@ -41,9 +42,12 @@ for batch_size in batches:
 			if not Client.verify_proof(proof, data, root):
 				print("FAILED")
 				soundness_error += 1
-	time.sleep(10)
+
+		epoch_number += 1
+
 	pid.kill()
 	print("[batch_size {}] {} iterations ==> soundness error {}".format(batch_size, iterations, float(soundness_error) / float(iterations)))
 	global_soundness_error += soundness_error
 
 print("\nOverall soundness error of {}".format(global_soundness_error))
+
