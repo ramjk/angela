@@ -25,7 +25,7 @@ for batch_size in batches:
 		datas = list()
 
 		while inserts < batch_size:
-			is_member = util.flip_coin()
+			is_member = util.flip_coin(bias=0.75)
 			index = util.random_index()
 			data = util.random_string()
 			if is_member:
