@@ -11,8 +11,8 @@ import (
 	"sort"
 )
 
-const NUMITERATIONS int = 10
-var epochNumber uint64 = 1
+const NUMITERATIONS int = 256
+var epochNumber uint64 = 5
 // var seedNum int64 = 0
 
 const baselineBatchReadSize int = 50
@@ -580,29 +580,45 @@ func BenchmarkBatchInsert16384(b *testing.B) {
 }
 
 func TestBatchInsert(t * testing.T) {
-	// transactionLen := NUMITERATIONS
-	tree := MakeTree("")
+	for j := 0; j < 7; j++ {
+		transactionLen := NUMITERATIONS
+		// cannot use anything other than "" because there is no one to finish the rest of the tree
+		testPrefix := ""
+		tree := MakeTree(testPrefix)
 
-	transactions := make([]*Transaction, 1)
-	for i := 0; i < 1; i++ {
-		transactions[i] = &Transaction{"0101101010111001011001000101101011110100001110011101000101111111110001101010111011101101101001100011001101001111000001011010101010001010111000110111010010110010110110101101111010010111101010110001011101000010000100001110011000101110000000010001111010100111", "3SL370G8"}
-	}
+		transactions := make([]*Transaction, transactionLen)
+		closed := make(map[string]bool)
+		for i := 0; i < transactionLen; i++ {
+			id := randomBitString(TREE_DEPTH)
+			_, ok := closed[id]
+			for ; ok; _, ok = closed[id] {
+				id = randomBitString(TREE_DEPTH)
+			}
+			transactions[i] = &Transaction{id, fmt.Sprintf("angela%d", i)}
 
-    tree.BatchInsert(transactions, epochNumber, baselineBatchReadSize, baselineBatchPercolateSize, baselineBatchWriteSize)
-
-	// for k, v := range tree.conflicts { 
-    //   fmt.Printf("key[%s] value[%s]\n", k, v.writeable)
-	// }
-	
-	for i := 0; i < 1; i++ {
-		proof := tree.GenerateProofDB(transactions[i].ID)
-
-		if len(proof.CoPath) != TREE_DEPTH {
-			t.Error("Length of the copath was not equal to TREE_DEPTH.")
 		}
 
-		if !tree.verifyProof(proof) {
-			t.Error("Proof was invalid when it was expected to be valid.")
+	    tree.BatchInsert(transactions, epochNumber+uint64(j), baselineBatchReadSize, baselineBatchPercolateSize, baselineBatchWriteSize)
+
+		// for k, v := range tree.conflicts { 
+	    //   fmt.Printf("key[%s] value[%s]\n", k, v.writeable)
+		// }
+
+		fmt.Println(tree.GetLatestRoot())
+		// cache is not reset here but since we can only use "" as a prefix it is ok	
+		for i := 0; i < transactionLen; i++ {
+			tree.cache = make(map[string]*digest)
+
+			proof := tree.GenerateProofDB(testPrefix+transactions[i].ID)
+
+			if len(proof.CoPath) != TREE_DEPTH {
+				t.Error("Length of the copath was not equal to TREE_DEPTH.")
+			}
+
+			if !tree.verifyProof(proof) {
+				fmt.Println("Errored on transaction id ", transactions[i].ID)
+				t.Error("Proof was invalid when it was expected to be valid.")
+			}
 		}
 	}
 }
@@ -616,4 +632,5 @@ func TestDatabaseConnection(t *testing.T) {
 	// Write a ping here 
 	db.DropTable()
 	db.CreateTable()
+	db.ShowTables()
 }
