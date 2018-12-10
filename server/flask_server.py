@@ -142,4 +142,4 @@ if __name__ == '__main__':
 	ray_info['root_worker'] = root_worker
 	ray_info['prefix_length'] = prefix_length
 
-	app.run()#host='0.0.0.0')
+	app.run(host='0.0.0.0')

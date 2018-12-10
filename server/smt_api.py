@@ -42,6 +42,7 @@ def read(index) -> Proof:
 	result = lib.Read(index.encode())
 	proofDict = {}
 	proofDict["ProofType"] = (result[0].decode() == "true")
+	# print("ProofType in SMT_API", proofDict["ProofType"])
 	proofDict["QueryID"] = result[1].decode()
 	proofDict["ProofID"] = result[2].decode()
 	proofDict["ProofLength"] = int(result[3].decode())

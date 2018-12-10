@@ -157,7 +157,7 @@ func (db *angelaDB) getChangeListInsertStmt(numNodes int) (*sql.Stmt, error) {
 	return changeListStmt, nil
 }
 
-func (db *angelaDB) insertChangeList(changeList []*CoPathPair, currentEpoch uint64) (int64, error) {
+func (db *angelaDB) insertChangeList(prefix string, changeList []*CoPathPair, currentEpoch uint64) (int64, error) {
 	stmt, err := db.getChangeListInsertStmt(len(changeList))
 	if err != nil {
 		return -1, fmt.Errorf("[aurora]: error in making changeList statement: %v", err)
@@ -165,7 +165,8 @@ func (db *angelaDB) insertChangeList(changeList []*CoPathPair, currentEpoch uint
 
 	vals := []interface{}{} 
 	for _, elem := range changeList {
-	    vals = append(vals, elem.ID, elem.Digest, currentEpoch)
+		// appending the prefix to each of the nodes being inserted into the database
+	    vals = append(vals, prefix + elem.ID, elem.Digest, currentEpoch)
 	}
 	//format all vals at once
 	transaction, err := db.conn.Begin()

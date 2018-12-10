@@ -124,7 +124,7 @@ func (T *SparseMerkleTree) Insert(index string, data string, epochNumber uint64)
 	ch := make(chan []*CoPathPair)
 	quit := make(chan bool)
 
-	go auroraWritebackBatch(ch, quit, writeDB, T.prefix, epochNumber, 1)
+	go auroraWritebackBatch(ch, quit, writeDB, T.prefix, epochNumber, 1, 1)
 
 	dig, _ := base64.StdEncoding.DecodeString(data)
 	hash := hashDigest(dig)
@@ -188,6 +188,7 @@ func (T *SparseMerkleTree) preloadCopaths(transactions BatchedTransaction, read 
 
 	ids := make([]string, 0, len(copaths))
     for k := range copaths {
+    	// appending the subtree prefix to be read from the database
         ids = append(ids, T.prefix + k)
     }
 
@@ -209,7 +210,8 @@ func auroraWritebackBatch(
 	db *angelaDB, 
 	prefix string, 
 	epochNumber uint64, 
-	batchWriteSize int) {
+	batchWriteSize int,
+	totalNumTransactions int) {
 
 	bufferList := make([]*CoPathPair, 0)
 	counter := 0
@@ -221,25 +223,26 @@ func auroraWritebackBatch(
     		// fmt.Println(delta)
     		bufferList = append(bufferList, delta...)
     		counter += 1
-    		if counter == batchWriteSize {
-    			_, err := db.insertChangeList(bufferList, epochNumber)
+    		if counter % batchWriteSize == 0 || counter == totalNumTransactions {
+    			numRowsAffected, err := db.insertChangeList(prefix, bufferList, epochNumber)
 	    		if err != nil {
 	    			fmt.Println(err)
 	    		}
-	    		counter = 0
+	    		fmt.Println("Printing the number of rows affected", numRowsAffected)
 	    		bufferList = nil
     		}
-    		// fmt.Println("Printing the number of rows affected")
-    		// fmt.Println(numRowsAffected)
-    	case <-quit:
-    		if len(bufferList) > 0 {
-    			_, err := db.insertChangeList(bufferList, epochNumber)
-	    		if err != nil {
-	    			fmt.Println(err)
-	    		}			
+    		if counter == totalNumTransactions {
+    			db.Close()
     		}
-    		// fmt.Println("Done Writing")
-    		db.Close()
+    	case <-quit:
+    		// if len(bufferList) > 0 {
+    		// 	numRowsAffected, err := db.insertChangeList(bufferList, epochNumber)
+	    	// 	if err != nil {
+	    	// 		fmt.Println(err)
+	    	// 	}
+	    	// 	fmt.Println("Printing the number of rows affected", numRowsAffected)		
+    		// }
+    		fmt.Println("Done Writing")
     		return
     	}
     }
@@ -284,6 +287,7 @@ func (T *SparseMerkleTree) BatchInsert(
 	for i := 0; i < len(transactions); i+=batchReadSize {
 		copathPairs := <-readChannel
 		for j := 0; j < len(copathPairs); j++ {
+			// storing the read results in the cache by subtree virtual address
 			T.cache[copathPairs[j].ID[len(T.prefix):]] = &copathPairs[j].Digest
 		}
 	}
@@ -299,7 +303,7 @@ func (T *SparseMerkleTree) BatchInsert(
 	ch := make(chan []*CoPathPair)
 	quit := make(chan bool)
 
-	go auroraWritebackBatch(ch, quit, writeDB, T.prefix, epochNumber, batchWriteSize)
+	go auroraWritebackBatch(ch, quit, writeDB, T.prefix, epochNumber, batchWriteSize, len(transactions))
 
 	for i:=0; i<len(transactions); i+=batchPercolateSize {
 		wg.Add(1)
@@ -398,24 +402,35 @@ func (T *SparseMerkleTree) isConflict(index string) (bool) {
 	return false
 }
 
+// Always getting the actual root of the tree
 func (T *SparseMerkleTree) GetLatestRoot() (string) {
+	rootDigest, _ := T.getLatestNode("")
+	return base64.StdEncoding.EncodeToString(rootDigest)
+}
+
+func (T *SparseMerkleTree) getLatestNode(nodeId string) (digest, bool) {
 	readDB, err := GetReadAngelaDB()
 	if err != nil {
 		panic(err)
 	}
 	defer readDB.Close()
-	rootId := []string{""}
-	copathPairs, err := readDB.retrieveLatestCopathDigests(rootId)
+	nodeIds := []string{nodeId}
+	copathPairs, err := readDB.retrieveLatestCopathDigests(nodeIds)
 	if err != nil {
 		fmt.Println(err)
-		return ""
 	}
-	return base64.StdEncoding.EncodeToString(copathPairs[0].Digest)
+	fmt.Println("")
+	ok := err == nil && len(copathPairs) == 1
+	if ok {
+		return copathPairs[0].Digest, ok
+	}
+	return T.getEmpty(T.depth), ok
 }
 
 func (T *SparseMerkleTree) CGenerateProof(index string) ([]string) {
 	proof := T.GenerateProofDB(index)
 	results := make([]string, proof.ProofLength)
+	fmt.Println("About to format ",bool(proof.ProofType))
     results[0] = strconv.FormatBool(bool(proof.ProofType))
     results[1] = proof.QueryID
     results[2] = proof.ProofID
@@ -427,6 +442,7 @@ func (T *SparseMerkleTree) CGenerateProof(index string) ([]string) {
     return results
 }
 
+// IDs dealt with here should be non-virtual (i.e. no prefix involved)
 func (T *SparseMerkleTree) GenerateProofDB(index string) (Proof) {
 	readDB, err := GetReadAngelaDB()
 	if err != nil {
@@ -439,13 +455,11 @@ func (T *SparseMerkleTree) GenerateProofDB(index string) (Proof) {
 	var proof_t ProofType
 	var currID string
 	var startingIndex string
-	indexCheck := []string{index}
-	// fmt.Println("Index to check", indexCheck)
-	indexPair, err := readDB.retrieveLatestCopathDigests(indexCheck)
-	ok := err == nil && len(indexPair) > 0
+	_, ok := T.getLatestNode(index)
 
 	// _, ok := T.cache[index]
 	if !ok {
+		// fmt.Println("Entering NONMEMBERSHIP")
 		proof_t = NONMEMBERSHIP
 		ancestorIds := make([]string, 0)
 		ancestor := index
@@ -555,6 +569,7 @@ func (T *SparseMerkleTree) verifyProof(proof Proof) (bool) {
 	// If proof of nonmembership, first make sure that there is a prefix match
 	ProofIDLength := len(proof.ProofID)
 	if proof.ProofType == NONMEMBERSHIP {
+		// fmt.Println("verifying proof of nonmembership")
 		if ProofIDLength > len(proof.QueryID) {
 			return false
 		}
@@ -565,13 +580,11 @@ func (T *SparseMerkleTree) verifyProof(proof Proof) (bool) {
 			}
 		}
 	}
-
-	rootDigestPointer, ok := T.cache[proof.ProofID]
 	var rootDigest digest
+	rootDigest, ok := T.getLatestNode(proof.ProofID) 
 	if !ok {
+		// fmt.Println("not ok rootDigest verify")
 		rootDigest = T.getEmpty(T.depth - ProofIDLength)
-	} else {
-		rootDigest = *rootDigestPointer
 	}
 
 	for i := 0; i < len(proof.CoPath); i++ {
@@ -582,7 +595,18 @@ func (T *SparseMerkleTree) verifyProof(proof Proof) (bool) {
 			rootDigest = hashDigest(append(rootDigest, currNode.Digest...))
 		}
 	}
-	return base64.StdEncoding.EncodeToString(rootDigest) == T.GetLatestRoot()
+	good := base64.StdEncoding.EncodeToString(rootDigest) == T.GetLatestRoot()
+	if !good {
+		fmt.Println("Root Digest Calculated", base64.StdEncoding.EncodeToString(rootDigest))
+		fmt.Println("Latest Root", T.GetLatestRoot())
+		fmt.Println("ProofIDLength", ProofIDLength)
+		fmt.Println("Length of copath", len(proof.CoPath))
+		fmt.Println("first copath item id", proof.CoPath[0].ID)
+		fmt.Println("first copath item digest", proof.CoPath[0].Digest)
+		fmt.Println("last copath item id", proof.CoPath[255].ID)
+		fmt.Println("last copath item digest", proof.CoPath[255].Digest)
+	}
+	return good
 }
 
 // leaves must be sorted before findConflicts is called

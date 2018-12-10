@@ -67,7 +67,7 @@ class Worker(object):
 			keys.append(transaction.index[len(self.prefix):])
 			values.append(transaction.data)
 
-		smt_api.batch_insert(self.prefix, keys, values, epoch_number)
+		worker_root_digest = smt_api.batch_insert(self.prefix, keys, values, epoch_number)
 		if worker_roots:
 			print("Root from smt_api:", worker_root_digest)
 
