@@ -6,7 +6,7 @@ from typing import List, Optional, Tuple
 from server.transaction import Transaction, WriteTransaction
 from common.util import random_string, to_bytes, to_string
 
-@ray.remote
+@ray.remote(num_cpus=2)
 class Worker(object):
 	def __init__(self, depth: int, worker_id: int, prefix_length: int, parent=None):
 		self.children = None
