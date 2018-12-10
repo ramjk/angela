@@ -421,16 +421,18 @@ func (T *SparseMerkleTree) getLatestNode(nodeId string) (digest, bool) {
 	if err != nil {
 		fmt.Println(err)
 	}
+	fmt.Println("")
 	ok := err == nil && len(copathPairs) == 1
 	if ok {
 		return copathPairs[0].Digest, ok
 	}
-	return digest(""), true
+	return digest(""), ok
 }
 
 func (T *SparseMerkleTree) CGenerateProof(index string) ([]string) {
 	proof := T.GenerateProofDB(index)
 	results := make([]string, proof.ProofLength)
+	fmt.Println("About to format ",bool(proof.ProofType))
     results[0] = strconv.FormatBool(bool(proof.ProofType))
     results[1] = proof.QueryID
     results[2] = proof.ProofID
@@ -459,6 +461,7 @@ func (T *SparseMerkleTree) GenerateProofDB(index string) (Proof) {
 
 	// _, ok := T.cache[index]
 	if !ok {
+		// fmt.Println("Entering NONMEMBERSHIP")
 		proof_t = NONMEMBERSHIP
 		ancestorIds := make([]string, 0)
 		ancestor := index
@@ -568,7 +571,7 @@ func (T *SparseMerkleTree) verifyProof(proof Proof) (bool) {
 	// If proof of nonmembership, first make sure that there is a prefix match
 	ProofIDLength := len(proof.ProofID)
 	if proof.ProofType == NONMEMBERSHIP {
-		fmt.Println("verifying proof of nonmembership")
+		// fmt.Println("verifying proof of nonmembership")
 		if ProofIDLength > len(proof.QueryID) {
 			return false
 		}
@@ -582,7 +585,7 @@ func (T *SparseMerkleTree) verifyProof(proof Proof) (bool) {
 	var rootDigest digest
 	rootDigest, ok := T.getLatestNode(proof.ProofID) 
 	if !ok {
-		fmt.Println("not ok rootDigest verify")
+		// fmt.Println("not ok rootDigest verify")
 		rootDigest = T.getEmpty(T.depth - ProofIDLength)
 	}
 

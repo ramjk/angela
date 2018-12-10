@@ -11,7 +11,7 @@ import (
 	"sort"
 )
 
-const NUMITERATIONS int = 256
+const NUMITERATIONS int = 1
 var epochNumber uint64 = 1
 // var seedNum int64 = 0
 
@@ -580,7 +580,7 @@ func BenchmarkBatchInsert16384(b *testing.B) {
 }
 
 func TestBatchInsert(t * testing.T) {
-	for j := 0; j < 7; j++ {
+	for j := 0; j < 1; j++ {
 		transactionLen := NUMITERATIONS
 		// cannot use anything other than "" because there is no one to finish the rest of the tree
 		testPrefix := ""
