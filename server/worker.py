@@ -6,7 +6,7 @@ from typing import List, Optional, Tuple
 from server.transaction import Transaction, WriteTransaction
 from common.util import random_string, to_bytes, to_string
 
-@ray.remote(num_cpus=2)
+@ray.remote
 class Worker(object):
 	def __init__(self, depth: int, worker_id: int, prefix_length: int, parent=None):
 		self.children = None
@@ -67,7 +67,7 @@ class Worker(object):
 			keys.append(transaction.index[len(self.prefix):])
 			values.append(transaction.data)
 
-		smt_api.batch_insert(self.prefix, keys, values, epoch_number)
+		worker_root_digest = smt_api.batch_insert(self.prefix, keys, values, epoch_number)
 		if worker_roots:
 			print("Root from smt_api:", worker_root_digest)
 

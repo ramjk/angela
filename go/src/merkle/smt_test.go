@@ -12,7 +12,7 @@ import (
 )
 
 const NUMITERATIONS int = 256
-var epochNumber uint64 = 5
+var epochNumber uint64 = 1
 // var seedNum int64 = 0
 
 const baselineBatchReadSize int = 50
