@@ -402,12 +402,10 @@ func (T *SparseMerkleTree) isConflict(index string) (bool) {
 	return false
 }
 
+// Always getting the actual root of the tree
 func (T *SparseMerkleTree) GetLatestRoot() (string) {
-	rootDigest, ok := T.getLatestNode("")
-	if ok {
-		return base64.StdEncoding.EncodeToString(rootDigest)
-	}
-	return ""
+	rootDigest, _ := T.getLatestNode("")
+	return base64.StdEncoding.EncodeToString(rootDigest)
 }
 
 func (T *SparseMerkleTree) getLatestNode(nodeId string) (digest, bool) {
@@ -426,7 +424,7 @@ func (T *SparseMerkleTree) getLatestNode(nodeId string) (digest, bool) {
 	if ok {
 		return copathPairs[0].Digest, ok
 	}
-	return digest(""), ok
+	return T.getEmpty(T.depth), ok
 }
 
 func (T *SparseMerkleTree) CGenerateProof(index string) ([]string) {

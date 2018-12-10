@@ -9,6 +9,7 @@ from client.client import Client
 max_batch = 1024
 batches = [2**i for i in range(6, int(log(max_batch, 2)) + 1)]
 global_soundness_error = 0
+global_soundness_total = 0
 epoch_number = 1
 
 for batch_size in batches:
@@ -31,11 +32,12 @@ for batch_size in batches:
 			data = util.random_string()
 			if is_member:
 				Client.insert_leaf(index, data)
-			inserts += 1
+				inserts += 1
 			indices.append(index)
 			datas.append(data)
 			soundness_total += 1
 		root = Client.get_signed_root()
+		print("Root received")
 		for i in range(batch_size):
 			proof = Client.generate_proof(indices[i])
 			data = datas[i]
@@ -49,6 +51,6 @@ for batch_size in batches:
 	pid.kill()
 	print("[batch_size {}] {} iterations ==> soundness error {}".format(batch_size, iterations, float(soundness_error) / float(soundness_total)))
 	global_soundness_error += soundness_error
+	global_soundness_total += soundness_total
 
-print("\nOverall soundness error of {}".format(global_soundness_error))
-
+print("\nOverall soundness error of {}".format(float(global_soundness_error) / float(global_soundness_total)))

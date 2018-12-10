@@ -83,8 +83,8 @@ class Client(object):
 			else:
 				tmp = util.SHA256(tmp + util.to_bytes(node["Digest"]))
 		actual_digest = util.to_string(tmp)
-		# print("verification", actual_digest)
-		# print("root", root)
+		print("verification", actual_digest)
+		print("root", root)
 		return actual_digest == root
 
 	def end_session(self):
